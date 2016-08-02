@@ -1,2 +1,2 @@
-# 2017FTC
-2017 Fiirst Tech Challenge
+# 2016-2017 FTC
+2016-2017 First Tech Challenge
