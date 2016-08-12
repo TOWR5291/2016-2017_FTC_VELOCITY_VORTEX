@@ -87,12 +87,12 @@ public class K9Line extends OpMode {
 		 *    "servo_1" controls the arm joint of the manipulator.
 		 *    "servo_6" controls the claw joint of the manipulator.
 		 */
-		motorRight = hardwareMap.dcMotor.get("motor2");
-		motorLeft = hardwareMap.dcMotor.get("motor1");
+		motorRight = hardwareMap.dcMotor.get("motor_2");
+		motorLeft = hardwareMap.dcMotor.get("motor_1");
 		motorLeft.setDirection(DcMotor.Direction.REVERSE);
 
-		arm = hardwareMap.servo.get("servo1");
-		claw = hardwareMap.servo.get("servo2");
+		arm = hardwareMap.servo.get("servo_1");
+		claw = hardwareMap.servo.get("servo_6");
 
 		// set the starting position of the wrist and claw
 		armPosition = 0.2;

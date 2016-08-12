@@ -132,7 +132,6 @@ public class K9TankDrive extends OpMode {
         // note that if y equal -1 then joystick is pushed all of the way forward.
         float left = -gamepad1.left_stick_y;
         float right = -gamepad1.right_stick_y;
-		//float right = -gamepad1.left_stick_x;
 
 		// clip the right/left values so that the values never exceed +/- 1
 		right = Range.clip(right, -1, 1);
@@ -198,15 +197,10 @@ public class K9TankDrive extends OpMode {
 		 */
 
 		telemetry.addData("Text", "*** Robot Data***");
-        //telemetry.addData("arm", "arm:  " + String.format("%.2f", armPosition));
-        //telemetry.addData("claw", "claw:  " + String.format("%.2f", clawPosition));
-		//telemetry.addData("left tgt pwr",  "left  pwr: " + String.format("%.2f", left));
-		//telemetry.addData("right tgt pwr", "right pwr: " + String.format("%.2f", right));
-		telemetry.addData("C1 RIGHT X", "Stick1 X: " + gamepad1.left_stick_x);
-		telemetry.addData("C1 RIGHT Y", "Stick1 Y: " + gamepad1.left_stick_y);
-		telemetry.addData("C1 LEFT X", "Stick2 X: " + gamepad1.right_stick_x);
-		telemetry.addData("C1 LEFT Y", "Stick2 Y: " + gamepad1.right_stick_y);
-
+        telemetry.addData("arm", "arm:  " + String.format("%.2f", armPosition));
+        telemetry.addData("claw", "claw:  " + String.format("%.2f", clawPosition));
+		telemetry.addData("left tgt pwr",  "left  pwr: " + String.format("%.2f", left));
+		telemetry.addData("right tgt pwr", "right pwr: " + String.format("%.2f", right));
 	}
 
 	/*
