@@ -1,4 +1,4 @@
-package ftc5291;
+package club.towr5291.functions;
 
 /**
  * Created by zoe on 8/11/2016.
@@ -6,7 +6,6 @@ package ftc5291;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import ftc5291.Util;
 
 import java.io.BufferedWriter;
 import java.io.File;

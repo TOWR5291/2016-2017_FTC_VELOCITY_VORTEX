@@ -1,6 +1,4 @@
-package ftc5291;
-
-/**
+package club.towr5291.functions; /**
  * Created by zoe on 8/11/2016.
  */
 

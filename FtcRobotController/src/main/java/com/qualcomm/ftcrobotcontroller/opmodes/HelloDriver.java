@@ -1,8 +1,13 @@
 package com.qualcomm.ftcrobotcontroller.opmodes;
 
+import android.os.Environment;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import ftc5291.Log;
-import ftc5291.Timers;
+
+import java.io.FileWriter;
+
+import club.towr5291.functions.Log;
+import club.towr5291.functions.Timers;
 
 /**
  * Created by zoe on 8/9/2016.
@@ -23,7 +28,19 @@ public class HelloDriver extends OpMode {
         String ts = tsLong.toString();
         timing = new Timers();
         timing.startClock("global");
-        logging = new Log("/FTC_Logs/", "test"+ts);
+        logging = new Log("/FTC_Logs/", "test");
+        try {
+            String location;
+            location = Environment.getExternalStorageDirectory().toString();
+            FileWriter write = new FileWriter(location+"/FTC_Logs/text.txt", true);
+            write.append("This is first written/n");
+            telemetry.addData("1", "Logged " + location);
+            write.close();
+        }
+        catch (Exception e) {
+            telemetry.addData("1", "Error" + e);
+        }
+
     }
 
     @Override
@@ -31,7 +48,7 @@ public class HelloDriver extends OpMode {
         counter++;
         if(counter % 10 == 0) {
             telemetry.addData("1", "HelloDriver count = " + counter);
-            logging.add("simul ", counter);
+            logging.add(counter + ":simul ", counter);
         }
 
     }
@@ -40,5 +57,6 @@ public class HelloDriver extends OpMode {
         logging.saveAs(Log.FileType.CSV);
         logging.saveAs(Log.FileType.JSON);
         logging.saveAs(Log.FileType.TEXT);
+        telemetry.addData("2", "HelloDriver Writing Log ");
     }
 }
