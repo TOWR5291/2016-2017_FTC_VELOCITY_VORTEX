@@ -1,4 +1,4 @@
-package com.qualcomm.ftcrobotcontroller.opmodes;
+package club.towr5291.opmodes;
 
 /**
  * Created by zoe on 8/14/2016.

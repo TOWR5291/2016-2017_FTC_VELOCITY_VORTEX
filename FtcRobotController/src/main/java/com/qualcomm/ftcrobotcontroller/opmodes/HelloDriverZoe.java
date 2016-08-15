@@ -12,13 +12,13 @@ import club.towr5291.functions.Timers;
 /**
  * Created by zoe on 8/9/2016.
  */
-public class HelloDriver extends OpMode {
+public class HelloDriverZoe extends OpMode {
 
     int counter = 0;
     Log logging;
     Timers timing;
 
-    public HelloDriver()  {
+    public HelloDriverZoe()  {
         super();
     }
 

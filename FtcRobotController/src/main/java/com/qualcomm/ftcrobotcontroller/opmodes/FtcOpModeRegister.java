@@ -34,6 +34,12 @@ package com.qualcomm.ftcrobotcontroller.opmodes;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpModeRegister;
 
+import org.kettering.ftc.opmodes.HaloDrive;
+import org.kettering.ftc.opmodes.HelloDriver;
+import org.kettering.ftc.opmodes.MoveForward;
+
+import club.towr5291.opmodes.TOWR5291Driver;
+
 /**
  * Register Op Modes
  */
@@ -56,19 +62,21 @@ public class FtcOpModeRegister implements OpModeRegister {
      */
 
     manager.register("NullOp", NullOp.class);
+    manager.register("HelloDriverZoe", HelloDriverZoe.class);
+    manager.register("5291 Drive", TOWR5291Driver.class);
     manager.register("HelloDriver", HelloDriver.class);
-
-    //manager.register("MatrixK9TeleOp", MatrixK9TeleOp.class);
-    manager.register("K9TeleOp", K9TeleOp.class);
-    manager.register("K9Line", K9Line.class);
-    manager.register ("PushBotAuto", PushBotAuto.class);
-    manager.register ("PushBotManual", PushBotManual.class);
-
+    manager.register("HaloDrive", HaloDrive.class);
+    manager.register("Move Forward", MoveForward.class);
 
 
     /*
      * Uncomment any of the following lines if you want to register an op mode.
      */
+    //manager.register("MatrixK9TeleOp", MatrixK9TeleOp.class);
+    //manager.register("K9TeleOp", K9TeleOp.class);
+    //manager.register("K9Line", K9Line.class);
+    //manager.register ("PushBotAuto", PushBotAuto.class);
+    //manager.register ("PushBotManual", PushBotManual.class);
     //manager.register("MR Gyro Test", MRGyroTest.class);
     //manager.register("AdafruitRGBExample", AdafruitRGBExample.class);
     //manager.register("ColorSensorDriver", ColorSensorDriver.class);
@@ -88,5 +96,6 @@ public class FtcOpModeRegister implements OpModeRegister {
     //manager.register("PushBotDriveTouch", PushBotDriveTouch.java);
     //manager.register("PushBotIrSeek", PushBotIrSeek.java);
     //manager.register("PushBotSquare", PushBotSquare.java);
+
   }
 }
