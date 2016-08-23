@@ -2,7 +2,7 @@ package club.towr5291.opmodes;
 
 /**
  * Created by zoe on 8/14/2016.
- * Imported from Last year, updated the variable names
+ * Imported from Last year, upda
  *
  */
 
