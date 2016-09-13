@@ -1,14 +1,26 @@
 package club.towr5291.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.util.RobotLog;
+
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import club.towr5291.functions.FileLogger;
 import club.towr5291.robotconfig.HardwareDriveMotors;
@@ -19,9 +31,9 @@ import club.towr5291.robotconfig.HardwareSensors;
  * Created by ianhaden on 2/09/16.
  */
 
-@Autonomous(name="Pushbot: Auto Drive Red", group="5291Test")
+@Autonomous(name="Pushbot: Auto Drive AStar Path Finder", group="5291Test")
 //@Disabled
-public class AutoDriveRed extends OpMode {
+public class AutoDriveAStarPathFinder extends OpMode {
     /* Declare OpMode members. */
     HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use base drive hardware configuration
 
@@ -67,6 +79,7 @@ public class AutoDriveRed extends OpMode {
     int mStepRightTarget;
     boolean baseStepComplete = false;
     boolean armStepComplete = true;
+    public boolean activated = false;
 
     // Loop cycle time stats variables
     public ElapsedTime  mRuntime = new ElapsedTime();           // Time into round.
@@ -82,6 +95,16 @@ public class AutoDriveRed extends OpMode {
             new LibraryStateSegAuto ( 10,  "R90",  12,  0.5 )
 
     };
+
+    //set up Vuforia
+    public static final String TAG = "Vison OPMODE";
+    OpenGLMatrix lastLocation = null;
+    public VuforiaLocalizer vuforia;                                   // {@link #vuforia} is the variable we will use to store our instance of the Vuforia localization engine.
+    public List<VuforiaTrackable> allTrackables;
+
+    public float mmPerInch        = 25.4f;
+    public float mmBotWidth       = 18 * mmPerInch;            // ... or whatever is right for your robot
+    public float mmFTCFieldWidth  = (12*12 - 2) * mmPerInch;   // the FTC field is ~11'10" center-to-center of the glass panels
 
     /*
     * Code to run ONCE when the driver hits INIT
@@ -114,6 +137,9 @@ public class AutoDriveRed extends OpMode {
         robotDrive.leftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robotDrive.rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+
+
+
         fileLogger.writeEvent("init()","Init Complete");
     }
 
@@ -140,79 +166,199 @@ public class AutoDriveRed extends OpMode {
      */
     @Override
     public void loop() {
-        fileLogger.writeEvent("loop()","STATE: " + String.format("%4.1f ", mStateTime.time()) + " Current Step:- " + mCurrentStep + " Current Step State:- " + mCurrentStepState.toString() + " Current Turn State:- " + mCurrentTurnState.toString()+ " Current Drive State:- " + mCurrentDriveState.toString());
+
+        if (activated == false)
+        {
+            //init the Veforia
+            VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(com.qualcomm.ftcrobotcontroller.R.id.cameraMonitorViewId);
+            parameters.vuforiaLicenseKey = "AVATY7T/////AAAAGQJxfNYzLUgGjSx0aOEU0Q0rpcfZO2h2sY1MhUZUr+Bu6RgoUMUP/nERGmD87ybv1/lM2LBFDxcBGRHkXvxtkHel4XEUCsNHFTGWYcVkMIZqctQsIrTe13MnUvSOfQj8ig7xw3iULcwDpY+xAftW61dKTJ0IAOCxx2F0QjJWqRJBxrEUR/DfQi4LyrgnciNMXCiZ8KFyBdC63XMYkQj2joTN579+2u5f8aSCe8jkAFnBLcB1slyaU9lhnlTEMcFjwrLBcWoYIFAZluvFT0LpqZRlS1/XYf45QBSJztFKHIsj1rbCgotAE36novnAQBs74ewnWsJifokJGOYWdFJveWzn3GE9OEH23Y5l7kFDu4wc";
+            parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
+            this.vuforia = ClassFactory.createVuforiaLocalizer(parameters);
+
+            VuforiaTrackables velocityVortex = this.vuforia.loadTrackablesFromAsset("FTC_2016-17");
+            VuforiaTrackable wheels = velocityVortex.get(0);
+            VuforiaTrackable tools = velocityVortex.get(1);
+            VuforiaTrackable legos = velocityVortex.get(2);
+            VuforiaTrackable gears = velocityVortex.get(3);
+
+            wheels.setName("wheels");  // wheels target
+            tools.setName("tools");  // tools target
+            legos.setName("legos");  // legos target
+            gears.setName("gears");  // gears target
+
+            /** For convenience, gather together all the trackable objects in one easily-iterable collection */
+            allTrackables = new ArrayList<VuforiaTrackable>();
+            allTrackables.addAll(velocityVortex);
+
+            // RED Targets
+            // To Place GEARS Target
+            // position is approximately - (-6feet, -1feet)
+
+            OpenGLMatrix gearsTargetLocationOnField = OpenGLMatrix
+                    /* Then we translate the target off to the RED WALL. Our translation here
+                    is a negative translation in X.*/
+                    .translation(-mmFTCFieldWidth / 2, -1 * 12 * mmPerInch, 0)
+                    .multiplied(Orientation.getRotationMatrix(
+                            /* First, in the fixed (field) coordinate system, we rotate 90deg in X, then 90 in Z */
+                            AxesReference.EXTRINSIC, AxesOrder.XZX,
+                            AngleUnit.DEGREES, 90, 90, 0));
+            gears.setLocation(gearsTargetLocationOnField);
+            RobotLog.ii(TAG, "Gears Target=%s", format(gearsTargetLocationOnField));
+            fileLogger.writeEvent("init()", "Tools Target=%s" + format(gearsTargetLocationOnField));
+
+            // To Place GEARS Target
+            // position is approximately - (-6feet, 3feet)
+            OpenGLMatrix toolsTargetLocationOnField = OpenGLMatrix
+                    /* Then we translate the target off to the Blue Audience wall.
+                    Our translation here is a positive translation in Y.*/
+                    .translation(-mmFTCFieldWidth / 2, 3 * 12 * mmPerInch, 0)
+                    //.translation(0, mmFTCFieldWidth/2, 0)
+                    .multiplied(Orientation.getRotationMatrix(
+                            /* First, in the fixed (field) coordinate system, we rotate 90deg in X */
+                            AxesReference.EXTRINSIC, AxesOrder.XZX,
+                            AngleUnit.DEGREES, 90, 0, 0));
+            tools.setLocation(toolsTargetLocationOnField);
+            RobotLog.ii(TAG, "Tools Target=%s", format(toolsTargetLocationOnField));
+            fileLogger.writeEvent("init()", "Tools Target=%s" + format(toolsTargetLocationOnField));
+
+            //Finsih RED Targets
+
+            // BLUE Targets
+            // To Place LEGOS Target
+            // position is approximately - (-6feet, -1feet)
+
+            OpenGLMatrix legosTargetLocationOnField = OpenGLMatrix
+                    /* Then we translate the target off to the RED WALL. Our translation here
+                    is a negative translation in X.*/
+                    .translation(-3 * 12 * mmPerInch, mmFTCFieldWidth / 2, 0)
+                    .multiplied(Orientation.getRotationMatrix(
+                            /* First, in the fixed (field) coordinate system, we rotate 90deg in X, then 90 in Z */
+                            AxesReference.EXTRINSIC, AxesOrder.XZX,
+                            AngleUnit.DEGREES, 90, 90, 0));
+            legos.setLocation(legosTargetLocationOnField);
+            RobotLog.ii(TAG, "Gears Target=%s", format(legosTargetLocationOnField));
+            fileLogger.writeEvent("init()", "Tools Target=%s" + format(legosTargetLocationOnField));
+
+            // To Place WHEELS Target
+            // position is approximately - (-6feet, 3feet)
+            OpenGLMatrix wheelsTargetLocationOnField = OpenGLMatrix
+                    /* Then we translate the target off to the Blue Audience wall.
+                    Our translation here is a positive translation in Y.*/
+                    .translation(1 * 12 * mmPerInch, mmFTCFieldWidth / 2, 0)
+                    .multiplied(Orientation.getRotationMatrix(
+                            /* First, in the fixed (field) coordinate system, we rotate 90deg in X */
+                            AxesReference.EXTRINSIC, AxesOrder.XZX,
+                            AngleUnit.DEGREES, 90, 0, 0));
+            wheels.setLocation(wheelsTargetLocationOnField);
+            RobotLog.ii(TAG, "Tools Target=%s", format(wheelsTargetLocationOnField));
+            fileLogger.writeEvent("init()", "Tools Target=%s" + format(wheelsTargetLocationOnField));
+
+            //Finsih BLUE Targets
+
+            //set up phone location
+            OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
+                    .translation(mmBotWidth / 2, 0, 0)
+                    .multiplied(Orientation.getRotationMatrix(
+                            AxesReference.EXTRINSIC, AxesOrder.YZY,
+                            AngleUnit.DEGREES, -90, 0, 0));
+            RobotLog.ii(TAG, "phone=%s", format(phoneLocationOnRobot));
+            fileLogger.writeEvent("init()", "Phone Location=%s" + format(phoneLocationOnRobot));
+            //finish phone location
+
+            //trackable listeners
+            ((VuforiaTrackableDefaultListener) gears.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+            ((VuforiaTrackableDefaultListener) tools.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+            ((VuforiaTrackableDefaultListener) legos.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+            ((VuforiaTrackableDefaultListener) wheels.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+            /** Start tracking the data sets we care about. */
+            velocityVortex.activate();
+            activated = true;
+        }
+
+
+        for (VuforiaTrackable trackable : allTrackables) {
+            /**
+             * getUpdatedRobotLocation() will return null if no new information is available since
+             * the last time that call was made, or if the trackable is not currently visible.
+             * getRobotLocation() will return null if the trackable is not currently visible.
+             */
+            telemetry.addData(trackable.getName(), ((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible() ? "Visible" : "Not Visible");    //
+
+            OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
+            if (robotLocationTransform != null) {
+                lastLocation = robotLocationTransform;
+            }
+        }
+        if (lastLocation != null) {
+            //  RobotLog.vv(TAG, "robot=%s", format(lastLocation));
+            telemetry.addData("Pos", format(lastLocation));
+        } else {
+            telemetry.addData("Pos", "Unknown");
+        }
+
+        fileLogger.writeEvent("loop()", "STATE: " + String.format("%4.1f ", mStateTime.time()) + " Current Step:- " + mCurrentStep + " Current Step State:- " + mCurrentStepState.toString() + " Current Turn State:- " + mCurrentTurnState.toString() + " Current Drive State:- " + mCurrentDriveState.toString());
         // Send the current state info (state and time) back to first line of driver station telemetry.
         telemetry.addData("STATE", String.format("%4.1f ", mStateTime.time()) + " Current Step:- " + mCurrentStep + " Current Step State:- " + mCurrentStepState.toString());
         // Execute the current state.  Each STATE's case code does the following:
 
-        switch (mCurrentStepState)
-        {
-            case STATE_INIT:
-                {
-                    initStep(mRobotAutonomous);
-                }
-                break;
-            case STATE_START:
-                {
+        switch (mCurrentStepState) {
+            case STATE_INIT: {
+                initStep(mRobotAutonomous);
+            }
+            break;
+            case STATE_START: {
 
+            }
+            break;
+            case STATE_RUNNING: {
+                runningTurnStep();
+                runningDriveStep();
+                if ((mCurrentDriveState == stepState.STATE_COMPLETE) && (mCurrentTurnState == stepState.STATE_COMPLETE) && (armStepComplete)) {
+                    //  Transition to a new state.
+                    mCurrentStepState = stepState.STATE_COMPLETE;
                 }
-                break;
-            case STATE_RUNNING:
-                {
-                    runningTurnStep ();
-                    runningDriveStep();
-                    if ((mCurrentDriveState == stepState.STATE_COMPLETE) && (mCurrentTurnState == stepState.STATE_COMPLETE) && (armStepComplete))
-                    {
-                        //  Transition to a new state.
-                        mCurrentStepState = stepState.STATE_COMPLETE;
-                    }
-                }
-                break;
-            case STATE_PAUSE:
-                {
+            }
+            break;
+            case STATE_PAUSE: {
 
-                }
-                break;
-            case STATE_COMPLETE:
-                {
-                    fileLogger.writeEvent("loop()","Current Step:- " + mCurrentStep + ", Array Size: " + mRobotAutonomous.length);
-                    if ((mCurrentStep) < (mRobotAutonomous.length - 1)) {
-                        fileLogger.writeEvent("loop()","Current Step:- " + mCurrentStep + ", Array Size: " + mRobotAutonomous.length);
-                        //  Transition to a new state and next step.
-                        mCurrentStep++;
-                        mCurrentStepState = stepState.STATE_INIT;
+            }
+            break;
+            case STATE_COMPLETE: {
+                fileLogger.writeEvent("loop()", "Current Step:- " + mCurrentStep + ", Array Size: " + mRobotAutonomous.length);
+                if ((mCurrentStep) < (mRobotAutonomous.length - 1)) {
+                    fileLogger.writeEvent("loop()", "Current Step:- " + mCurrentStep + ", Array Size: " + mRobotAutonomous.length);
+                    //  Transition to a new state and next step.
+                    mCurrentStep++;
+                    mCurrentStepState = stepState.STATE_INIT;
 
-                    } else {
-                        fileLogger.writeEvent("loop()","STATE_COMPLETE - Setting FINISHED ");
-                        //  Transition to a new state.
-                        mCurrentStepState = stepState.STATE_FINISHED;
-                    }
-                }
-                break;
-            case STATE_TIMEOUT:
-                {
-                    robotDrive.leftMotor.setPower(0);
-                    robotDrive.rightMotor.setPower(0);
+                } else {
+                    fileLogger.writeEvent("loop()", "STATE_COMPLETE - Setting FINISHED ");
                     //  Transition to a new state.
                     mCurrentStepState = stepState.STATE_FINISHED;
+                }
+            }
+            break;
+            case STATE_TIMEOUT: {
+                robotDrive.leftMotor.setPower(0);
+                robotDrive.rightMotor.setPower(0);
+                //  Transition to a new state.
+                mCurrentStepState = stepState.STATE_FINISHED;
 
-                }
-                break;
-            case STATE_ERROR:
-                {
-                    telemetry.addData("STATE", "ERROR WAITING TO FINISH " + mCurrentStep);
-                }
-                break;
-            case STATE_FINISHED:
-                {
-                    telemetry.addData("STATE", "FINISHED " + mCurrentStep);
-                }
+            }
+            break;
+            case STATE_ERROR: {
+                telemetry.addData("STATE", "ERROR WAITING TO FINISH " + mCurrentStep);
+            }
+            break;
+            case STATE_FINISHED: {
+                telemetry.addData("STATE", "FINISHED " + mCurrentStep);
+            }
             break;
 
         }
 
         //check timeout vale
-        if ((mStateTime.seconds() > mStepTimeout  ) && ((mCurrentStepState != stepState.STATE_ERROR) && (mCurrentStepState != stepState.STATE_FINISHED))) {
+        if ((mStateTime.seconds() > mStepTimeout) && ((mCurrentStepState != stepState.STATE_ERROR) && (mCurrentStepState != stepState.STATE_FINISHED))) {
             //  Transition to a new state.
             mCurrentStepState = stepState.STATE_TIMEOUT;
         }
@@ -293,7 +439,8 @@ public class AutoDriveRed extends OpMode {
     //--------------------------------------------------------------------------
     public void runningTurnStepPivot ()
     {
-       switch (mCurrentTurnState) {
+
+        switch (mCurrentTurnState) {
             case STATE_INIT: {
                 fileLogger.writeEvent("runningTurnStep()","mStepTurnL      :- " + mStepTurnL  );
                 fileLogger.writeEvent("runningTurnStep()","mStepTurnR      :- " + mStepTurnR  );
@@ -482,6 +629,10 @@ public class AutoDriveRed extends OpMode {
                 break;
             }
         }
+    }
+
+    String format(OpenGLMatrix transformationMatrix) {
+        return transformationMatrix.formatAsTransform();
     }
 
 }

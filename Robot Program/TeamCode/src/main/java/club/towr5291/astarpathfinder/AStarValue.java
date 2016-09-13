@@ -14,4 +14,16 @@ public class AStarValue {
     public int xvalue;
     public int yvalue;
 
+    public AStarValue (int ID, double FValue, double GValue, double HValue, int Parent, int xvalue, int yvalue) {
+        this.ID = ID;
+        this.FValue = FValue;
+        this.GValue = GValue;
+        this.HValue = HValue;
+        this.Parent = Parent;
+        this.xvalue = xvalue;
+        this.yvalue = yvalue;
+    }
+    public AStarValue() {
+        this(0, 0, 0, 0, 0, 0, 0);
+    }
 }

@@ -20,5 +20,19 @@ public class LibraryStateSegAuto {
         mRobotSpeed = robotSpeed;
     }
 
+    public double getmRobotTimeOut() {
+        return mRobotTimeOut;
+    }
 
+    public double getmRobotDistance() {
+        return mRobotDistance;
+    }
+
+    public double getmRobotSpeed() {
+        return mRobotSpeed;
+    }
+
+    public String getmRobotDirection() {
+        return mRobotDirection;
+    }
 }

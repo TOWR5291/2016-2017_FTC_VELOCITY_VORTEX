@@ -14,19 +14,19 @@ import java.util.HashMap;
 
 import club.towr5291.astarpathfinder.A0Star;
 import club.towr5291.astarpathfinder.AStarValue;
+import club.towr5291.astarpathfinder.fourValues;
 import club.towr5291.functions.AStarGetPath;
 import club.towr5291.functions.FileLogger;
 import club.towr5291.functions.Point;
-
 
 
 /**
  * Created by ianhaden on 2/09/16.
  */
 
-@Autonomous(name="Pushbot: Path Generator", group="5291Test")
+@Autonomous(name="Concept: A Star Path Fincder", group="5291Concept")
 //@Disabled
-public class AutoDriveRedAPath extends OpMode {
+public class ConceptAStarPathFinder extends OpMode {
 
 
     //set up the variables for the logger
@@ -73,19 +73,23 @@ public class AutoDriveRedAPath extends OpMode {
     boolean[] closedList = new boolean[FIELDWIDTH * FIELDLENGTH];  // closed list.  List of nodes already checked
     boolean[] openList = new boolean[FIELDWIDTH * FIELDLENGTH];    // open list.  List of nodes to be checked
 
-    AStarValue AStarValue = new AStarValue();
+    AStarValue AStarValues = new AStarValue();
     //AStarValue AStarGValue = new AStarValue();
     //AStarValue AStarHValue = new AStarValue();
     //AStarValue AStarParent = new AStarValue();
     AStarValue AStarClosed = new AStarValue();
     AStarValue AStarOpen = new AStarValue();
 
-    HashMap<Integer,AStarValue> AStarValueMap = new HashMap<Integer,AStarValue>(500);
+    public HashMap<String,AStarValue> AStarValueMap = new HashMap<String,AStarValue>();
+
+    public fourValues[] pathValues = new fourValues[1000];
+    public int pathIndex = 0;
+
     //HashMap<Integer,AStarValue> AStarGValueMap = new HashMap<Integer,AStarValue>(500);
     //HashMap<Integer,AStarValue> AStarHValueMap = new HashMap<Integer,AStarValue>(500);
     //HashMap<Integer,AStarValue> AStarParentMap = new HashMap<Integer,AStarValue>();
-    HashMap<Integer,AStarValue> AStarClosedMap = new HashMap<Integer,AStarValue>();
-    HashMap<Integer,AStarValue> AStarOpenMap = new HashMap<Integer,AStarValue>();
+    public HashMap<String,AStarValue> AStarClosedMap = new HashMap<String,AStarValue>();
+    public HashMap<String,AStarValue> AStarOpenMap = new HashMap<String,AStarValue>();
 
     A0Star a0Star = new A0Star();
 
@@ -112,6 +116,11 @@ public class AutoDriveRedAPath extends OpMode {
     public void init() {
         int loopColumn;
         int loopRow;
+        boolean searching = true;
+        for ( int i = 0; i < pathValues.length; i++) {
+            pathValues[i] = new fourValues();
+        }
+
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
@@ -153,32 +162,74 @@ public class AutoDriveRedAPath extends OpMode {
 //        }
 
 
-        for(loopRow = 0; loopRow < FIELDLENGTH; loopRow++)
-        {
-            for(loopColumn = 0; loopColumn < FIELDWIDTH; loopColumn++){
-                if (a0Star.walkable[loopColumn][loopRow])
-                    fieldOutput = fieldOutput + "1";
-            }
-            fileLogger.writeEvent("init()",fieldOutput);
-            fieldOutput = "";
-        }
-        fileLogger.writeEvent("init()","setting the class astargvalue");
-
-
         //load start point
-        AStarValue.xvalue = 122;
-        AStarValue.yvalue = 122;
-        AStarValue.GValue = 0;
-        AStarValue.HValue = 0;
-        AStarValue.FValue = 0;
-        AStarValue.Parent = 0;
-        AStarValue.ID = getKey(AStarValue.xvalue, AStarValue.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-        AStarValueMap.put(AStarValue.ID, AStarValue);
+        int startX = 122;
+        int startY = 122;
+        int endX = 12;
+        int endY = 80;
+        AStarValues.xvalue = startX;
+        AStarValues.yvalue = startY;
+        AStarValues.GValue = 0;
+        AStarValues.HValue = 0;
+        AStarValues.FValue = 0;
+        AStarValues.Parent = 0;
+        AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
+        AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
 
         fileLogger.writeEvent("init()","loaded astargvalue into hashmap");
 
-        for (Integer key: AStarValueMap.keySet())
+        for (String key: AStarValueMap.keySet())
             fileLogger.writeEvent("init()","Keys " + key + ": x:" + AStarValueMap.get(key).xvalue + " y:" + AStarValueMap.get(key).yvalue);
+
+        //process map
+        fourValues currentResult = new fourValues(1,0,AStarValues.xvalue,AStarValues.yvalue);
+
+        while (searching) {
+            fileLogger.writeEvent("init()","Searching ");
+            currentResult = (ProcessCurrentNode((int)currentResult.val3, (int)currentResult.val4, endX, endY));
+            searching = (currentResult.val1 == 1);
+        }
+
+        boolean found = (currentResult.val2 == 1);
+
+        if (found) {
+
+            for ( int i = 0; i < pathValues.length; i++) {
+                fileLogger.writeEvent("init()","Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 );
+                if ((pathValues[i].val2 == endX) && (pathValues[i].val3 == endY)) {
+                    break;
+                }
+            }
+
+//            curNode = getKey(endX, endY, a0Star.fieldWidth, a0Star.fieldLength);
+//
+//
+//            while (curNode != getKey(startX, startY, a0Star.fieldWidth, a0Star.fieldLength)) {
+//                fileLogger.writeEvent("init()","curNode " + curNode);
+//                pathValues[pathIndex].val1 = (double)pathIndex;
+//                pathValues[pathIndex].val2 = (double)getXPos(curNode, a0Star.fieldWidth, a0Star.fieldLength);
+//                pathValues[pathIndex].val3 = (double)getYPos(curNode, a0Star.fieldWidth, a0Star.fieldLength);  //path_add_point (path, getXPos(curNode, a0Star.fieldWidth, a0Star.fieldLength), getYPos(curNode, a0Star.fieldWidth, a0Star.fieldLength);
+//
+//                processNodes = AStarValueMap.get(String.valueOf(curNode));   //curNode = ds_map_find_value(P, curNode);
+//                curNode = processNodes.Parent;
+//                pathIndex++;
+//           }
+//            fileLogger.writeEvent("init()","Outside While");
+//            pathValues[pathIndex].val1 = pathIndex;
+//            pathValues[pathIndex].val2 = startX;
+//            pathValues[pathIndex].val3 = startY;
+//
+//            //path_reverse(path);
+//            //path_set_closed(path, false);
+
+        }
+
+        //plot out path..
+        //for (int i = pathIndex; i >= 0; i-- ) {
+        //    fileLogger.writeEvent("init()","Path X= " + pathValues[pathIndex].val2  + " Y= " + pathValues[pathIndex].val3);
+
+        //}
+
 
 
         fileLogger.writeEvent("init()","Init Complete");
@@ -306,82 +357,87 @@ public class AutoDriveRedAPath extends OpMode {
         value = yPos*length + xPos;
         return value;
     }
-    public int getXPos(int key, int width, int length) {
+    public int getXPos(double key, int width, int length) {
         int value;
-        value = key % width;  //modulo
+        value = (int)key % width;  //modulo
         return value;
     }
-    public int getYPos(int key, int width, int length) {
+    public int getYPos(double key, int width, int length) {
         int value;
-        value = key / width;  //integer division
+        value = (int)key / width;  //integer division
         return value;
     }
 
-    public int ProcessCurrentNode (int currentx, int currenty, int endX, int endY) {
+    public fourValues ProcessCurrentNode (int currentX, int currentY, int endX, int endY) {
         boolean closed = false;
         boolean diagonal = false;
         boolean canWalk = false;
-        boolean searching = false;
-        boolean found = false;
+        int searching = 1;
+        int found = 0;
         boolean empty = false;
         double distFromCurrentToIJ = 0, distFromStartToCurrent = 0;
         double tempF, tempG, tempH;
         int minF;
+        double lowestF = -1;
+        int lowestFKey = 0;
+        fourValues returnValue = new fourValues(0,0,0,0);
+
         AStarValue AStarValueCurrerntXY = new AStarValue();
         AStarValue AStarValueCurrerntIJ = new AStarValue();
 
+        tempF = 99999;
+
         //add point to be process to the closed list
-        AStarClosed.xvalue = currentx;
-        AStarClosed.yvalue = currenty;
+        AStarClosed.xvalue = currentX;
+        AStarClosed.yvalue = currentY;
         AStarClosed.ID = getKey(AStarClosed.xvalue, AStarClosed.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-        AStarClosedMap.put(AStarClosed.ID, AStarClosed);
-        fileLogger.writeEvent("ProcessCurrentNode()","Added to closed list ");
+        AStarClosedMap.put(String.valueOf(AStarClosed.ID), AStarClosed);
+        //fileLogger.writeEvent("ProcessCurrentNode()","Added to closed list ");
 
         //analyze adjacent blocks/grid locations
         //key exists so get the values
-        if (AStarValueMap.containsKey(getKey(currentx, currenty, a0Star.fieldWidth, a0Star.fieldLength)))
-            AStarValueCurrerntXY = AStarValueMap.get(getKey(currentx, currenty, a0Star.fieldWidth, a0Star.fieldLength));
+        if (AStarValueMap.containsKey(getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength)))
+            AStarValueCurrerntXY = AStarValueMap.get(String.valueOf(getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength)));
         else {
-            AStarValueCurrerntXY.xvalue = currentx;
-            AStarValueCurrerntXY.yvalue = currenty;
+            AStarValueCurrerntXY.xvalue = currentX;
+            AStarValueCurrerntXY.yvalue = currentY;
             AStarValueCurrerntXY.FValue = 0;
             AStarValueCurrerntXY.GValue = 0;
             AStarValueCurrerntXY.HValue = 0;
             AStarValueCurrerntXY.ID = 0;
         }
-        //var distFromStartToCurrent=ds_map_find_value(G,getKey(curX,curY));
 
-        AStarValue.xvalue = currentx;
-        AStarValue.yvalue = currenty;
-        AStarValue.ID = getKey(AStarValue.xvalue, AStarValue.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
+        AStarValues.xvalue = currentX;
+        AStarValues.yvalue = currentY;
+        AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
 
-        for (int i = Math.max(0, (currentx - 1)); i <= Math.min(a0Star.fieldWidth - 1, currentx + 1); i++ ) {
-            for (int j = Math.max(0, (currenty - 1)); j <= Math.min(a0Star.fieldLength - 1, currenty + 1); j++ ) {
-                if ((i == currentx) && (j == currenty)) {
-                    fileLogger.writeEvent("ProcessCurrentNode()","i=x and j=y - nothing to do");
+        for (int i = Math.max(0, (currentX - 1)); i <= Math.min(a0Star.fieldWidth - 1, currentX + 1); i++ ) {
+            for (int j = Math.max(0, (currentY - 1)); j <= Math.min(a0Star.fieldLength - 1, currentY + 1); j++ ) {
+                if ((i == currentX) && (j == currentY)) {
+                    //fileLogger.writeEvent("ProcessCurrentNode()","i=x and j=y - nothing to do");
                 } else {
                     //check if its on the closed list
-                    fileLogger.writeEvent("ProcessCurrentNode()","checking if on closed list " + i + " " + j);
-                    if (AStarClosedMap.containsKey(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength)))
+                    //fileLogger.writeEvent("ProcessCurrentNode()","checking if on closed list " + i + " " + j);
+                    if (AStarClosedMap.containsKey(String.valueOf(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength))))
                         closed = true;      //need to check if this returns null it doesn't error out
                     else
                         closed = false;                                                                 //not on closed list, must be on open list
-                    fileLogger.writeEvent("ProcessCurrentNode()","on closed list " + closed);
+                    //fileLogger.writeEvent("ProcessCurrentNode()","on closed list " + closed);
 
-                    fileLogger.writeEvent("ProcessCurrentNode()","checking if diagonal ");
-                    if (( i + j ) % 2  == (currentx + currenty) % 2)
+                    //fileLogger.writeEvent("ProcessCurrentNode()","checking if diagonal ");
+                    if (( i + j ) % 2  == (currentX + currentY) % 2)
                         diagonal = true;
                     else
                         diagonal = false;
 
-                    fileLogger.writeEvent("ProcessCurrentNode()","Is diagonal " + diagonal);
+                    //fileLogger.writeEvent("ProcessCurrentNode()","Is diagonal " + diagonal);
 
                     if (diagonal) {
-                        canWalk = a0Star.walkable[i][j] && a0Star.walkable[currentx][j] && a0Star.walkable[i][currenty];
-                        distFromCurrentToIJ = 1.414;                                                        //G Value
+                        canWalk = a0Star.walkable[i][j] && a0Star.walkable[currentX][j] && a0Star.walkable[i][currentY];
+                        distFromCurrentToIJ = 1420;                                                      //G Value
                     } else {
                         canWalk = a0Star.walkable[i][j];
-                        distFromCurrentToIJ = 1;                                                            //G Value
+                        distFromCurrentToIJ = 1000;                                                      //G Value
                     }
                 }
                 if (!closed && canWalk){
@@ -394,59 +450,81 @@ public class AutoDriveRedAPath extends OpMode {
                     if (AStarValueMap.containsKey(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength))){   //see if key is in G Map, means already processed
                         //var oldG=;
                         //show_debug_message(string(tempG)+" compare to "+string(oldG));
-                        AStarValueCurrerntIJ = AStarValueMap.get(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength));
+                        AStarValueCurrerntIJ = AStarValueMap.get(String.valueOf(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength)));
                         if (tempG < AStarValueCurrerntIJ.GValue) {
-                            AStarValueMap.remove(AStarValue.ID);
-                            fileLogger.writeEvent("ProcessCurrentNode()","Removed OLD Key (" + i + "," + j + ")     G:" + tempG + "     H:" + tempH + "     F:" + tempF);
+                            AStarValueMap.remove(String.valueOf(AStarValues.ID));
+                            //fileLogger.writeEvent("ProcessCurrentNode()", "Removed OLD Key (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
 
-                            AStarValue.xvalue = i;
-                            AStarValue.yvalue = j;
-                            AStarValue.GValue = tempG;
-                            AStarValue.HValue = tempH;
-                            AStarValue.FValue = tempF;
-                            AStarValue.Parent = getKey(currentx, currenty, a0Star.fieldWidth, a0Star.fieldLength);
-                            AStarValue.ID = getKey(AStarValue.xvalue, AStarValue.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-                            AStarValueMap.put(AStarValue.ID, AStarValue);
-                            fileLogger.writeEvent("ProcessCurrentNode()","Updating (" + i + "," + j + ")     G:" + tempG + "     H:" + tempH + "     F:" + tempF);
+                            AStarValues.xvalue = i;
+                            AStarValues.yvalue = j;
+                            AStarValues.GValue = tempG;
+                            AStarValues.HValue = tempH;
+                            AStarValues.FValue = tempF;
+                            AStarValues.Parent = getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength);
+                            AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
+                            AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
+                            //fileLogger.writeEvent("ProcessCurrentNode()", "Updating (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
                         }
                     } else {
-                        AStarValue.xvalue = i;
-                        AStarValue.yvalue = j;
-                        AStarValue.GValue = tempG;
-                        AStarValue.HValue = tempH;
-                        AStarValue.FValue = tempF;
-                        AStarValue.Parent = getKey(currentx, currenty, a0Star.fieldWidth, a0Star.fieldLength);
-                        AStarValue.ID = getKey(AStarValue.xvalue, AStarValue.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-                        AStarValueMap.put(AStarValue.ID, AStarValue);
-                        fileLogger.writeEvent("ProcessCurrentNode()","Adding (" + i + "," + j + ")     G:" + tempG + "     H:" + tempH + "     F:" + tempF);
+                        AStarValues.xvalue = i;
+                        AStarValues.yvalue = j;
+                        AStarValues.GValue = tempG;
+                        AStarValues.HValue = tempH;
+                        AStarValues.FValue = tempF;
+                        AStarValues.Parent = getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength);
+                        AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
+                        AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
+                        //fileLogger.writeEvent("ProcessCurrentNode()", "Adding (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
                     }
                 }
             }
         }
+        lowestF = 999999;
         //find best option
-        minF = -1;
-        //empty = ds_priority_empty(F);
-        //if (!empty)
-        //    minF = ds_priority_delete_min(F);
-        //decide what to do
-        if (minF == -1){
-            searching = false;
-            found = false;
-            fileLogger.writeEvent("ProcessCurrentNode()","No More Nodes Left");
+        for (String key: AStarValueMap.keySet()) {
+            AStarValueCurrerntIJ = AStarValueMap.get(key);
+            //fileLogger.writeEvent("ProcessCurrentNode()", "Valid key " + key + " ID " + AStarValueCurrerntIJ.ID + " FValue " + AStarValueCurrerntIJ.FValue + " LowestF " + lowestF);
+            if (AStarValueCurrerntIJ.FValue < lowestF) {
+                lowestF = AStarValueCurrerntIJ.FValue;
+                lowestFKey = AStarValueCurrerntIJ.ID;
+                //fileLogger.writeEvent("ProcessCurrentNode()", "Found LowerF " + lowestF);
+            }
+        }
+        if (lowestF != 999999) {
+            //found low values in map, remove it from map
+            pathValues[pathIndex].val1 = (double)pathIndex;
+            pathValues[pathIndex].val2 = currentX;
+            pathValues[pathIndex].val3 = currentY;  //path_add_point (path, getXPos(curNode, a0Star.fieldWidth, a0Star.fieldLength), getYPos(curNode, a0Star.fieldWidth, a0Star.fieldLength);
+
+            pathIndex++;
+
+            AStarValueMap.remove(lowestFKey);
+            currentX = getXPos(lowestFKey, a0Star.fieldWidth, a0Star.fieldLength);
+            currentY = getYPos(lowestFKey, a0Star.fieldWidth, a0Star.fieldLength);
+            fileLogger.writeEvent("ProcessCurrentNode()", "Trying Key " + getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength) + " (" + currentX +  " " + currentY + ")");
+            searching = 1;
+            found = 0;
         } else {
-            fileLogger.writeEvent("ProcessCurrentNode()","Trying (" + getXPos(minF,a0Star.fieldWidth, a0Star.fieldLength) +  " " + getYPos(minF,a0Star.fieldWidth, a0Star.fieldLength) + ")");
-            currentx = getXPos(minF, a0Star.fieldWidth, a0Star.fieldLength);
-            currenty = getYPos(minF, a0Star.fieldWidth, a0Star.fieldLength);
+            searching = 0;
+            found = 0;
+            fileLogger.writeEvent("ProcessCurrentNode()", "No More Nodes Left");
         }
         //check whether we're at the end
-        if (currentx == endX && currentx == endY){
-            searching = false;
-            found = true;
-            fileLogger.writeEvent("ProcessCurrentNode()","You found me I'm the final block");
+        if ((currentX == endX) && (currentY == endY)) {
+            pathValues[pathIndex].val1 = (double)pathIndex;
+            pathValues[pathIndex].val2 = currentX;
+            pathValues[pathIndex].val3 = currentY;  //path_add_point (path, getXPos(curNode, a0Star.fieldWidth, a0Star.fieldLength), getYPos(curNode, a0Star.fieldWidth, a0Star.fieldLength);
+
+            searching = 0;
+            found = 1;
+            fileLogger.writeEvent("ProcessCurrentNode()", "You found me I'm the final block");
         }
-
-
-
+        returnValue.val1 = searching;
+        returnValue.val2 = found;
+        returnValue.val3 = currentX;
+        returnValue.val4 = currentY;
+        //fileLogger.writeEvent("ProcessCurrentNode()", "Returning 1- " + searching + " 2- " + found + " 3- "  + currentX + " 4- " + currentY);
+        return returnValue;
     }
 
 

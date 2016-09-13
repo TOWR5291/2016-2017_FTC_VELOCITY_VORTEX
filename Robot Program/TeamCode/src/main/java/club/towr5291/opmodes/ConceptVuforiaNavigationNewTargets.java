@@ -30,7 +30,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.robotcontroller.external.samples;
+package club.towr5291.opmodes;
 
 import com.qualcomm.ftcrobotcontroller.R;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -84,9 +84,9 @@ import java.util.List;
  * is explained below.
  */
 
-@Autonomous(name="Concept: Vuforia Navigation", group ="Concept")
-@Disabled
-public class ConceptVuforiaNavigation extends LinearOpMode {
+@Autonomous(name="Concept: Vuforia Navigation NEW", group ="Concept")
+//@Disabled
+public class ConceptVuforiaNavigationNewTargets extends LinearOpMode {
 
     public static final String TAG = "Vuforia Sample";
 
@@ -135,16 +135,29 @@ public class ConceptVuforiaNavigation extends LinearOpMode {
          * example "StonesAndChips", datasets can be found in in this project in the
          * documentation directory.
          */
-        VuforiaTrackables stonesAndChips = this.vuforia.loadTrackablesFromAsset("StonesAndChips");
-        VuforiaTrackable redTarget = stonesAndChips.get(0);
-        redTarget.setName("RedTarget");  // Stones
+        //VuforiaTrackables stonesAndChips = this.vuforia.loadTrackablesFromAsset("StonesAndChips");
+        //VuforiaTrackable redTarget = stonesAndChips.get(0);
+        //redTarget.setName("RedTarget");  // Stones
 
-        VuforiaTrackable blueTarget  = stonesAndChips.get(1);
-        blueTarget.setName("BlueTarget");  // Chips
+        //VuforiaTrackable blueTarget  = stonesAndChips.get(1);
+        //blueTarget.setName("BlueTarget");  // Chips
+
+        VuforiaTrackables velocityVortex = this.vuforia.loadTrackablesFromAsset("FTC_2016-17");
+        VuforiaTrackable wheels = velocityVortex.get(0);
+        wheels.setName("wheels");  // wheels target
+
+        VuforiaTrackable tools  = velocityVortex.get(1);
+        tools.setName("tools");  // tools target
+
+        VuforiaTrackable legos = velocityVortex.get(2);
+        legos.setName("legos");  // legos target
+
+        VuforiaTrackable gears  = velocityVortex.get(3);
+        gears.setName("gears");  // gears target
 
         /** For convenience, gather together all the trackable objects in one easily-iterable collection */
         List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
-        allTrackables.addAll(stonesAndChips);
+        allTrackables.addAll(velocityVortex);
 
         /**
          * We use units of mm here because that's the recommended units of measurement for the
@@ -208,37 +221,73 @@ public class ConceptVuforiaNavigation extends LinearOpMode {
          * In a real situation we'd also account for the vertical (Z) offset of the target,
          * but for simplicity, we ignore that here; for a real robot, you'll want to fix that.
          *
-         * To place the Stones Target on the Red Audience wall:
+         * To place the Wheels Target on the Red Audience wall:
          * - First we rotate it 90 around the field's X axis to flip it upright
          * - Then we rotate it  90 around the field's Z access to face it away from the audience.
          * - Finally, we translate it back along the X axis towards the red audience wall.
+         *
          */
-        OpenGLMatrix redTargetLocationOnField = OpenGLMatrix
+
+        // RED Targets
+        // To Place GEARS Target
+        // position is approximately - (-6feet, -1feet)
+
+        OpenGLMatrix gearsTargetLocationOnField = OpenGLMatrix
                 /* Then we translate the target off to the RED WALL. Our translation here
                 is a negative translation in X.*/
-                .translation(-mmFTCFieldWidth/2, 0, 0)
+                .translation(-mmFTCFieldWidth/2, -1 * 12 * mmPerInch, 0)
                 .multiplied(Orientation.getRotationMatrix(
                         /* First, in the fixed (field) coordinate system, we rotate 90deg in X, then 90 in Z */
                         AxesReference.EXTRINSIC, AxesOrder.XZX,
                         AngleUnit.DEGREES, 90, 90, 0));
-        redTarget.setLocation(redTargetLocationOnField);
-        RobotLog.ii(TAG, "Red Target=%s", format(redTargetLocationOnField));
+        gears.setLocation(gearsTargetLocationOnField);
+        RobotLog.ii(TAG, "Gears Target=%s", format(gearsTargetLocationOnField));
 
-       /*
-        * To place the Stones Target on the Blue Audience wall:
-        * - First we rotate it 90 around the field's X axis to flip it upright
-        * - Finally, we translate it along the Y axis towards the blue audience wall.
-        */
-        OpenGLMatrix blueTargetLocationOnField = OpenGLMatrix
+        // To Place GEARS Target
+        // position is approximately - (-6feet, 3feet)
+        OpenGLMatrix toolsTargetLocationOnField = OpenGLMatrix
                 /* Then we translate the target off to the Blue Audience wall.
                 Our translation here is a positive translation in Y.*/
-                .translation(0, mmFTCFieldWidth/2, 0)
+                .translation(-mmFTCFieldWidth/2, 3 * 12 * mmPerInch, 0)
+                //.translation(0, mmFTCFieldWidth/2, 0)
                 .multiplied(Orientation.getRotationMatrix(
                         /* First, in the fixed (field) coordinate system, we rotate 90deg in X */
                         AxesReference.EXTRINSIC, AxesOrder.XZX,
                         AngleUnit.DEGREES, 90, 0, 0));
-        blueTarget.setLocation(blueTargetLocationOnField);
-        RobotLog.ii(TAG, "Blue Target=%s", format(blueTargetLocationOnField));
+        tools.setLocation(toolsTargetLocationOnField);
+        RobotLog.ii(TAG, "Tools Target=%s", format(toolsTargetLocationOnField));
+
+        //Finsih RED Targets
+
+        // BLUE Targets
+        // To Place LEGOS Target
+        // position is approximately - (-6feet, -1feet)
+
+        OpenGLMatrix legosTargetLocationOnField = OpenGLMatrix
+                /* Then we translate the target off to the RED WALL. Our translation here
+                is a negative translation in X.*/
+                .translation(-3 * 12 * mmPerInch, mmFTCFieldWidth/2, 0)
+                .multiplied(Orientation.getRotationMatrix(
+                        /* First, in the fixed (field) coordinate system, we rotate 90deg in X, then 90 in Z */
+                        AxesReference.EXTRINSIC, AxesOrder.XZX,
+                        AngleUnit.DEGREES, 90, 90, 0));
+        legos.setLocation(legosTargetLocationOnField);
+        RobotLog.ii(TAG, "Gears Target=%s", format(legosTargetLocationOnField));
+
+        // To Place WHEELS Target
+        // position is approximately - (-6feet, 3feet)
+        OpenGLMatrix wheelsTargetLocationOnField = OpenGLMatrix
+                /* Then we translate the target off to the Blue Audience wall.
+                Our translation here is a positive translation in Y.*/
+                .translation(1 * 12 * mmPerInch, mmFTCFieldWidth/2, 0)
+                .multiplied(Orientation.getRotationMatrix(
+                        /* First, in the fixed (field) coordinate system, we rotate 90deg in X */
+                        AxesReference.EXTRINSIC, AxesOrder.XZX,
+                        AngleUnit.DEGREES, 90, 0, 0));
+        wheels.setLocation(wheelsTargetLocationOnField);
+        RobotLog.ii(TAG, "Tools Target=%s", format(wheelsTargetLocationOnField));
+
+        //Finsih BLUE Targets
 
         /**
          * Create a transformation matrix describing where the phone is on the robot. Here, we
@@ -264,8 +313,10 @@ public class ConceptVuforiaNavigation extends LinearOpMode {
          * listener is a {@link VuforiaTrackableDefaultListener} and can so safely cast because
          * we have not ourselves installed a listener of a different type.
          */
-        ((VuforiaTrackableDefaultListener)redTarget.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
-        ((VuforiaTrackableDefaultListener)blueTarget.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+        ((VuforiaTrackableDefaultListener)gears.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+        ((VuforiaTrackableDefaultListener)tools.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+        ((VuforiaTrackableDefaultListener)legos.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+        ((VuforiaTrackableDefaultListener)wheels.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
 
         /**
          * A brief tutorial: here's how all the math is going to work:
@@ -292,7 +343,7 @@ public class ConceptVuforiaNavigation extends LinearOpMode {
         waitForStart();
 
         /** Start tracking the data sets we care about. */
-        stonesAndChips.activate();
+        velocityVortex.activate();
 
         while (opModeIsActive()) {
 
