@@ -4,6 +4,8 @@ package club.towr5291.opmodes;
  * Created by ianhaden on 2/09/16.
  * Define a "PathSegment" object, used for building a path for the robot to follow.
  */
+
+// Michael was here//
 public class LibraryStateSegAuto {
 
     public double mRobotTimeOut;        //how much time is allowed for the step to complete
