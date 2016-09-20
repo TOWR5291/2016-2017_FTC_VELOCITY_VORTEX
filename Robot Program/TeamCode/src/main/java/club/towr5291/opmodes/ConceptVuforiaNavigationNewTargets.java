@@ -253,7 +253,7 @@ public class ConceptVuforiaNavigationNewTargets extends LinearOpMode {
                 .multiplied(Orientation.getRotationMatrix(
                         /* First, in the fixed (field) coordinate system, we rotate 90deg in X */
                         AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 0, 0));
+                        AngleUnit.DEGREES, 90, 90, 0));
         tools.setLocation(toolsTargetLocationOnField);
         RobotLog.ii(TAG, "Tools Target=%s", format(toolsTargetLocationOnField));
 
@@ -261,7 +261,7 @@ public class ConceptVuforiaNavigationNewTargets extends LinearOpMode {
 
         // BLUE Targets
         // To Place LEGOS Target
-        // position is approximately - (-6feet, -1feet)
+        // position is approximately - (-3feet, 6feet)
 
         OpenGLMatrix legosTargetLocationOnField = OpenGLMatrix
                 /* Then we translate the target off to the RED WALL. Our translation here
@@ -270,12 +270,12 @@ public class ConceptVuforiaNavigationNewTargets extends LinearOpMode {
                 .multiplied(Orientation.getRotationMatrix(
                         /* First, in the fixed (field) coordinate system, we rotate 90deg in X, then 90 in Z */
                         AxesReference.EXTRINSIC, AxesOrder.XZX,
-                        AngleUnit.DEGREES, 90, 90, 0));
+                        AngleUnit.DEGREES, 90, 0, 0));
         legos.setLocation(legosTargetLocationOnField);
         RobotLog.ii(TAG, "Gears Target=%s", format(legosTargetLocationOnField));
 
         // To Place WHEELS Target
-        // position is approximately - (-6feet, 3feet)
+        // position is approximately - (1feet, 6feet)
         OpenGLMatrix wheelsTargetLocationOnField = OpenGLMatrix
                 /* Then we translate the target off to the Blue Audience wall.
                 Our translation here is a positive translation in Y.*/
