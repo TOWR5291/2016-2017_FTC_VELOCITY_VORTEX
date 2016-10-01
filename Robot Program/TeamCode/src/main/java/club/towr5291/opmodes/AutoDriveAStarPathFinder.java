@@ -161,15 +161,15 @@ public class AutoDriveAStarPathFinder extends OpMode {
 
         // Send telemetry message to signify robot waiting;
         telemetry.update();
-        robotDrive.leftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        robotDrive.rightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robotDrive.leftMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robotDrive.rightMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         mCurrentStepState = stepState.STATE_INIT;
         mCurrentTurnState = stepState.STATE_INIT;
         mCurrentDriveState = stepState.STATE_INIT;
 
-        robotDrive.leftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        robotDrive.rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         for ( int i = 0; i < pathValues.length; i++) {
             pathValues[i] = new fourValues();
@@ -418,8 +418,7 @@ public class AutoDriveAStarPathFinder extends OpMode {
             }
             break;
             case STATE_TIMEOUT: {
-                robotDrive.leftMotor.setPower(0);
-                robotDrive.rightMotor.setPower(0);
+                setDriveMotorPower(Math.abs(0));
                 //  Transition to a new state.
                 mCurrentStepState = stepState.STATE_FINISHED;
 
@@ -527,29 +526,29 @@ public class AutoDriveAStarPathFinder extends OpMode {
                 // Turn On RUN_TO_POSITION
                 if(mStepTurnR == 0) {
                     // Determine new target position
-                    fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor.getCurrentPosition());
-                    mStepLeftTarget = robotDrive.leftMotor.getCurrentPosition() + (int) (mStepTurnL * COUNTS_PER_DEGREE);
-                    mStepRightTarget = robotDrive.rightMotor.getCurrentPosition() + (int) (mStepTurnR * COUNTS_PER_DEGREE);
+                    fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
+                    mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepTurnL * COUNTS_PER_DEGREE);
+                    mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepTurnR * COUNTS_PER_DEGREE);
                     fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget:-  " + mStepLeftTarget);
                     // pass target position to motor controller
-                    robotDrive.leftMotor.setTargetPosition(mStepLeftTarget);
+                    robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget);
                     // set motor controller to mode
-                    robotDrive.leftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     // set power on motor controller to start moving
-                    robotDrive.leftMotor.setPower(Math.abs(.5));
+                    setDriveLeftMotorPower(Math.abs(.5));
                 }
                 else {
                     // Determine new target position
-                    fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor.getCurrentPosition());
-                    mStepLeftTarget = robotDrive.leftMotor.getCurrentPosition() + (int) (mStepTurnL * COUNTS_PER_DEGREE);
-                    mStepRightTarget = robotDrive.rightMotor.getCurrentPosition() + (int) (mStepTurnR * COUNTS_PER_DEGREE);
+                    fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
+                    mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepTurnL * COUNTS_PER_DEGREE);
+                    mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepTurnR * COUNTS_PER_DEGREE);
                     fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget);
                     // pass target position to motor controller
-                    robotDrive.rightMotor.setTargetPosition(mStepRightTarget);
+                    robotDrive.rightMotor1.setTargetPosition(mStepRightTarget);
                     // set motor controller to mode, Turn On RUN_TO_POSITION
-                    robotDrive.rightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     // set power on motor controller to start moving
-                    robotDrive.rightMotor.setPower(Math.abs(.5));
+                    setDriveRightMotorPower(Math.abs(.5));
                 }
 
                 fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget :- " + mStepLeftTarget  );
@@ -561,28 +560,27 @@ public class AutoDriveAStarPathFinder extends OpMode {
             case STATE_RUNNING: {
                 //if (robotDrive.leftMotor.isBusy() || robotDrive.rightMotor.isBusy()) {
                 fileLogger.writeEvent("runningTurnStep()","Running         " );
-                fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
-                fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
+                fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
+                fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
                 if (mStepTurnR == 0) {
                     fileLogger.writeEvent("runningTurnStep()","Running         " );
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor.getCurrentPosition(), robotDrive.rightMotor.getCurrentPosition());
-                    if (!robotDrive.leftMotor.isBusy()) {
+                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
+                    if (!robotDrive.leftMotor1.isBusy()) {
                         fileLogger.writeEvent("runningTurnStep()","Complete         " );
                         mCurrentTurnState = stepState.STATE_COMPLETE;
                     }
                 } else if (mStepTurnL == 0) {
                     fileLogger.writeEvent("runningTurnStep()","Running         " );
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor.getCurrentPosition(), robotDrive.rightMotor.getCurrentPosition());
-                    if (!robotDrive.rightMotor.isBusy()) {
+                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
+                    if (!robotDrive.rightMotor1.isBusy()) {
                         fileLogger.writeEvent("runningTurnStep()","Complete         " );
                         mCurrentTurnState = stepState.STATE_COMPLETE;
                     }
                 } else {
                     // Stop all motion by setting power to 0
-                    robotDrive.leftMotor.setPower(0);
-                    robotDrive.rightMotor.setPower(0);
+                    setDriveMotorPower(Math.abs(0));
                     fileLogger.writeEvent("runningTurnStep()","Complete         " );
                     mCurrentTurnState = stepState.STATE_COMPLETE;
                 }
@@ -601,28 +599,27 @@ public class AutoDriveAStarPathFinder extends OpMode {
                 // Turn On RUN_TO_POSITION
                 if(mStepTurnR == 0) {
                     // Determine new target position
-                    fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor.getCurrentPosition());
-                    mStepLeftTarget = robotDrive.leftMotor.getCurrentPosition() + (int)(0.5 * mStepTurnL * COUNTS_PER_DEGREE);
-                    mStepRightTarget = robotDrive.rightMotor.getCurrentPosition() - (int)(0.5 * mStepTurnL * COUNTS_PER_DEGREE);
+                    fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
+                    mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int)(0.5 * mStepTurnL * COUNTS_PER_DEGREE);
+                    mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() - (int)(0.5 * mStepTurnL * COUNTS_PER_DEGREE);
                     fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget:-  " + mStepLeftTarget);
                 }
                 else {
                     // Determine new target position
-                    fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor.getCurrentPosition());
-                    mStepLeftTarget = robotDrive.leftMotor.getCurrentPosition() - (int)(0.5 * mStepTurnR * COUNTS_PER_DEGREE);
-                    mStepRightTarget = robotDrive.rightMotor.getCurrentPosition() + (int)(0.5 * mStepTurnR * COUNTS_PER_DEGREE);
+                    fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
+                    mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() - (int)(0.5 * mStepTurnR * COUNTS_PER_DEGREE);
+                    mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int)(0.5 * mStepTurnR * COUNTS_PER_DEGREE);
                     fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget);
                 }
 
                 // pass target position to motor controller
-                robotDrive.leftMotor.setTargetPosition(mStepLeftTarget);
-                robotDrive.rightMotor.setTargetPosition(mStepRightTarget);
+                robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget);
+                robotDrive.rightMotor1.setTargetPosition(mStepRightTarget);
                 // set motor controller to mode
-                robotDrive.leftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                robotDrive.rightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 // set power on motor controller to start moving
-                robotDrive.leftMotor.setPower(Math.abs(.5));
-                robotDrive.rightMotor.setPower(Math.abs(.5));
+                setDriveMotorPower(Math.abs(.5));
 
                 fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget :- " + mStepLeftTarget  );
                 fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget  );
@@ -633,28 +630,27 @@ public class AutoDriveAStarPathFinder extends OpMode {
             case STATE_RUNNING: {
                 //if (robotDrive.leftMotor.isBusy() || robotDrive.rightMotor.isBusy()) {
                 fileLogger.writeEvent("runningTurnStep()","Running         " );
-                fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
-                fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
+                fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
+                fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
                 if (mStepTurnR == 0) {
                     fileLogger.writeEvent("runningTurnStep()","Running         " );
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor.getCurrentPosition(), robotDrive.rightMotor.getCurrentPosition());
-                    if (!robotDrive.leftMotor.isBusy()) {
+                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
+                    if (!robotDrive.leftMotor1.isBusy()) {
                         fileLogger.writeEvent("runningTurnStep()","Complete         " );
                         mCurrentTurnState = stepState.STATE_COMPLETE;
                     }
                 } else if (mStepTurnL == 0) {
                     fileLogger.writeEvent("runningTurnStep()","Running         " );
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor.getCurrentPosition(), robotDrive.rightMotor.getCurrentPosition());
-                    if (!robotDrive.rightMotor.isBusy()) {
+                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
+                    if (!robotDrive.rightMotor1.isBusy()) {
                         fileLogger.writeEvent("runningTurnStep()","Complete         " );
                         mCurrentTurnState = stepState.STATE_COMPLETE;
                     }
                 } else {
                     // Stop all motion by setting power to 0
-                    robotDrive.leftMotor.setPower(0);
-                    robotDrive.rightMotor.setPower(0);
+                    setDriveMotorPower(0);
                     fileLogger.writeEvent("runningTurnStep()","Complete         " );
                     mCurrentTurnState = stepState.STATE_COMPLETE;
                 }
@@ -672,34 +668,32 @@ public class AutoDriveAStarPathFinder extends OpMode {
                     fileLogger.writeEvent("runningDriveStep()","mStepDistance   :- " + mStepDistance  );
 
                     // Determine new target position
-                    mStepLeftTarget = robotDrive.leftMotor.getCurrentPosition() + (int) (mStepDistance * COUNTS_PER_INCH);
-                    mStepRightTarget = robotDrive.rightMotor.getCurrentPosition() + (int) (mStepDistance * COUNTS_PER_INCH);
+                    mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepDistance * COUNTS_PER_INCH);
+                    mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepDistance * COUNTS_PER_INCH);
                     // pass target position to motor controller
-                    robotDrive.leftMotor.setTargetPosition(mStepLeftTarget);
-                    robotDrive.rightMotor.setTargetPosition(mStepRightTarget);
+                    robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget);
+                    robotDrive.rightMotor1.setTargetPosition(mStepRightTarget);
 
                     fileLogger.writeEvent("runningDriveStep()","mStepLeftTarget :- " + mStepLeftTarget  );
                     fileLogger.writeEvent("runningDriveStep()","mStepRightTarget:- " + mStepRightTarget  );
 
                     // set motor controller to mode, Turn On RUN_TO_POSITION
-                    robotDrive.leftMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    robotDrive.rightMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                     // set power on motor controller to start moving
-                    robotDrive.leftMotor.setPower(Math.abs(mStepSpeed));
-                    robotDrive.rightMotor.setPower(Math.abs(mStepSpeed));
+                    setDriveMotorPower(Math.abs(mStepSpeed));
 
                     mCurrentDriveState = stepState.STATE_RUNNING;
                 }
                 break;
                 case STATE_RUNNING: {
-                    if (robotDrive.leftMotor.isBusy() && robotDrive.rightMotor.isBusy()) {
+                    if (robotDrive.leftMotor1.isBusy() && robotDrive.rightMotor1.isBusy()) {
                         telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                        telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor.getCurrentPosition(), robotDrive.rightMotor.getCurrentPosition());
+                        telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
                     } else {
                         // Stop all motion;
-                        robotDrive.leftMotor.setPower(0);
-                        robotDrive.rightMotor.setPower(0);
+                        setDriveMotorPower(0);
                         baseStepComplete = true;
                         fileLogger.writeEvent("runningDriveStep()","Complete         " );
                         mCurrentDriveState = stepState.STATE_COMPLETE;
@@ -920,6 +914,21 @@ public class AutoDriveAStarPathFinder extends OpMode {
         return pathValues;
     }
 
+    void setDriveMotorPower (double power) {
+        setDriveRightMotorPower(power);
+        setDriveLeftMotorPower(power);
+    }
 
+    void setDriveRightMotorPower (double power) {
+        robotDrive.rightMotor1.setPower(power);
+        robotDrive.rightMotor2.setPower(power);
+
+    }
+
+    void setDriveLeftMotorPower (double power) {
+        robotDrive.leftMotor1.setPower(power);
+        robotDrive.leftMotor2.setPower(power);
+
+    }
 
 }
