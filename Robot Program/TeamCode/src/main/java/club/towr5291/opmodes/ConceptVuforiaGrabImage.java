@@ -2,6 +2,7 @@ package club.towr5291.opmodes;
 
 import com.qualcomm.robotcore.util.RobotLog;
 import com.vuforia.Frame;
+import com.vuforia.Image;
 import com.vuforia.PIXEL_FORMAT;
 import com.vuforia.State;
 import com.vuforia.Vuforia;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.robotcore.internal.VuforiaLocalizerImpl;
  */
 public class ConceptVuforiaGrabImage extends VuforiaLocalizerImpl {
 
+    public Image rgb;
 
     class CloseableFrame extends Frame {
         public CloseableFrame(Frame other) { // clone the frame so we can be useful beyond callback
@@ -37,6 +39,20 @@ public class ConceptVuforiaGrabImage extends VuforiaLocalizerImpl {
             // how the Frame is obtained in the first place.
             CloseableFrame frame = new CloseableFrame(state.getFrame());
             RobotLog.vv(TAG, "received Vuforia frame#=%d", frame.getIndex());
+
+            long num = frame.getNumImages();
+
+            for (int i = 0; i < num; i++) {
+                if (frame.getImage(i).getFormat() == PIXEL_FORMAT.RGB565) {
+                    rgb = frame.getImage(i);
+                }
+
+            }
+
+
+
+
+
             frame.close();
         }
     }
