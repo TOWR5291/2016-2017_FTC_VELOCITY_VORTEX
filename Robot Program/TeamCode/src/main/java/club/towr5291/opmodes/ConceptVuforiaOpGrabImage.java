@@ -47,11 +47,8 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         while (opModeIsActive()) {
 
             if (vuforia.rgb != null) {
-
                 Bitmap image = Bitmap.createBitmap(vuforia.rgb.getWidth(), vuforia.rgb.getBufferHeight(), Bitmap.Config.RGB_565);
-
                 image.copyPixelsFromBuffer(vuforia.rgb.getPixels());
-
             }
 
             for (VuforiaTrackable beac : velocityVortex) {
@@ -68,10 +65,6 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
                     Vec2F upperRight = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(127,92,0));
                     Vec2F lowerLeft = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(127,-92,0));
                     Vec2F lowerright = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(-127,-92,0));
-
-
-
-
 
                 }
 

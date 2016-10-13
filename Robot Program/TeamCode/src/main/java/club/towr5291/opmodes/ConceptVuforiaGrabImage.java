@@ -49,10 +49,6 @@ public class ConceptVuforiaGrabImage extends VuforiaLocalizerImpl {
 
             }
 
-
-
-
-
             frame.close();
         }
     }
