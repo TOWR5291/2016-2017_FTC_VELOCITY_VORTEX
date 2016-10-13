@@ -41,6 +41,7 @@ import com.qualcomm.robotcore.util.RobotLog;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.MatrixF;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
@@ -89,6 +90,10 @@ import java.util.List;
 public class ConceptVuforiaNavigationNewTargets extends LinearOpMode {
 
     public static final String TAG = "Vuforia Sample";
+
+    private double robotX;
+    private double robotY;
+    private double robotBearing;
 
     OpenGLMatrix lastLocation = null;
 
@@ -358,6 +363,20 @@ public class ConceptVuforiaNavigationNewTargets extends LinearOpMode {
                 OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
                 if (robotLocationTransform != null) {
                     lastLocation = robotLocationTransform;
+                    // Then you can extract the positions and angles using the getTranslation and getOrientation methods.
+                    VectorF trans = robotLocationTransform.getTranslation();
+                    Orientation rot = Orientation.getOrientation(robotLocationTransform, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.RADIANS);
+
+                    // Robot position is defined by the standard Matrix translation (x and y)
+                    robotX = trans.get(0);
+                    robotY = trans.get(1);
+
+                    // Robot bearing (in Cartesian system) position is defined by the standard Matrix z rotation
+                    robotBearing = rot.thirdAngle;
+
+                    telemetry.addData("Pos X", robotX);
+                    telemetry.addData("Pos Y", robotY);
+                    telemetry.addData("Pos B", robotBearing);
                 }
             }
             /**
