@@ -13,8 +13,9 @@ public class AStarValue {
     public int Parent;
     public int xvalue;
     public int yvalue;
+    public int zvalue;
 
-    public AStarValue (int ID, double FValue, double GValue, double HValue, int Parent, int xvalue, int yvalue) {
+    public AStarValue (int ID, double FValue, double GValue, double HValue, int Parent, int xvalue, int yvalue, int zvalue) {
         this.ID = ID;
         this.FValue = FValue;
         this.GValue = GValue;
@@ -22,8 +23,9 @@ public class AStarValue {
         this.Parent = Parent;
         this.xvalue = xvalue;
         this.yvalue = yvalue;
+        this.zvalue = zvalue;
     }
     public AStarValue() {
-        this(0, 0, 0, 0, 0, 0, 0);
+        this(0, 0, 0, 0, 0, 0, 0, 0);
     }
 }

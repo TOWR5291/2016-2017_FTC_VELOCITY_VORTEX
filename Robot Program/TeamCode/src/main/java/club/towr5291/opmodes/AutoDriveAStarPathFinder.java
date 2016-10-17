@@ -25,7 +25,7 @@ import java.util.List;
 
 import club.towr5291.astarpathfinder.A0Star;
 import club.towr5291.astarpathfinder.AStarValue;
-import club.towr5291.astarpathfinder.fourValues;
+import club.towr5291.astarpathfinder.sixValues;
 import club.towr5291.functions.FileLogger;
 import club.towr5291.robotconfig.HardwareDriveMotors;
 import club.towr5291.robotconfig.HardwareSensors;
@@ -72,7 +72,7 @@ public class AutoDriveAStarPathFinder extends OpMode {
     private stepState  mCurrentStepState;                       // Current State Machine State.
     private stepState  mCurrentDriveState;                      // Current State Machine State.
     private stepState  mCurrentTurnState;                       // Current State Machine State.
-    private LibraryStateSegAuto[] mStateSegAuto;
+    private LibraryStateSegAutoOld[] mStateSegAuto;
     double mStepTimeout;
     double mStepDistance;
     double mStepSpeed;
@@ -92,12 +92,12 @@ public class AutoDriveAStarPathFinder extends OpMode {
     private ElapsedTime mStateTime = new ElapsedTime();         // Time into current state
 
     //this is the sequence the state machine will follow
-    private LibraryStateSegAuto[] mRobotAutonomous = {
+    private LibraryStateSegAutoOld[] mRobotAutonomous = {
             //                        time, head, dist, powe
             //                        out   ing   ance  r
             //                         s    deg   inch   %
-            new LibraryStateSegAuto ( 10,  "L90",  12,  0.5 ),
-            new LibraryStateSegAuto ( 10,  "R90",  12,  0.5 )
+            new LibraryStateSegAutoOld ( 10,  "L90",  12,  0.5 ),
+            new LibraryStateSegAutoOld ( 10,  "R90",  12,  0.5 )
 
     };
 
@@ -117,7 +117,7 @@ public class AutoDriveAStarPathFinder extends OpMode {
 
     public HashMap<String,AStarValue> AStarValueMap = new HashMap<String,AStarValue>();
 
-    public fourValues[] pathValues = new fourValues[1000];
+    public sixValues[] pathValues = new sixValues[1000];
     public int pathIndex = 0;
 
     public HashMap<String,AStarValue> AStarClosedMap = new HashMap<String,AStarValue>();
@@ -172,7 +172,7 @@ public class AutoDriveAStarPathFinder extends OpMode {
         robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         for ( int i = 0; i < pathValues.length; i++) {
-            pathValues[i] = new fourValues();
+            pathValues[i] = new sixValues();
         }
 
         /* Initialize the hardware variables.
@@ -340,12 +340,13 @@ public class AutoDriveAStarPathFinder extends OpMode {
                 int endY = 80;
                 AStarValues.xvalue = startX;
                 AStarValues.yvalue = startY;
+                AStarValues.zvalue = 0;
                 AStarValues.GValue = 0;
                 AStarValues.HValue = 0;
                 AStarValues.FValue = 0;
                 AStarValues.Parent = 0;
                 AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-                AStarValueMap.put(String.valueOf(AStarValues.ID), new AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
+                AStarValueMap.put(String.valueOf(AStarValues.ID), new AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue,  AStarValues.zvalue));
 
                 fileLogger.writeEvent("loop()", "loaded astargvalue into hashmap");
                 startPointLoaded = true;
@@ -467,7 +468,7 @@ public class AutoDriveAStarPathFinder extends OpMode {
     //--------------------------------------------------------------------------
     //  Initialise the state.
     //--------------------------------------------------------------------------
-    public void initStep (LibraryStateSegAuto[] step)
+    public void initStep (LibraryStateSegAutoOld[] step)
     {
 
         // Reset the state time, and then change to next state.
@@ -708,7 +709,7 @@ public class AutoDriveAStarPathFinder extends OpMode {
         return transformationMatrix.formatAsTransform();
     }
 
-    public fourValues ProcessCurrentNode (int currentX, int currentY, int endX, int endY) {
+    public sixValues ProcessCurrentNode (int currentX, int currentY, int endX, int endY) {
         boolean closed = false;
         boolean diagonal = false;
         boolean canWalk = false;
@@ -720,7 +721,7 @@ public class AutoDriveAStarPathFinder extends OpMode {
         int minF;
         double lowestF = -1;
         int lowestFKey = 0;
-        fourValues returnValue = new fourValues(0,0,0,0);
+        sixValues returnValue = new sixValues(0,0,0,0,0,0);
 
         AStarValue AStarValueCurrerntXY = new AStarValue();
         AStarValue AStarValueCurrerntIJ = new AStarValue();
@@ -797,23 +798,25 @@ public class AutoDriveAStarPathFinder extends OpMode {
 
                             AStarValues.xvalue = i;
                             AStarValues.yvalue = j;
+                            AStarValues.zvalue = 0;
                             AStarValues.GValue = tempG;
                             AStarValues.HValue = tempH;
                             AStarValues.FValue = tempF;
                             AStarValues.Parent = getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength);
                             AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-                            AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
+                            AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue, AStarValues.zvalue));
                             //fileLogger.writeEvent("ProcessCurrentNode()", "Updating (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
                         }
                     } else {
                         AStarValues.xvalue = i;
                         AStarValues.yvalue = j;
+                        AStarValues.zvalue = 0;
                         AStarValues.GValue = tempG;
                         AStarValues.HValue = tempH;
                         AStarValues.FValue = tempF;
                         AStarValues.Parent = getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength);
                         AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-                        AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
+                        AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue, AStarValues.zvalue));
                         //fileLogger.writeEvent("ProcessCurrentNode()", "Adding (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
                     }
                 }
@@ -883,14 +886,14 @@ public class AutoDriveAStarPathFinder extends OpMode {
         return value;
     }
 
-    public fourValues[] findPathAStar (int startX, int startY, int endX, int endY ) {
+    public sixValues[] findPathAStar (int startX, int startY, int endX, int endY ) {
         boolean searching = true;
 
         for (String key: AStarValueMap.keySet())
             fileLogger.writeEvent("init()","Keys " + key + ": x:" + AStarValueMap.get(key).xvalue + " y:" + AStarValueMap.get(key).yvalue);
 
         //process map
-        fourValues currentResult = new fourValues(1,0,AStarValues.xvalue,AStarValues.yvalue);
+        sixValues currentResult = new sixValues(1,0,AStarValues.xvalue,AStarValues.yvalue,0,0);
 
         while (searching) {
             fileLogger.writeEvent("init()","Searching ");

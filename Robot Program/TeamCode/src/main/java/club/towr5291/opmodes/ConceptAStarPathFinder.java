@@ -1,30 +1,24 @@
 package club.towr5291.opmodes;
 
-import android.content.Context;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
 import club.towr5291.astarpathfinder.A0Star;
 import club.towr5291.astarpathfinder.AStarValue;
-import club.towr5291.astarpathfinder.fourValues;
-import club.towr5291.functions.AStarGetPath;
+import club.towr5291.astarpathfinder.sixValues;
 import club.towr5291.functions.FileLogger;
-import club.towr5291.functions.Point;
 
 
 /**
  * Created by ianhaden on 2/09/16.
  */
 
-@Autonomous(name="Concept: A Star Path Fincder", group="5291Concept")
+@Autonomous(name="Concept: A Star Path Finder", group="5291Concept")
 //@Disabled
 public class ConceptAStarPathFinder extends OpMode {
 
@@ -33,7 +27,7 @@ public class ConceptAStarPathFinder extends OpMode {
     private String startDate;
     private ElapsedTime runtime = new ElapsedTime();
     private FileLogger fileLogger;
-
+    private int debug = 3;
     //define each state for the step.  Each step should go through some of the states below
     private enum stepState {
         STATE_INIT,
@@ -82,7 +76,7 @@ public class ConceptAStarPathFinder extends OpMode {
 
     public HashMap<String,AStarValue> AStarValueMap = new HashMap<String,AStarValue>();
 
-    public fourValues[] pathValues = new fourValues[1000];
+    public sixValues[] pathValues = new sixValues[1000];
     public int pathIndex = 0;
 
     //HashMap<Integer,AStarValue> AStarGValueMap = new HashMap<Integer,AStarValue>(500);
@@ -101,11 +95,11 @@ public class ConceptAStarPathFinder extends OpMode {
     private ElapsedTime mStateTime = new ElapsedTime();         // Time into current state
 
     //this is the sequence the state machine will follow
-    private LibraryStateSegAuto[] mRobotAutonomous = {
+    private LibraryStateSegAutoOld[] mRobotAutonomous = {
             //                        time, head, dist, powe
             //                        out   ing   ance  r
             //                         s    deg   inch   %
-            new LibraryStateSegAuto ( 10,  "L90",  12,  0.5 )
+            new LibraryStateSegAutoOld ( 10,  "L90",  12,  0.5 )
 
     };
 
@@ -118,7 +112,7 @@ public class ConceptAStarPathFinder extends OpMode {
         int loopRow;
         boolean searching = true;
         for ( int i = 0; i < pathValues.length; i++) {
-            pathValues[i] = new fourValues();
+            pathValues[i] = new sixValues();
         }
 
         /* Initialize the hardware variables.
@@ -163,29 +157,34 @@ public class ConceptAStarPathFinder extends OpMode {
 
 
         //load start point
-        int startX = 122;
-        int startY = 122;
-        int endX = 12;
-        int endY = 80;
+        int startX = 11;  //122
+        int startY = 11;  //122
+        int endX = 2;     //12
+        int endY = 3;     //80
         AStarValues.xvalue = startX;
         AStarValues.yvalue = startY;
+        AStarValues.zvalue = 0;
         AStarValues.GValue = 0;
         AStarValues.HValue = 0;
         AStarValues.FValue = 0;
         AStarValues.Parent = 0;
         AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-        AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
+        AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue, AStarValues.zvalue));
 
-        fileLogger.writeEvent("init()","loaded astargvalue into hashmap");
+        if (debug >= 1)
+            fileLogger.writeEvent("init()","loaded astargvalue into hashmap");
 
-        for (String key: AStarValueMap.keySet())
-            fileLogger.writeEvent("init()","Keys " + key + ": x:" + AStarValueMap.get(key).xvalue + " y:" + AStarValueMap.get(key).yvalue);
+        //for (String key: AStarValueMap.keySet())
+        //{
+        //    fileLogger.writeEvent("init()","Keys " + key + ": x:" + AStarValueMap.get(key).xvalue + " y:" + AStarValueMap.get(key).yvalue);
+        //}
 
         //process map
-        fourValues currentResult = new fourValues(1,0,AStarValues.xvalue,AStarValues.yvalue);
+        sixValues currentResult = new sixValues(1,0,AStarValues.xvalue,AStarValues.yvalue,0,0);
 
         while (searching) {
-            fileLogger.writeEvent("init()","Searching ");
+            if (debug >= 2)
+                fileLogger.writeEvent("init()","Searching ");
             currentResult = (ProcessCurrentNode((int)currentResult.val3, (int)currentResult.val4, endX, endY));
             searching = (currentResult.val1 == 1);
         }
@@ -195,7 +194,8 @@ public class ConceptAStarPathFinder extends OpMode {
         if (found) {
 
             for ( int i = 0; i < pathValues.length; i++) {
-                fileLogger.writeEvent("init()","Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 );
+                if (debug >= 1)
+                    fileLogger.writeEvent("init()","Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 );
                 if ((pathValues[i].val2 == endX) && (pathValues[i].val3 == endY)) {
                     break;
                 }
@@ -368,43 +368,50 @@ public class ConceptAStarPathFinder extends OpMode {
         return value;
     }
 
-    public fourValues ProcessCurrentNode (int currentX, int currentY, int endX, int endY) {
+
+    public sixValues ProcessCurrentNode (int currentX, int currentY, int endX, int endY) {
+        String TAG = "ProcessCurrentNode";
+
         boolean closed = false;
         boolean diagonal = false;
         boolean canWalk = false;
         int searching = 1;
         int found = 0;
-        boolean empty = false;
         double distFromCurrentToIJ = 0, distFromStartToCurrent = 0;
         double tempF, tempG, tempH;
-        int minF;
         double lowestF = -1;
         int lowestFKey = 0;
-        fourValues returnValue = new fourValues(0,0,0,0);
+        sixValues returnValue = new sixValues(0,0,0,0,0,0);
 
-        AStarValue AStarValueCurrerntXY = new AStarValue();
-        AStarValue AStarValueCurrerntIJ = new AStarValue();
-
-        tempF = 99999;
+        AStarValue AStarValueCurrentXY = new AStarValue();
+        AStarValue AStarValueCurrentIJ = new AStarValue();
 
         //add point to be process to the closed list
         AStarClosed.xvalue = currentX;
         AStarClosed.yvalue = currentY;
         AStarClosed.ID = getKey(AStarClosed.xvalue, AStarClosed.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
         AStarClosedMap.put(String.valueOf(AStarClosed.ID), AStarClosed);
-        //fileLogger.writeEvent("ProcessCurrentNode()","Added to closed list ");
+        if (debug >= 2)
+            fileLogger.writeEvent("ProcessCurrentNode()","Added to closed list ");
 
         //analyze adjacent blocks/grid locations
         //key exists so get the values
-        if (AStarValueMap.containsKey(getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength)))
-            AStarValueCurrerntXY = AStarValueMap.get(String.valueOf(getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength)));
-        else {
-            AStarValueCurrerntXY.xvalue = currentX;
-            AStarValueCurrerntXY.yvalue = currentY;
-            AStarValueCurrerntXY.FValue = 0;
-            AStarValueCurrerntXY.GValue = 0;
-            AStarValueCurrerntXY.HValue = 0;
-            AStarValueCurrerntXY.ID = 0;
+        int nodeKey = getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength);
+        if (AStarValueMap.containsKey(String.valueOf(nodeKey))){
+            AStarValueCurrentXY = AStarValueMap.get(String.valueOf(nodeKey));
+            if (debug >= 3) {
+                fileLogger.writeEvent(TAG, "Getting Key X:" + currentX + " Y:" + currentY + " Key:" + nodeKey);
+            }
+        } else {
+            AStarValueCurrentXY.xvalue = currentX;
+            AStarValueCurrentXY.yvalue = currentY;;
+            AStarValueCurrentXY.FValue = 0;
+            AStarValueCurrentXY.GValue = 0;
+            AStarValueCurrentXY.HValue = 0;
+            AStarValueCurrentXY.ID = 0;
+            if (debug >= 3) {
+                fileLogger.writeEvent(TAG, "Key Doesn't Exist X:" + currentX + " Y:" + currentY + " Key:" + nodeKey);
+            }
         }
 
         AStarValues.xvalue = currentX;
@@ -414,23 +421,26 @@ public class ConceptAStarPathFinder extends OpMode {
         for (int i = Math.max(0, (currentX - 1)); i <= Math.min(a0Star.fieldWidth - 1, currentX + 1); i++ ) {
             for (int j = Math.max(0, (currentY - 1)); j <= Math.min(a0Star.fieldLength - 1, currentY + 1); j++ ) {
                 if ((i == currentX) && (j == currentY)) {
-                    //fileLogger.writeEvent("ProcessCurrentNode()","i=x and j=y - nothing to do");
+                    if (debug >= 2)
+                        fileLogger.writeEvent("ProcessCurrentNode()","i=x and j=y - nothing to do");
                 } else {
                     //check if its on the closed list
-                    //fileLogger.writeEvent("ProcessCurrentNode()","checking if on closed list " + i + " " + j);
+                    if (debug >= 2)
+                        fileLogger.writeEvent("ProcessCurrentNode()","checking if on closed list " + i + " " + j);
                     if (AStarClosedMap.containsKey(String.valueOf(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength))))
                         closed = true;      //need to check if this returns null it doesn't error out
                     else
                         closed = false;                                                                 //not on closed list, must be on open list
-                    //fileLogger.writeEvent("ProcessCurrentNode()","on closed list " + closed);
+                    if (debug >= 2)
+                        fileLogger.writeEvent("ProcessCurrentNode()","on closed list " + closed + " Then checking if diagonal");
 
-                    //fileLogger.writeEvent("ProcessCurrentNode()","checking if diagonal ");
                     if (( i + j ) % 2  == (currentX + currentY) % 2)
                         diagonal = true;
                     else
                         diagonal = false;
 
-                    //fileLogger.writeEvent("ProcessCurrentNode()","Is diagonal " + diagonal);
+                    if (debug >= 2)
+                      fileLogger.writeEvent("ProcessCurrentNode()","Is diagonal " + diagonal);
 
                     if (diagonal) {
                         canWalk = a0Star.walkable[i][j] && a0Star.walkable[currentX][j] && a0Star.walkable[i][currentY];
@@ -442,39 +452,43 @@ public class ConceptAStarPathFinder extends OpMode {
                 }
                 if (!closed && canWalk){
                     //calculated G,H,and F
-                    tempG = AStarValueCurrerntXY.GValue + distFromCurrentToIJ;
+                    tempG = AStarValueCurrentXY.GValue + distFromCurrentToIJ;
                     tempH = Math.abs(i - endX) + Math.abs(j - endY);                              //insert heuristic of choice (we use manhattan)
-                    //NOTE : you could also use point_distance(i,j,endX,endY);
                     tempF = tempG + tempH;
                     //update if necessary
-                    if (AStarValueMap.containsKey(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength))){   //see if key is in G Map, means already processed
+                    if (AStarValueMap.containsKey(String.valueOf(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength)))){   //see if key is in G Map, means already processed
                         //var oldG=;
                         //show_debug_message(string(tempG)+" compare to "+string(oldG));
-                        AStarValueCurrerntIJ = AStarValueMap.get(String.valueOf(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength)));
-                        if (tempG < AStarValueCurrerntIJ.GValue) {
+                        AStarValueCurrentIJ = AStarValueMap.get(String.valueOf(getKey(i, j, a0Star.fieldWidth, a0Star.fieldLength)));
+                        if (tempG < AStarValueCurrentIJ.GValue) {
                             AStarValueMap.remove(String.valueOf(AStarValues.ID));
-                            //fileLogger.writeEvent("ProcessCurrentNode()", "Removed OLD Key (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
+                            if (debug >= 2)
+                                fileLogger.writeEvent("ProcessCurrentNode()", "Removed OLD Key (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
 
                             AStarValues.xvalue = i;
                             AStarValues.yvalue = j;
+                            AStarValues.zvalue = 0;
                             AStarValues.GValue = tempG;
                             AStarValues.HValue = tempH;
                             AStarValues.FValue = tempF;
                             AStarValues.Parent = getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength);
                             AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-                            AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
-                            //fileLogger.writeEvent("ProcessCurrentNode()", "Updating (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
+                            AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue, AStarValues.zvalue));
+                            if (debug >= 2)
+                                fileLogger.writeEvent("ProcessCurrentNode()", "Updating (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
                         }
                     } else {
                         AStarValues.xvalue = i;
                         AStarValues.yvalue = j;
+                        AStarValues.zvalue = 0;
                         AStarValues.GValue = tempG;
                         AStarValues.HValue = tempH;
                         AStarValues.FValue = tempF;
                         AStarValues.Parent = getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength);
                         AStarValues.ID = getKey(AStarValues.xvalue, AStarValues.yvalue, a0Star.fieldWidth, a0Star.fieldLength);
-                        AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue));
-                        //fileLogger.writeEvent("ProcessCurrentNode()", "Adding (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
+                        AStarValueMap.put(String.valueOf(AStarValues.ID), new  AStarValue(AStarValues.ID, AStarValues.FValue, AStarValues.GValue, AStarValues.HValue, AStarValues.Parent, AStarValues.xvalue, AStarValues.yvalue, AStarValues.zvalue));
+                        if (debug >= 2)
+                            fileLogger.writeEvent("ProcessCurrentNode()", "Adding (" + i + "," + j + ") Key " + AStarValues.ID + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF);
                     }
                 }
             }
@@ -482,12 +496,14 @@ public class ConceptAStarPathFinder extends OpMode {
         lowestF = 999999;
         //find best option
         for (String key: AStarValueMap.keySet()) {
-            AStarValueCurrerntIJ = AStarValueMap.get(key);
-            //fileLogger.writeEvent("ProcessCurrentNode()", "Valid key " + key + " ID " + AStarValueCurrerntIJ.ID + " FValue " + AStarValueCurrerntIJ.FValue + " LowestF " + lowestF);
-            if (AStarValueCurrerntIJ.FValue < lowestF) {
-                lowestF = AStarValueCurrerntIJ.FValue;
-                lowestFKey = AStarValueCurrerntIJ.ID;
-                //fileLogger.writeEvent("ProcessCurrentNode()", "Found LowerF " + lowestF);
+            AStarValueCurrentIJ = AStarValueMap.get(key);
+            if (debug >= 2)
+                fileLogger.writeEvent("ProcessCurrentNode()", "Valid key " + key + " ID " + AStarValueCurrentIJ.ID + " FValue " + AStarValueCurrentIJ.FValue + " LowestF " + lowestF);
+            if (AStarValueCurrentIJ.FValue < lowestF) {
+                lowestF = AStarValueCurrentIJ.FValue;
+                lowestFKey = AStarValueCurrentIJ.ID;
+                if (debug >= 2)
+                    fileLogger.writeEvent("ProcessCurrentNode()", "Found LowerF " + lowestF);
             }
         }
         if (lowestF != 999999) {
@@ -501,13 +517,15 @@ public class ConceptAStarPathFinder extends OpMode {
             AStarValueMap.remove(lowestFKey);
             currentX = getXPos(lowestFKey, a0Star.fieldWidth, a0Star.fieldLength);
             currentY = getYPos(lowestFKey, a0Star.fieldWidth, a0Star.fieldLength);
-            fileLogger.writeEvent("ProcessCurrentNode()", "Trying Key " + getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength) + " (" + currentX +  " " + currentY + ")");
+            if (debug >= 2)
+                fileLogger.writeEvent("ProcessCurrentNode()", "Trying Key " + getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength) + " (" + currentX +  " " + currentY + ")");
             searching = 1;
             found = 0;
         } else {
             searching = 0;
             found = 0;
-            fileLogger.writeEvent("ProcessCurrentNode()", "No More Nodes Left");
+            if (debug >= 1)
+                fileLogger.writeEvent("ProcessCurrentNode()", "No More Nodes Left");
         }
         //check whether we're at the end
         if ((currentX == endX) && (currentY == endY)) {
@@ -517,21 +535,20 @@ public class ConceptAStarPathFinder extends OpMode {
 
             searching = 0;
             found = 1;
-            fileLogger.writeEvent("ProcessCurrentNode()", "You found me I'm the final block");
+            if (debug >= 1)
+                fileLogger.writeEvent("ProcessCurrentNode()", "You found me I'm the final block");
         }
         returnValue.val1 = searching;
         returnValue.val2 = found;
         returnValue.val3 = currentX;
         returnValue.val4 = currentY;
-        //fileLogger.writeEvent("ProcessCurrentNode()", "Returning 1- " + searching + " 2- " + found + " 3- "  + currentX + " 4- " + currentY);
+        if (debug >= 1)
+            fileLogger.writeEvent("ProcessCurrentNode()", "Returning 1- " + searching + " 2- " + found + " 3- "  + currentX + " 4- " + currentY);
         return returnValue;
     }
-
 
     //--------------------------------------------------------------------------
     // User Defined Utility functions here....
     //--------------------------------------------------------------------------
-
-
 
 }

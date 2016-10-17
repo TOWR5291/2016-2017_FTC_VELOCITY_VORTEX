@@ -9,32 +9,68 @@ package club.towr5291.opmodes;
 public class LibraryStateSegAuto {
 
     public double mRobotTimeOut;        //how much time is allowed for the step to complete
-    public double mRobotDistance;       //how far to move in inches
-    public double mRobotSpeed;          //how fast to move -1 to 1
-    public String mRobotDirection;      //what angle to move in
+    public String mRobotCommand;        //how far to move in inches
+    public double mRobotParm1;          //how far to move in inches
+    public double mRobotParm2;        //how far to move in inches
+    public double mRobotParm3;        //how far to move in inches
+    public double mRobotSpeed;          //what angle to move in
 
     // Constructor
-    public LibraryStateSegAuto(double timeout, String robotDirection, double robotDistance, double robotSpeed)
+    public LibraryStateSegAuto(double timeout, String RobotCommand, double RobotParm1, double RobotParm2, double RobotParm3, double robotSpeed)
     {
         mRobotTimeOut = timeout;
-        mRobotDirection = robotDirection;
-        mRobotDistance = robotDistance;
+        mRobotCommand = RobotCommand;
+        mRobotParm1 = RobotParm1;
+        mRobotParm2 = RobotParm2;
+        mRobotParm3 = RobotParm3;
         mRobotSpeed = robotSpeed;
+    }
+
+    public void setmRobotTimeOut(double mRobotTimeOut) {
+        this.mRobotTimeOut = mRobotTimeOut;
+    }
+
+    public void setmRobotCommand(String mRobotCommand) {
+        this.mRobotCommand = mRobotCommand;
+    }
+
+    public void setmRobotParm1(double mRobotParm1) {
+        this.mRobotParm1 = mRobotParm1;
+    }
+
+    public void setmRobotParm2(double mRobotParm2) {
+        this.mRobotParm2 = mRobotParm2;
+    }
+
+    public void setmRobotParm3(double mRobotParm3) {
+        this.mRobotParm3 = mRobotParm3;
+    }
+
+    public void setmRobotSpeed(double mRobotSpeed) {
+        this.mRobotSpeed = mRobotSpeed;
     }
 
     public double getmRobotTimeOut() {
         return mRobotTimeOut;
     }
 
-    public double getmRobotDistance() {
-        return mRobotDistance;
+    public String getmRobotCommand() {
+        return mRobotCommand;
+    }
+
+    public double getmRobotParm1() {
+        return mRobotParm1;
+    }
+
+    public double getmRobotParm2() {
+        return mRobotParm2;
+    }
+
+    public double getmRobotParm3() {
+        return mRobotParm3;
     }
 
     public double getmRobotSpeed() {
         return mRobotSpeed;
-    }
-
-    public String getmRobotDirection() {
-        return mRobotDirection;
     }
 }

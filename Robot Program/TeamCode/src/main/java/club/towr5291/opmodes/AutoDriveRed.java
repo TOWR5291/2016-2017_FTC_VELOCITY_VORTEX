@@ -25,7 +25,7 @@ public class AutoDriveRed extends OpMode {
     /* Declare OpMode members. */
     HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use base drive hardware configuration
 
-    static final double     COUNTS_PER_MOTOR_REV    = 1440 ;    // eg: TETRIX Motor Encoder  Neverrest 20=140, Neverrest 40=280, Neverrest 60=420
+    static final double     COUNTS_PER_MOTOR_REV    = 1440 ;    // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
     static final double     DRIVE_GEAR_REDUCTION    = 1.333 ;   // This is < 1.0 if geared UP
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     WHEEL_ACTUAL_FUDGE      = 1;        // Fine tuning amount
@@ -40,7 +40,7 @@ public class AutoDriveRed extends OpMode {
     private ElapsedTime runtime = new ElapsedTime();
     private FileLogger fileLogger;
 
-    //define each state for the step.  Each step should go through some of the states below
+       //define each state for the step.  Each step should go through some of the states below
     private enum stepState {
         STATE_INIT,
         STATE_START,
@@ -56,7 +56,7 @@ public class AutoDriveRed extends OpMode {
     private stepState  mCurrentStepState;                       // Current State Machine State.
     private stepState  mCurrentDriveState;                      // Current State Machine State.
     private stepState  mCurrentTurnState;                       // Current State Machine State.
-    private LibraryStateSegAuto[] mStateSegAuto;
+    private LibraryStateSegAutoOld[] mStateSegAuto;
     double mStepTimeout;
     double mStepDistance;
     double mStepSpeed;
@@ -74,12 +74,12 @@ public class AutoDriveRed extends OpMode {
     private ElapsedTime mStateTime = new ElapsedTime();         // Time into current state
 
     //this is the sequence the state machine will follow
-    private LibraryStateSegAuto[] mRobotAutonomous = {
-            //                        time, head, dist, powe
-            //                        out   ing   ance  r
-            //                         s    deg   inch   %
-            new LibraryStateSegAuto ( 10,  "0",   24,  1 ),
-            new LibraryStateSegAuto ( 10,  "0",   24,  1 )
+    private LibraryStateSegAutoOld[] mRobotAutonomous = {
+            //                          time, head, dist, powe
+            //                          out   ing   ance  r
+            //                           s    deg   inch   %
+            new LibraryStateSegAutoOld ( 10,  "0",   24,  1 ),
+            new LibraryStateSegAutoOld ( 10,  "0",   24,  1 )
 
     };
 
@@ -242,7 +242,7 @@ public class AutoDriveRed extends OpMode {
     //--------------------------------------------------------------------------
     //  Initialise the state.
     //--------------------------------------------------------------------------
-    public void initStep (LibraryStateSegAuto[] step)
+    public void initStep (LibraryStateSegAutoOld[] step)
     {
 
         // Reset the state time, and then change to next state.
