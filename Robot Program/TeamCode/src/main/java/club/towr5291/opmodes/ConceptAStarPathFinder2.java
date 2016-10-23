@@ -34,7 +34,7 @@ public class ConceptAStarPathFinder2 extends OpMode {
 
     public sixValues[] pathValues = new sixValues[1000];
 
-    A0Star a0Star = new A0Star();
+    private A0Star a0Star = new A0Star();
     String fieldOutput = "";
 
     //public AStarGetPathBasic pathValues2 = new AStarGetPathBasic();
@@ -46,8 +46,8 @@ public class ConceptAStarPathFinder2 extends OpMode {
     * Code to run ONCE when the driver hits INIT
     */
     @Override
-    public void init() {
-
+    public void init()
+    {
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
@@ -67,87 +67,93 @@ public class ConceptAStarPathFinder2 extends OpMode {
         //outputing field
         fileLogger.writeEvent("init()", "Writing Field Array");
 
-
         //load start point
-        int startX = 121;  //122
-        int startY = 122;  //122
-        int startZ = 90;
-        int endX = 48;     //12
-        int endY = 2;     //80
+        int startX = 134;  //122
+        int startY = 135;  //122
+        int startZ = 0;
+        int endX = 24;     //12
+        int endY = 56;     //80
         int endDir = 270;
+        int BlueRed;
 
-        //pathValues = pathValues2.findPathAStar(startX, startY, endX, endY);  //for basic
         pathValues = pathValues2.findPathAStar(startX, startY, startZ, endX, endY, endDir);  //for enhanced
-
-
-        //plot out path..
-//        for (int i = 0; i < pathValues.length; i++) {
-//            fileLogger.writeEvent("init()","Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 + " Dir:= " + pathValues[i].val4 );
-//            if ((pathValues[i].val2 == endX) && (pathValues[i].val3 == endY)) {
-//                break;
-//            }
-//        }
 
         String[][] mapComplete = new String[A0Star.FIELDWIDTH][A0Star.FIELDWIDTH];
         fieldOutput = "";
 
-        for (int loopRow = 0; loopRow < a0Star.fieldWidth; loopRow++) {
-            for (int loopColumn = 0; loopColumn < a0Star.fieldLength; loopColumn++) {
-                if (a0Star.walkableRed[loopRow][loopColumn]) {
-                    if ((loopRow == startX) && (loopColumn == startY)) {
-                        mapComplete[loopRow][loopColumn] = "S";
-                        fieldOutput = fieldOutput + "S";
-                    }  else {
-                        mapComplete[loopRow][loopColumn] = "1";
-                        fieldOutput = fieldOutput + "1";
-                    }
-                } else {
-                    if ((loopRow == startX) && (loopColumn == startY)) {
-                        mapComplete[loopRow][loopColumn] = "1";
-                        fieldOutput = fieldOutput + "S";
+        if (startX < startY)
+        {
+            BlueRed = 2;  //RED
+        }
+        else
+        {
+            BlueRed = 1;  //BLUE
+        }
+
+        for (int y = 0; y < a0Star.fieldLength; y++)
+        {
+            for (int x = 0; x < a0Star.fieldWidth; x++)
+            {
+                if (BlueRed == 2) {
+                    if (a0Star.walkableRed[y][x]) {
+                        if ((x == startX) && (y == startY)) {
+                            mapComplete[y][x] = "S";
+                        } else {
+                            mapComplete[y][x] = "1";
+                        }
                     } else {
-                        mapComplete[loopRow][loopColumn] = "0";
-                        fieldOutput = fieldOutput + "0";
+                        if ((x == startX) && (y == startY)) {
+                            mapComplete[y][x] = "1";
+                        } else {
+                            mapComplete[y][x] = "0";
+                        }
                     }
                 }
+                else
+                {
+                    if (a0Star.walkableBlue[y][x]) {
+                        if ((x == startX) && (y == startY)) {
+                            mapComplete[y][x] = "S";
+                        } else {
+                            mapComplete[y][x] = "1";
+                        }
+                    } else {
+                        if ((x == startX) && (y == startY)) {
+                            mapComplete[y][x] = "1";
+                        } else {
+                            mapComplete[y][x] = "0";
+                        }
+                    }
+
+                }
             }
-            //fileLogger.writeEvent("loop()", fieldOutput);
-            fieldOutput = "";
         }
 
         fieldOutput = "MAP INIT COMPLETE";
 
         fileLogger.writeEvent("loop()", "Plotting results");
 
-//        for (int i = 0; i < pathValues.length; i++) {
-//            fileLogger.writeEvent("init()","Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 + " Dir:= " + pathValues[i].val4 );
-//            if ((pathValues[i].val2 == endX) && (pathValues[i].val3 == endY)) {
-//                break;
-//            }
-//        }
-
         //plot out path..
-        for (int i = 0; i < pathValues.length; i++) {
+        for (int i = 0; i < pathValues.length; i++)
+        {
             //fileLogger.writeEvent("init()","Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 + " Dir:= " + pathValues[i].val4 );
-            mapComplete[(int)pathValues[i].val2][(int)pathValues[i].val3] = "P";
-            if ((pathValues[i].val2 == startX) && (pathValues[i].val3 == startY)) {
-                mapComplete[(int)pathValues[i].val2][(int)pathValues[i].val3] = "S";
-            }
-            if ((pathValues[i].val2 == endX) && (pathValues[i].val3 == endY)) {
-                mapComplete[(int)pathValues[i].val2][(int)pathValues[i].val3] = "E";
-                break;
+            mapComplete[(int)pathValues[i].val3][(int)pathValues[i].val2] = "P";
+            if ((pathValues[i].val2 == startX) && (pathValues[i].val3 == startY))
+            {
+                mapComplete[(int) pathValues[i].val3][(int) pathValues[i].val2] = "S";
             }
         }
+        mapComplete[endY][endX] = "E";
         fieldOutput ="";
-        for (int loopRow = 0; loopRow < a0Star.fieldWidth; loopRow++) {
-            for (int loopColumn = 0; loopColumn < a0Star.fieldLength; loopColumn++) {
-                fieldOutput = "" + fieldOutput + mapComplete[loopRow][loopColumn];
+        for (int y = 0; y < a0Star.fieldLength; y++)
+        {
+            for (int x = 0; x < a0Star.fieldWidth; x++)
+            {
+                fieldOutput = "" + fieldOutput + mapComplete[y][x];
             }
             fileLogger.writeEvent("loop()", fieldOutput);
             fieldOutput = "";
         }
-
-
         fileLogger.writeEvent("init()","Init Complete");
     }
 
@@ -155,7 +161,8 @@ public class ConceptAStarPathFinder2 extends OpMode {
      * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
      */
     @Override
-    public void init_loop() {
+    public void init_loop()
+    {
 
     }
 
@@ -163,7 +170,8 @@ public class ConceptAStarPathFinder2 extends OpMode {
      * Code to run ONCE when the driver hits PLAY
      */
     @Override
-    public void start() {
+    public void start()
+    {
         fileLogger.writeEvent("start()","START PRESSED: ");
     }
 
@@ -171,7 +179,8 @@ public class ConceptAStarPathFinder2 extends OpMode {
      * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
      */
     @Override
-    public void loop() {
+    public void loop()
+    {
 
         telemetry.update();
     }
@@ -183,20 +192,17 @@ public class ConceptAStarPathFinder2 extends OpMode {
     public void stop()
     {
         telemetry.addData("FileLogger Op Stop: ", runtime.toString());
-        if (fileLogger != null) {
+        if (fileLogger != null)
+        {
             fileLogger.writeEvent("stop()","Stopped");
             fileLogger.close();
             fileLogger = null;
         }
     }
 
-
-
-
     //--------------------------------------------------------------------------
     // User Defined Utility functions here....
     //--------------------------------------------------------------------------
-
 
 
 }

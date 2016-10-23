@@ -19,38 +19,41 @@ public class A0Star {
         fieldWidth = (int)(FIELDWIDTH / blockSize);
         fieldLength = (int)(FIELDLENGTH / blockSize);
 
-        for (int i = 0; i < fieldWidth; i++) {
-            for (int j = 0; j < fieldLength; j++) {
-                walkable[i][j] = true;  //used for test program, not used for anything else
-                if (j > i) {
+        for (int y = 0; y < fieldLength; y++) {
+            for (int x = 0; x < fieldWidth; x++) {
+                walkable[y][x] = true;  //used for test program, not used for anything else
+                if (y >= x) {
                     //map half the field as walkable
-                    walkableRed[i][j] = false;
-                    walkableBlue[i][j] = true;
+                    walkableRed[y][x] = true;
+                    walkableBlue[y][x] = false;
                     //mark corner ramps as unwalkable
-                    if ( i < (j + 96)) {
-                        walkableBlue[i][j] = true;
+                    if ( y < (x + 96)) {
+                        walkableRed[y][x] = true;
                     } else {
-                        walkableBlue[i][j] = false;
-                    }
-                    //mark center as unwalkable 1foot square
-                    if (((j >= 66 ) && (j <= 78)) && ((i >= 66 ) && (i <= 78))) {
-                        walkableBlue[i][j] = false;
-                    }
-                } else {
-                    //map half the field as walkable
-                    walkableRed[i][j] = true;
-                    walkableBlue[i][j] = false;
-                    //mark corner ramps as unwalkable
-                    if ( i < (j + 96)) {
-                        walkableRed[i][j] = true;
-                    } else {
-                        walkableRed[i][j] = false;
+                        walkableRed[y][x] = false;
                     }
 
                     //mark center as unwalkable 1foot square
-                    if (((j >= 66 ) && (j <= 78)) && ((i >= 66 ) && (i <= 78))) {
-                        walkableRed[i][j] = false;
+                    if (((x >= 66 ) && (x <= 78)) && ((y >= 66 ) && (y <= 78))) {
+                        walkableRed[y][x] = false;
+                        walkableBlue[y][x] = false;
                     }
+                } else {
+                    //map half the field as walkable
+                    walkableRed[y][x] = false;
+                    walkableBlue[y][x] = true;
+                    //mark corner ramps as unwalkable
+                    if ( x < (y + 96)) {
+                        walkableBlue[y][x] = true;
+                    } else {
+                        walkableBlue[y][x] = false;
+                    }
+                    //mark center as unwalkable 1foot square
+                    if (((x >= 66 ) && (x <= 78)) && ((y >= 66 ) && (y <= 78))) {
+                        walkableRed[y][x] = false;
+                        walkableBlue[y][x] = false;
+                    }
+
                 }
             }
         }

@@ -32,15 +32,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package club.towr5291.opmodes;
 
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 
+import club.towr5291.astarpathfinder.A0Star;
+import club.towr5291.astarpathfinder.sixValues;
+import club.towr5291.functions.AStarGetPathEnhanced;
 import club.towr5291.functions.FileLogger;
 import club.towr5291.robotconfig.HardwareDriveMotors;
 
@@ -70,24 +76,43 @@ import club.towr5291.robotconfig.HardwareDriveMotors;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Auto Drive Linear", group="5291Test")
-public class AutoDriveEncoder_Linear extends LinearOpMode {
+@Autonomous(name="Ians Auto Drive Linear", group="5291Test")
+public class AutoDriveEncoder_Linear extends LinearOpMode
+{
+
+    private static final String TAG = "AutoDriveEncoder_Linear";
 
     /* Declare OpMode members. */
-    HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use a Pushbot's hardware
+    private HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use a Pushbot's hardware
     private ElapsedTime     runtime = new ElapsedTime();
 
-    static final double     COUNTS_PER_MOTOR_REV    = 560 ;     // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
-    static final double     DRIVE_GEAR_REDUCTION    = 0.78 ;    // This is < 1.0 if geared UP, Tilerunner is geared up
-    static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
-    static final double     WHEEL_ACTUAL_FUDGE      = 1;        // Fine tuning amount
-    static final double     COUNTS_PER_INCH         = ((COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415)) * WHEEL_ACTUAL_FUDGE ;
-    static final double     ROBOT_TRACK             = 16.5;     //  distance between centerline of rear wheels robot will pivot on rear wheel of omni on front, 16.5 track is 103.67 inches full circle
-    static final double     COUNTS_PER_DEGREE       =  ((2 * 3.1415 * ROBOT_TRACK) * COUNTS_PER_INCH) / 360;
+    private static final double     COUNTS_PER_MOTOR_REV    = 560 ;     // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
+    private static final double     DRIVE_GEAR_REDUCTION    = 0.78 ;    // This is < 1.0 if geared UP, Tilerunner is geared up
+    private static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
+    private static final double     WHEEL_ACTUAL_FUDGE      = 1;        // Fine tuning amount
+    private static final double     COUNTS_PER_INCH         = ((COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415)) * WHEEL_ACTUAL_FUDGE ;
+    private static final double     ROBOT_TRACK             = 16.5;     //  distance between centerline of rear wheels robot will pivot on rear wheel of omni on front, 16.5 track is 103.67 inches full circle
+    private static final double     COUNTS_PER_DEGREE       =  ((2 * 3.1415 * ROBOT_TRACK) * COUNTS_PER_INCH) / 360;
 
     //set up the variables for the file logger
     private String startDate;
     private FileLogger fileLogger;
+    private int debug = 3;
+
+    private double distanceToEndLeft;
+    private double distanceToEndRight;
+    private double distanceToEnd;
+    private double distanceFromStartLeft;
+    private double distanceFromStartRight;
+    private double distanceFromStart;
+
+    private int mStartPositionLeft;
+    private int mStartPositionRight;
+
+    private ModernRoboticsI2cRangeSensor rangeSensorLeft;
+    private ModernRoboticsI2cRangeSensor rangeSensorRight;
+
+    ColorSensor colorSensor;    // Hardware Device Object
 
     //define each state for the step.  Each step should go through some of the states below
     private enum stepState {
@@ -98,74 +123,132 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
         STATE_COMPLETE,
         STATE_TIMEOUT,
         STATE_ERROR,
-        STATE_FINISHED
+        STATE_FINISHED,
+        STATE_ASTAR_PRE_INIT,
+        STATE_ASTAR_INIT,
+        STATE_ASTAR_RUNNING,
+        STATE_ASTAR_ERROR,
+        STATE_ASTAR_COMPLETE
     }
 
     // set up the variables for the state engine
-    private int mCurrentStep = 0;                               // Current State Machine State.
-    private stepState mCurrentStepState;                        // Current State Machine State.
-    private stepState mCurrentDriveState;                       // Current State Machine State.
-    private stepState mCurrentTurnState;                        // Current State Machine State.
-    private LibraryStateSegAuto[] mStateSegAuto;
+    private int mCurrentStep = 1;                                                       // Current Step in State Machine.
+    private int mCurrentAStarStep = 1;                                                  // Current Step in AStar State Machine.
+    private stepState mCurrentStepState;                                                // Current State Machine State.
+    private stepState mCurrentDriveState;                                               // Current State of Drive.
+    private stepState mCurrentTankTurnState;                                            // Current State of Tank Turn.
+    private stepState mCurrentPivotTurnState;                                           // Current State of Pivot Turn.
+    private stepState mCurrentRadiusTurnState;                                          // Current State of Radius Turn.
+
     private double mStepTimeout;
-    double mStepSpeed;
-    String mRobotCommand;
-    double mRobotParm1;
-    double mRobotParm2;
-    double mRobotParm3;
-    double mStepTurnL;
-    double mStepTurnR;
-    double mStepDistance;
-    int mStepLeftTarget;
-    int mStepRightTarget;
-    boolean baseStepComplete = false;
+    private double mStepSpeed;
+    private String mRobotCommand;
+    private boolean mRobotStepComplete;
+    private double mStepTurnL;
+    private  double mStepTurnR;
+    private double mStepDistance;
+    private int mStepLeftTarget;
+    private int mStepRightTarget;
+    private boolean baseStepComplete = false;
     boolean armStepComplete = true;
-    static final double INCREMENT   = 0.03;                     // amount to ramp motor each cycle
-    private ElapsedTime mStateTime = new ElapsedTime();         // Time into current state
+    static final double INCREMENT  = 0.03;                                              // amount to ramp motor each cycle
+    private ElapsedTime mStateTime = new ElapsedTime();                                 // Time into current state
 
-    //this is the sequence the state machine will follow
-    private LibraryStateSegAuto[] mRobotAutonomous = {
-            // Valid Commands Angle
-            // RT = Right Turn Angle
-            // LT = Left Turn Angle
-            // LP = Left Pivot Angle
-            // RP = Left Pivot Angle
-            // LR = Left turn with radius
-            // RR = Right turn with radius
-            // FW = Drive Forward Distance
-            // RV = Drive Backward Distance
-            // AS = AutoStar From Current Pos to X,Y
-            // FN = Special Function
-            //
-            //                        time, comm,  parm, parm, parm, powe
-            //                        out   and    1     2     3     r
-            //                         s                             %
-            new LibraryStateSegAuto ( 10,  "LT90", 0,    0,    0,    0.5 ),
-            new LibraryStateSegAuto ( 10,  "RT90", 0,    0,    0,    0.5 ),
-            new LibraryStateSegAuto ( 10,  "FW12", 0,    0,    0,    1 ),
-            new LibraryStateSegAuto ( 10,  "RV6" , 0,    0,    0,    0.3 )
+    private HashMap<String,LibraryStateSegAuto> autonomousSteps = new HashMap<String,LibraryStateSegAuto>();
 
-    };
+    private HashMap<String,String> powerTable = new HashMap<String,String>();
+
+    private void loadPowerTable ()
+    {
+        powerTable.put(String.valueOf(0.5), ".2");
+        powerTable.put(String.valueOf(1), ".3");
+        powerTable.put(String.valueOf(2), ".4");
+        powerTable.put(String.valueOf(3), ".5");
+        powerTable.put(String.valueOf(4), ".6");
+        powerTable.put(String.valueOf(5), ".7");
+        powerTable.put(String.valueOf(6), ".8");
+        powerTable.put(String.valueOf(7), ".9");
+    }
+
+    private void loadStaticSteps ()
+    {
+        // Valid Commands Angle
+        // RT = Right Turn Angle
+        // LT = Left Turn Angle
+        // LP = Left Pivot Angle
+        // RP = Left Pivot Angle
+        // LR = Left turn with radius
+        // RR = Right turn with radius
+        // FW = Drive Forward Distance
+        // RV = Drive Backward Distance
+        // AS = AutoStar From Current Pos to X,Y
+        // FN = Special Function
+        //  Red Beacon 1 = (12, 24)
+        //  Red Beacon 2 = (12, 84)
+        //  Blue Beacon 1 = (24,12)
+        //  Blue Beacon 2 = (84,12)
+        //                                                              step time, comm,  parm, parm, parm, parm, parm, parm, powe  comp
+        //                                                                   out   and    1     2     3     4     5     6     r     lete
+        //                                                                   s                                                %
+        autonomousSteps.put(String.valueOf(1), new LibraryStateSegAuto (1,   10,  "FW12", 0,    0,    0,    0,    0,    0,    1,    false));
+        autonomousSteps.put(String.valueOf(2), new LibraryStateSegAuto (2,   10,  "AS  ", 120,  110,  0,    12,   24,   270,  0.5,  false));
+      //autonomousSteps.put(String.valueOf(3), new LibraryStateSegAuto (3,   10,  "RT90", 0,    0,    0,    0,    0,    0,    0.5,  false));
+      //autonomousSteps.put(String.valueOf(4), new LibraryStateSegAuto (4,   10,  "RV6" , 0,    0,    0,    0,    0,    0,    0.3,  false));
+
+    }
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() throws InterruptedException
+    {
+        //set up gyro sensor
+        ModernRoboticsI2cGyro gyro;   // Hardware Device Object
+        int gyroXVal, gyroYVal, yroZVal = 0;     // Gyro rate Values
+        int gyroHeading = 0;              // Gyro integrated heading
+        int gyroAngleZ = 0;
+        boolean gyroLastResetState = false;
+        boolean gyroCurResetState  = false;
 
-        // Set the start date for the logger filename and timestamps
-        startDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
-        runtime.reset();
-        telemetry.addData("FileLogger: ", runtime.toString());
-        // Start the filelogger, and initialise the first few lines
-        fileLogger = new FileLogger(runtime);
-        fileLogger.open();
-        telemetry.addData("FileLogger Op Out File: ", fileLogger.getFilename());
-        fileLogger.write("Time,SysMS,Thread,Event,Desc");
-        fileLogger.writeEvent("init()","Log Started");
+        // get a reference to a Modern Robotics GyroSensor object.
+        gyro = (ModernRoboticsI2cGyro)hardwareMap.gyroSensor.get("gyro");
+
+        // calibrate the gyro, this takes a few seconds
+        gyro.calibrate();
+
+        LibraryStateSegAuto processingSteps = new LibraryStateSegAuto(0,0,"",0,0,0,0,0,0,0,false);
+        AStarGetPathEnhanced getPathValues = new AStarGetPathEnhanced();
+        sixValues[] pathValues = new sixValues[1000];
+        A0Star a0Star = new A0Star();
+        String fieldOutput;
+        String strAngleChange;
+        int BlueRed;
+        HashMap<String,LibraryStateSegAuto> autonomousStepsAStar = new HashMap<>();
+
+        if (debug >= 1)
+        {
+            startDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+            fileLogger = new FileLogger(runtime);
+            fileLogger.open();
+            fileLogger.write("Time,SysMS,Thread,Event,Desc");
+            fileLogger.writeEvent(TAG, "Log Started");
+            runtime.reset();
+            telemetry.addData("FileLogger: ", runtime.toString());
+            telemetry.addData("FileLogger Op Out File: ", fileLogger.getFilename());
+        }
+
+        loadStaticSteps();                                                          //load all the steps into the hashmaps
+        loadPowerTable();                                                           //load the power table
 
         /*
         * Initialize the drive system variables.
         * The init() method of the hardware class does all the work here
         */
         robotDrive.init(hardwareMap);
+
+        rangeSensorLeft = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "sensorrangeleft");
+        rangeSensorRight = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "sensorrangeright");
+
+        // get a reference to our ColorSensor object.
+        colorSensor = hardwareMap.colorSensor.get("sensorcolor");
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Resetting Encoders");    //
@@ -179,37 +262,64 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
         robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Send telemetry message to indicate successful Encoder reset
-        telemetry.addData("Path0",  "Starting at %7d :%7d",
-                robotDrive.leftMotor1.getCurrentPosition(),
-                robotDrive.rightMotor1.getCurrentPosition());
-        telemetry.update();
+        telemetry.addData("Path0",  "Starting at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
 
-
-        // Send telemetry message to signify robot waiting;
-        telemetry.update();
         robotDrive.leftMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robotDrive.rightMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        mCurrentStepState = stepState.STATE_INIT;
-        mCurrentTurnState = stepState.STATE_INIT;
-        mCurrentDriveState = stepState.STATE_INIT;
 
         robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        fileLogger.writeEvent("init()","Init Complete");
+        mCurrentStepState = stepState.STATE_INIT;
+        mCurrentTankTurnState = stepState.STATE_INIT;
+        mCurrentDriveState = stepState.STATE_INIT;
 
+        while (!isStopRequested() && gyro.isCalibrating())  {
+            sleep(50);
+            idle();
+        }
 
+        if (debug >= 1)
+        {
+            fileLogger.writeEvent(TAG, "Init Complete");
+        }
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
-        while (opModeIsActive()) {
-
+        while (opModeIsActive())
+        {
+            if (debug >= 1)
+            {
+                fileLogger.writeEvent(TAG, "mCurrentStepState:- " + mCurrentStepState + " mCurrentStepState " + mCurrentStepState);
+            }
             switch (mCurrentStepState)
             {
                 case STATE_INIT:
                 {
-                    initStep(mRobotAutonomous);
+                    if (debug >= 1)
+                    {
+                        fileLogger.writeEvent(TAG, "About to check if step exists " + mCurrentStep);
+                    }
+                    // get step from hashmap, send it to the initStep for decoding
+                    if (autonomousSteps.containsKey(String.valueOf(mCurrentStep)))
+                    {
+                        if (debug >= 1)
+                        {
+                            fileLogger.writeEvent(TAG, "Step Exists TRUE " + mCurrentStep + " about to get the values from the step");
+                        }
+                        processingSteps = autonomousSteps.get(String.valueOf(mCurrentStep));
+                        if (debug >= 1)
+                        {
+                            fileLogger.writeEvent(TAG, "Got the values for step " + mCurrentStep + " about to decode");
+                        }
+
+                        //decode the step from hashmap
+                        initStep(processingSteps);
+                    }
+                    else  //if no steps left in hashmap then complete
+                    {
+                        mCurrentStepState = stepState.STATE_FINISHED;
+                    }
                 }
                 break;
                 case STATE_START:
@@ -219,11 +329,12 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
                 break;
                 case STATE_RUNNING:
                 {
-                    runningTurnStep ();
-                    runningDriveStep();
-                    if ((mCurrentDriveState == stepState.STATE_COMPLETE) && (mCurrentTurnState == stepState.STATE_COMPLETE) && (armStepComplete))
+                    TankTurnStep();
+                    PivotTurnStep();
+                    RadiusTurnStep();
+                    DriveStep();
+                    if ((mCurrentDriveState == stepState.STATE_COMPLETE) && (mCurrentPivotTurnState == stepState.STATE_COMPLETE) && (mCurrentTankTurnState == stepState.STATE_COMPLETE) && (mCurrentRadiusTurnState == stepState.STATE_COMPLETE))
                     {
-                        //  Transition to a new state.
                         mCurrentStepState = stepState.STATE_COMPLETE;
                     }
                 }
@@ -235,18 +346,15 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
                 break;
                 case STATE_COMPLETE:
                 {
-                    fileLogger.writeEvent("loop()","Current Step:- " + mCurrentStep + ", Array Size: " + mRobotAutonomous.length);
-                    if ((mCurrentStep) < (mRobotAutonomous.length - 1)) {
-                        fileLogger.writeEvent("loop()","Current Step:- " + mCurrentStep + ", Array Size: " + mRobotAutonomous.length);
-                        //  Transition to a new state and next step.
-                        mCurrentStep++;
-                        mCurrentStepState = stepState.STATE_INIT;
-
-                    } else {
-                        fileLogger.writeEvent("loop()","STATE_COMPLETE - Setting FINISHED ");
-                        //  Transition to a new state.
-                        mCurrentStepState = stepState.STATE_FINISHED;
+                    if (debug >= 1)
+                    {
+                        fileLogger.writeEvent(TAG, "Step Complete - Current Step:- " + mCurrentStep);
                     }
+
+                    //  Transition to a new state and next step.
+                    mCurrentStep++;
+                    mCurrentStepState = stepState.STATE_INIT;
+
                 }
                 break;
                 case STATE_TIMEOUT:
@@ -254,7 +362,6 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
                     setDriveMotorPower(0);
                     //  Transition to a new state.
                     mCurrentStepState = stepState.STATE_FINISHED;
-
                 }
                 break;
                 case STATE_ERROR:
@@ -264,85 +371,312 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
                 break;
                 case STATE_FINISHED:
                 {
+                    setDriveMotorPower(0);
+                    if (debug >= 1)
+                    {
+                        fileLogger.writeEvent(TAG, "Step Complete - FINISHED");
+                    }
                     telemetry.addData("STATE", "FINISHED " + mCurrentStep);
                 }
                 break;
+                case STATE_ASTAR_PRE_INIT:
+                {
+                    mCurrentAStarStep = 1;                                          //init the Step for AStar
+                    //get start point
+                    //get end point
+                    int startX = (int)processingSteps.getmRobotParm1();
+                    int startY = (int)processingSteps.getmRobotParm2();
+                    int startZ = (int)processingSteps.getmRobotParm3();
+                    int endX = (int)processingSteps.getmRobotParm4();
+                    int endY = (int)processingSteps.getmRobotParm5();
+                    int endDir = (int)processingSteps.getmRobotParm6();
 
+                    //process path
+                    pathValues = getPathValues.findPathAStar(startX, startY, startZ, endX, endY, endDir);  //for enhanced
+
+                    String[][] mapComplete = new String[A0Star.FIELDWIDTH][A0Star.FIELDWIDTH];
+
+                    //write path to logfile to verify path
+                    if (startX < startY)
+                    {
+                        BlueRed = 2;  //RED
+                    }
+                    else
+                    {
+                        BlueRed = 1;  //BLUE
+                    }
+
+                    for (int y = 0; y < a0Star.fieldLength; y++)
+                    {
+                        for (int x = 0; x < a0Star.fieldWidth; x++)
+                        {
+                            if (BlueRed == 2) {
+                                if (a0Star.walkableRed[y][x]) {
+                                    if ((x == startX) && (y == startY)) {
+                                        mapComplete[y][x] = "S";
+                                    } else {
+                                        mapComplete[y][x] = "1";
+                                    }
+                                } else {
+                                    if ((x == startX) && (y == startY)) {
+                                        mapComplete[y][x] = "1";
+                                    } else {
+                                        mapComplete[y][x] = "0";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (a0Star.walkableBlue[y][x]) {
+                                    if ((x == startX) && (y == startY)) {
+                                        mapComplete[y][x] = "S";
+                                    } else {
+                                        mapComplete[y][x] = "1";
+                                    }
+                                } else {
+                                    if ((x == startX) && (y == startY)) {
+                                        mapComplete[y][x] = "1";
+                                    } else {
+                                        mapComplete[y][x] = "0";
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+
+                    //plot out path..
+                    for (int i = 0; i < pathValues.length; i++)
+                    {
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent(TAG,"Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 + " Dir:= " + pathValues[i].val4 );
+                        }
+                        if (((int)pathValues[i].val1 == 0) && ((int)pathValues[i].val3 == 0) && ((int)pathValues[i].val2 == 0) && ((int)pathValues[i].val4 == 0))
+                            break;
+                        mapComplete[(int)pathValues[i].val3][(int)pathValues[i].val2] = "P";
+                        if ((pathValues[i].val2 == startX) && (pathValues[i].val3 == startY))
+                        {
+                            mapComplete[(int) pathValues[i].val3][(int) pathValues[i].val2] = "S";
+                        }
+                    }
+                    mapComplete[endY][endX] = "E";
+                    fieldOutput ="";
+                    for (int y = 0; y < a0Star.fieldLength; y++)
+                    {
+                        for (int x = 0; x < a0Star.fieldWidth; x++)
+                        {
+                            fieldOutput = "" + fieldOutput + mapComplete[y][x];
+                        }
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent(TAG, fieldOutput);
+                        }
+                        fieldOutput = "";
+                    }
+
+                    //load path into hashmap
+                    boolean dirChanged;
+                    int startStraightSection = 0;
+                    int numberOfMoves;
+                    int key = 0;
+
+                    for (int i = 0; i < pathValues.length; i++)
+                    {
+
+                        if (((int)pathValues[i].val1 == 0) && ((int)pathValues[i].val2 == 0) && ((int)pathValues[i].val3 == 0))
+                            break;
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent(TAG,"Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 + " Dir:= " + pathValues[i].val4 );
+                        }
+                        //need to work out if there is a turn
+                        //if its the first step, then direction is StartDir
+                        if (i == 0) {
+                            if (startZ != pathValues[i].val4) {  //need to turn
+                                strAngleChange = getAngle(startZ, (int) pathValues[i].val4);
+                                autonomousStepsAStar.put(String.valueOf(key), new LibraryStateSegAuto(key, 5, strAngleChange, 0, 0, 0, 0, 0, 0, 1, false));
+                                key++;
+                                dirChanged = true;
+                            }
+                            else
+                            {
+                                dirChanged = false;    //no change in direction
+                            }
+                        }
+                        else
+                        {
+                            if (pathValues[i-1].val4 != pathValues[i].val4) {  //need to turn
+                                strAngleChange = getAngle((int)pathValues[i-1].val4, (int)pathValues[i].val4);
+                                autonomousStepsAStar.put(String.valueOf(key), new LibraryStateSegAuto (key,   5,  strAngleChange, 0,    0,    0,    0,    0,    0,    1,    false));
+                                key++;
+                                dirChanged = true;
+                            }
+                            else
+                            {
+                                dirChanged = false;    //no change in direction
+                            }
+                        }
+                        //need to add all straight steps together and get a single straight step
+                        if (dirChanged)
+                        {
+                            //need to know the direction we were travelling at to calculate the distance.
+                            // If angle is 0, 90, 270, or 180 then distance is 1 inch per i,
+                            // if it is 45, 135, 315, 225 then it is root 1 inch per i
+                            numberOfMoves = (i - 1) - startStraightSection;
+                            //get the direction prior to turning
+                            if (i==0)
+                            {
+                                switch (startZ)
+                                {
+                                    case 0:
+                                    case 90:
+                                    case 180:
+                                    case 270:
+                                        autonomousStepsAStar.put(String.valueOf(key), new LibraryStateSegAuto (key,   5, "FW" + numberOfMoves , 0,    0,    0,    0,    0,    0,    1,    false));
+                                        key++;
+                                        break;
+                                    case 45:
+                                    case 135:
+                                    case 225:
+                                    case 315:
+                                        autonomousStepsAStar.put(String.valueOf(key), new LibraryStateSegAuto (key,   5, "FW" + (int)(numberOfMoves * 1.4142 ) , 0,    0,    0,    0,    0,    0,    1,    false));
+                                        key++;
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                switch ((int)pathValues[i-1].val4)
+                                {
+                                    case 0:
+                                    case 90:
+                                    case 180:
+                                    case 270:
+                                        autonomousStepsAStar.put(String.valueOf(key), new LibraryStateSegAuto (key,   5, "FW" + numberOfMoves , 0,    0,    0,    0,    0,    0,    1,    false));
+                                        key++;
+                                        break;
+                                    case 45:
+                                    case 135:
+                                    case 225:
+                                    case 315:
+                                        autonomousStepsAStar.put(String.valueOf(key), new LibraryStateSegAuto (key,   5, "FW" + (int)(numberOfMoves * 1.4142 ) , 0,    0,    0,    0,    0,    0,    1,    false));
+                                        key++;
+                                        break;
+                                }
+                            }
+                            startStraightSection = i;
+                        }
+
+                        //find end of sequence
+                        if (((int)pathValues[i].val1 == 0) && ((int)pathValues[i].val3 == 0) && ((int)pathValues[i].val2 == 0) && ((int)pathValues[i].val4 == 0))
+                        {
+                            //last step was the last, need to check if we are facing the right way, if not we need to rotate the robot
+                            if (((int)pathValues[i-1].val4) != endDir)
+                            {
+                                strAngleChange = getAngle((int)pathValues[i-1].val4, endDir);
+                                autonomousStepsAStar.put(String.valueOf(key), new LibraryStateSegAuto (key,   5,  strAngleChange, 0,    0,    0,    0,    0,    0,    1,    false));
+                                key++;
+                            }
+                            else
+                            {
+                                //we are facing the right way, nothing to do
+                            }
+                        }
+                    }
+                    mCurrentAStarStep = 0;
+                    mCurrentStepState = stepState.STATE_ASTAR_INIT;
+
+                }
+                break;
+                case STATE_ASTAR_INIT:
+                {
+                    if (debug >= 1)
+                    {
+                        fileLogger.writeEvent(TAG, "About to check if step exists " + mCurrentAStarStep);
+                    }
+                    // get step from hashmap, send it to the initStep for decoding
+                    if (autonomousSteps.containsKey(String.valueOf(mCurrentAStarStep)))
+                    {
+                        if (debug >= 1)
+                        {
+                            fileLogger.writeEvent(TAG, "Step Exists TRUE " + mCurrentAStarStep + " about to get the values from the step");
+                        }
+                        processingSteps = autonomousStepsAStar.get(String.valueOf(mCurrentAStarStep));      //read the step from the hashmap
+                        autonomousStepsAStar.remove(String.valueOf(mCurrentAStarStep));                     //remove the step from the hashmap
+                        if (debug >= 1)
+                        {
+                            fileLogger.writeEvent(TAG, "Got the values for step " + mCurrentAStarStep + " about to decode and removed them");
+                        }
+
+                        //decode the step from hashmap
+                        initAStarStep(processingSteps);
+                    }
+                    else  //if no steps left in hashmap then complete
+                    {
+                        mCurrentStepState = stepState.STATE_ASTAR_COMPLETE;
+                    }
+                }
+                break;
+                case STATE_ASTAR_RUNNING:
+                {
+                    //move robot according AStar hashmap
+                    TankTurnStep();
+                    PivotTurnStep();
+                    RadiusTurnStep();
+                    DriveStep();
+                    if ((mCurrentDriveState == stepState.STATE_COMPLETE) && (mCurrentPivotTurnState == stepState.STATE_COMPLETE) && (mCurrentTankTurnState == stepState.STATE_COMPLETE) && (mCurrentRadiusTurnState == stepState.STATE_COMPLETE))
+                    {
+                        //increment ASTar Steps Counter
+                        mCurrentAStarStep++;
+                        mCurrentStepState = stepState.STATE_ASTAR_INIT;
+                    }
+
+                }
+                break;
+                case STATE_ASTAR_ERROR:
+                {
+                    //do something on error
+                }
+                break;
+                case STATE_ASTAR_COMPLETE:
+                {
+                    //empty hashmap ready for next AStar processing.
+                    //clear AStar step counter ready for next AStar process
+                    mCurrentAStarStep = 0;
+
+                    //when complete, keep processing normal step
+                    if (debug >= 1)
+                    {
+                        fileLogger.writeEvent(TAG, "A* Path Completed:- " + mCurrentStep);
+                    }
+
+                    //  Transition to a new state and next step.
+                    mCurrentStep++;
+                    mCurrentStepState = stepState.STATE_INIT;
+
+                }
+                break;
             }
 
             //check timeout vale
-            if ((mStateTime.seconds() > mStepTimeout  ) && ((mCurrentStepState != stepState.STATE_ERROR) && (mCurrentStepState != stepState.STATE_FINISHED))) {
+            if ((mStateTime.seconds() > mStepTimeout  ) && ((mCurrentStepState != stepState.STATE_ERROR) && (mCurrentStepState != stepState.STATE_FINISHED)))
+            {
                 //  Transition to a new state.
                 mCurrentStepState = stepState.STATE_TIMEOUT;
             }
         }
-    }
-
-    /*
-     *  Method to perfmorm a relative move, based on encoder counts.
-     *  Encoders are not reset as the move is based on the current position.
-     *  Move will stop if any of three conditions occur:
-     *  1) Move gets to the desired position
-     *  2) Move runs out of time
-     *  3) Driver stops the opmode running.
-     */
-    public void encoderDrive(double speed,
-                             double leftInches, double rightInches,
-                             double timeoutS) throws InterruptedException {
-        int newLeftTarget;
-        int newRightTarget;
-
-        // Ensure that the opmode is still active
-        if (opModeIsActive()) {
-
-            // Determine new target position, and pass to motor controller
-            newLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
-            newRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
-            robotDrive.leftMotor1.setTargetPosition(newLeftTarget);
-            robotDrive.rightMotor1.setTargetPosition(newRightTarget);
-
-            // Turn On RUN_TO_POSITION
-            robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            // reset the timeout time and start motion.
-            runtime.reset();
-            setDriveMotorPower(Math.abs(speed));
-
-            // keep looping while we are still active, and there is time left, and both motors are running.
-            while (opModeIsActive() &&
-                   (runtime.seconds() < timeoutS) &&
-                   (robotDrive.leftMotor1.isBusy() && robotDrive.rightMotor1.isBusy())) {
-
-                // Display it for the driver.
-                telemetry.addData("Path1",  "Running to %7d :%7d", newLeftTarget,  newRightTarget);
-                telemetry.addData("Path2",  "Running at %7d :%7d",
-                        robotDrive.leftMotor1.getCurrentPosition(),
-                        robotDrive.rightMotor1.getCurrentPosition());
-                telemetry.update();
-
-                // Allow time for other processes to run.
-                idle();
+        if (debug >= 1)
+        {
+            if (fileLogger != null)
+            {
+                fileLogger.writeEvent(TAG, "Stopped");
+                fileLogger.close();
+                fileLogger = null;
             }
-
-            // Stop all motion;
-            setDriveMotorPower(0);
-
-            // Turn off RUN_TO_POSITION
-            robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-            //  sleep(250);   // optional pause after each move
-        }
-
-        //opmode finished, close log file
-        telemetry.addData("FileLogger Op Stop: ", runtime.toString());
-        if (fileLogger != null) {
-            fileLogger.writeEvent("stop()","Stopped");
-            fileLogger.close();
-            fileLogger = null;
         }
     }
+
 
     //--------------------------------------------------------------------------
     // User Defined Utility functions here....
@@ -351,98 +685,379 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
     //--------------------------------------------------------------------------
     //  Initialise the state.
     //--------------------------------------------------------------------------
-    public void initStep (LibraryStateSegAuto[] step) {
+    private void initStep (LibraryStateSegAuto mStateSegAuto) {
+        double mRobotParm1;
+        double mRobotParm2;
+        double mRobotParm3;
+        double mRobotParm4;
+        double mRobotParm5;
+        double mRobotParm6;
+
+
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Starting to Decode Step ");
+        }
 
         // Reset the state time, and then change to next state.
         baseStepComplete = false;
         mStateTime.reset();
-        mStateSegAuto = step;
-        mStepTimeout = mStateSegAuto[mCurrentStep].mRobotTimeOut;
-        mStepSpeed = mStateSegAuto[mCurrentStep].mRobotSpeed;
-        mRobotCommand = mStateSegAuto[mCurrentStep].mRobotCommand;
-        mRobotParm1 = mStateSegAuto[mCurrentStep].mRobotParm1;
-        mRobotParm2 = mStateSegAuto[mCurrentStep].mRobotParm2;
-        mRobotParm3 = mStateSegAuto[mCurrentStep].mRobotParm3;
-        String fRobotCommand;
 
-        mCurrentTurnState = stepState.STATE_INIT;
-        mCurrentDriveState = stepState.STATE_INIT;
+        mStepTimeout = mStateSegAuto.getmRobotTimeOut();
+        mStepSpeed = mStateSegAuto.getmRobotSpeed();
+        mRobotCommand = mStateSegAuto.getmRobotCommand();
+        mRobotParm1 = mStateSegAuto.getmRobotParm1();
+        mRobotParm2 = mStateSegAuto.getmRobotParm2();
+        mRobotParm3 = mStateSegAuto.getmRobotParm3();
+        mRobotParm4 = mStateSegAuto.getmRobotParm4();
+        mRobotParm5 = mStateSegAuto.getmRobotParm5();
+        mRobotParm6 = mStateSegAuto.getmRobotParm6();
+        mRobotStepComplete = mStateSegAuto.getmRobotStepComplete();
 
-//        fileLogger.writeEvent("initStep()","mRobotDirection.substring(0, 0)    :- " + mRobotDirection.substring(0, 0)  );
-//        fileLogger.writeEvent("initStep()","mRobotDirection.substring(0, 1)    :- " + mRobotDirection.substring(0, 1)  );
-//        fileLogger.writeEvent("initStep()","mRobotDirection.substring(0, 2)    :- " + mRobotDirection.substring(0, 2)  );
-//        fileLogger.writeEvent("initStep()","mRobotDirection.substring(0, 3)    :- " + mRobotDirection.substring(0, 3)  );
-//        fileLogger.writeEvent("initStep()","mRobotDirection.substring(1)       :- " + mRobotDirection.substring(1)  );
+        if (debug >= 3) {
+            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 0)    :- " + mRobotCommand.substring(0, 0));
+            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 1)    :- " + mRobotCommand.substring(0, 1));
+            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 2)    :- " + mRobotCommand.substring(0, 2));
+            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 3)    :- " + mRobotCommand.substring(0, 3));
+            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(1)       :- " + mRobotCommand.substring(1));
+        }
 
-        //get the command
-        fRobotCommand = mStateSegAuto[mCurrentStep].mRobotCommand.substring(0, 2);
+        mCurrentStepState = stepState.STATE_RUNNING;
 
-        switch (fRobotCommand)
+        switch (mRobotCommand.substring(0, 2))
         {
             case "LT":
-                mStepTurnL = Double.parseDouble(mStateSegAuto[mCurrentStep].mRobotCommand.substring(2));
-                mStepTurnR = 0;
+                mCurrentTankTurnState = stepState.STATE_INIT;
                 break;
             case "RT":
-                mStepTurnL = 0;
-                mStepTurnR = Double.parseDouble(mStateSegAuto[mCurrentStep].mRobotCommand.substring(2));
+                mCurrentTankTurnState = stepState.STATE_INIT;
                 break;
             case "LP":
-
+                mCurrentPivotTurnState = stepState.STATE_INIT;
                 break;
             case "RP":
-
+                mCurrentPivotTurnState = stepState.STATE_INIT;
                 break;
             case "LR":  // Left turn with a Radius in Parm 1
-
+                mCurrentRadiusTurnState = stepState.STATE_INIT;
                 break;
             case "RR":  // Right turn with a Radius in Parm 1
-
+                mCurrentRadiusTurnState = stepState.STATE_INIT;
                 break;
             case "FW":  // Drive forward a distance in inches and power setting
-                mStepDistance = Double.parseDouble(mStateSegAuto[mCurrentStep].mRobotCommand.substring(2));
+                mCurrentDriveState = stepState.STATE_INIT;
                 break;
             case "RV":  // Drive backward a distance in inches and power setting
-                mStepDistance = -Double.parseDouble(mStateSegAuto[mCurrentStep].mRobotCommand.substring(2));
+                mStepDistance = -Double.parseDouble(mRobotCommand.substring(2));
+                mCurrentDriveState = stepState.STATE_INIT;
                 break;
             case "AS":  // Plot a course using A* algorithm, accuracy in Parm 1
-
+                mCurrentStepState = stepState.STATE_ASTAR_PRE_INIT;
                 break;
             case "FN":  //  Run a special Function with Parms
 
                 break;
         }
 
+        if (debug >= 2) {
+            fileLogger.writeEvent("initStep()", "Current Step        :- " + mCurrentStep);
+            fileLogger.writeEvent("initStep()", "mStepTimeout        :- " + mStepTimeout);
+            fileLogger.writeEvent("initStep()", "mStepSpeed          :- " + mStepSpeed);
+            fileLogger.writeEvent("initStep()", "mRobotCommand       :- " + mRobotCommand);
+            fileLogger.writeEvent("initStep()", "mRobotParm1         :- " + mRobotParm1);
+            fileLogger.writeEvent("initStep()", "mRobotParm2         :- " + mRobotParm2);
+            fileLogger.writeEvent("initStep()", "mRobotParm3         :- " + mRobotParm3);
+            fileLogger.writeEvent("initStep()", "mRobotParm4         :- " + mRobotParm4);
+            fileLogger.writeEvent("initStep()", "mRobotParm5         :- " + mRobotParm5);
+            fileLogger.writeEvent("initStep()", "mRobotParm6         :- " + mRobotParm6);
+            fileLogger.writeEvent("initStep()", "mStepDistance       :- " + mStepDistance);
+            fileLogger.writeEvent("initStep()", "mStepTurnL          :- " + mStepTurnL);
+            fileLogger.writeEvent("initStep()", "mStepTurnR          :- " + mStepTurnR);
+            fileLogger.writeEvent("initStep()", "mRobotStepComplete  :- " + mRobotStepComplete);
+        }
+    }
 
-        mCurrentStepState = stepState.STATE_RUNNING;
+    private void initAStarStep (LibraryStateSegAuto mStateSegAuto) {
+        double mRobotParm1;
+        double mRobotParm2;
+        double mRobotParm3;
+        double mRobotParm4;
+        double mRobotParm5;
+        double mRobotParm6;
 
-        fileLogger.writeEvent("initStep()","Current Step    :- " + mCurrentStep  );
-        fileLogger.writeEvent("initStep()","mStepTimeout    :- " + mStepTimeout  );
-        fileLogger.writeEvent("initStep()","mStepSpeed      :- " + mStepSpeed  );
-        fileLogger.writeEvent("initStep()","mRobotCommand   :- " + mRobotCommand  );
-        fileLogger.writeEvent("initStep()","mRobotParm1     :- " + mRobotParm1  );
-        fileLogger.writeEvent("initStep()","mRobotParm2     :- " + mRobotParm2  );
-        fileLogger.writeEvent("initStep()","mRobotParm3     :- " + mRobotParm3  );
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Starting to Decode AStar Step ");
+        }
 
+        // Reset the state time, and then change to next state.
+        baseStepComplete = false;
+        mStateTime.reset();
+
+        mStepTimeout = mStateSegAuto.getmRobotTimeOut();
+        mStepSpeed = mStateSegAuto.getmRobotSpeed();
+        mRobotCommand = mStateSegAuto.getmRobotCommand();
+        mRobotParm1 = mStateSegAuto.getmRobotParm1();
+        mRobotParm2 = mStateSegAuto.getmRobotParm2();
+        mRobotParm3 = mStateSegAuto.getmRobotParm3();
+        mRobotParm4 = mStateSegAuto.getmRobotParm4();
+        mRobotParm5 = mStateSegAuto.getmRobotParm5();
+        mRobotParm6 = mStateSegAuto.getmRobotParm6();
+        mRobotStepComplete = mStateSegAuto.getmRobotStepComplete();
+
+        mCurrentStepState = stepState.STATE_ASTAR_RUNNING;
+
+        switch (mRobotCommand.substring(0, 2))
+        {
+            case "LT":
+                mCurrentTankTurnState = stepState.STATE_INIT;
+                break;
+            case "RT":
+                mCurrentTankTurnState = stepState.STATE_INIT;
+                break;
+            case "LP":
+                mCurrentPivotTurnState = stepState.STATE_INIT;
+                break;
+            case "RP":
+                mCurrentPivotTurnState = stepState.STATE_INIT;
+                break;
+            case "LR":  // Left turn with a Radius in Parm 1
+                mCurrentRadiusTurnState = stepState.STATE_INIT;
+                break;
+            case "RR":  // Right turn with a Radius in Parm 1
+                mCurrentRadiusTurnState = stepState.STATE_INIT;
+                break;
+            case "FW":  // Drive forward a distance in inches and power setting
+                mCurrentDriveState = stepState.STATE_INIT;
+                break;
+            case "RV":  // Drive backward a distance in inches and power setting
+                mStepDistance = -Double.parseDouble(mRobotCommand.substring(2));
+                mCurrentDriveState = stepState.STATE_INIT;
+                break;
+            case "AS":  // Plot a course using A* algorithm, accuracy in Parm 1
+                mCurrentStepState = stepState.STATE_ASTAR_PRE_INIT;
+                break;
+            case "FN":  //  Run a special Function with Parms
+
+                break;
+        }
+
+        if (debug >= 2) {
+            fileLogger.writeEvent("initAStarStep()", "Current Step        :- " + mCurrentStep);
+            fileLogger.writeEvent("initAStarStep()", "mStepTimeout        :- " + mStepTimeout);
+            fileLogger.writeEvent("initAStarStep()", "mStepSpeed          :- " + mStepSpeed);
+            fileLogger.writeEvent("initAStarStep()", "mRobotCommand       :- " + mRobotCommand);
+            fileLogger.writeEvent("initAStarStep()", "mRobotParm1         :- " + mRobotParm1);
+            fileLogger.writeEvent("initAStarStep()", "mRobotParm2         :- " + mRobotParm2);
+            fileLogger.writeEvent("initAStarStep()", "mRobotParm3         :- " + mRobotParm3);
+            fileLogger.writeEvent("initAStarStep()", "mRobotParm4         :- " + mRobotParm4);
+            fileLogger.writeEvent("initAStarStep()", "mRobotParm5         :- " + mRobotParm5);
+            fileLogger.writeEvent("initAStarStep()", "mRobotParm6         :- " + mRobotParm6);
+            fileLogger.writeEvent("initAStarStep()", "mStepDistance       :- " + mStepDistance);
+            fileLogger.writeEvent("initAStarStep()", "mStepTurnL          :- " + mStepTurnL);
+            fileLogger.writeEvent("initAStarStep()", "mStepTurnR          :- " + mStepTurnR);
+            fileLogger.writeEvent("initAStarStep()", "mRobotStepComplete  :- " + mRobotStepComplete);
+        }
+    }
+
+    private void DriveStep()
+    {
+        double mStepSpeedTemp;
+
+        switch (mCurrentDriveState)
+        {
+            case STATE_INIT:
+            {
+                mStepDistance = 0;
+
+                switch (mRobotCommand.substring(0, 2)) {
+                    case "FW":  // Drive forward a distance in inches and power setting
+                        mStepDistance = Double.parseDouble(mRobotCommand.substring(2));
+                        break;
+                    case "RV":  // Drive backward a distance in inches and power setting
+                        mStepDistance = -Double.parseDouble(mRobotCommand.substring(2));
+                        break;
+                }
+
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("runningDriveStep()", "mStepDistance   :- " + mStepDistance);
+                    fileLogger.writeEvent("runningDriveStep()", "mStepDistance   :- " + mStepDistance);
+                }
+                // Determine new target position
+                mStartPositionLeft = robotDrive.leftMotor1.getCurrentPosition();
+                mStartPositionRight = robotDrive.rightMotor1.getCurrentPosition();
+
+                mStepLeftTarget = mStartPositionLeft + (int) (mStepDistance * COUNTS_PER_INCH);
+                mStepRightTarget = mStartPositionRight + (int) (mStepDistance * COUNTS_PER_INCH);
+
+                // pass target position to motor controller
+                robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget);
+                robotDrive.rightMotor1.setTargetPosition(mStepRightTarget);
+
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("runningDriveStep()", "mStepLeftTarget :- " + mStepLeftTarget);
+                    fileLogger.writeEvent("runningDriveStep()", "mStepRightTarget:- " + mStepRightTarget);
+                }
+
+                // set motor controller to mode, Turn On RUN_TO_POSITION
+                robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                mCurrentDriveState = stepState.STATE_RUNNING;
+            }
+            break;
+            case STATE_RUNNING:
+            {
+                mStepSpeedTemp = mStepSpeed;
+
+                // ramp up speed - need to write function to ramp up speed
+                distanceFromStartLeft = (mStartPositionLeft - robotDrive.leftMotor1.getCurrentPosition()) / COUNTS_PER_INCH;
+                distanceFromStartRight = (mStartPositionRight - robotDrive.rightMotor1.getCurrentPosition()) / COUNTS_PER_INCH;
+
+                //if moving ramp up
+                distanceFromStart = (distanceFromStartLeft + distanceFromStartRight) / 2;
+
+                if (distanceFromStart <= 0.5 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(0.5)));
+                }
+                else if (distanceFromStart <= 1 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(1)));
+                }
+                else if (distanceFromStart <= 2 )
+                {
+                    distanceFromStart = Double.valueOf(powerTable.get(String.valueOf(2)));
+                }
+                else if (distanceFromStart <= 3 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(3)));
+                }
+                else if (distanceFromStart <= 4 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(4)));
+                }
+                else if (distanceFromStart <= 5 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(5)));
+                }
+                else if (distanceFromStart <= 6 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(6)));
+                }
+                else if (distanceFromStart <= 7 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(7)));
+                }
+
+                //determine how close to target we are
+                distanceToEndLeft = (mStepLeftTarget - robotDrive.leftMotor1.getCurrentPosition()) / COUNTS_PER_INCH;
+                distanceToEndRight = (mStepRightTarget - robotDrive.rightMotor1.getCurrentPosition()) / COUNTS_PER_INCH;
+
+                //if getting close ramp down speed
+                distanceToEnd = (distanceToEndLeft + distanceToEndRight) / 2;
+
+                if (distanceToEnd <= 0.5 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(0.5)));
+                }
+                else if (distanceToEnd <= 1 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(1)));
+                }
+                else if (distanceToEnd <= 2 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(2)));
+                }
+                else if (distanceToEnd <= 3 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(3)));
+                }
+                else if (distanceToEnd <= 4 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(4)));
+                }
+                else if (distanceToEnd <= 5 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(5)));
+                }
+                else if (distanceToEnd <= 6 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(6)));
+                }
+                else if (distanceToEnd <= 7 )
+                {
+                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(7)));
+                }
+
+                // set power on motor controller to start moving
+                setDriveMotorPower(Math.abs(mStepSpeedTemp));
+
+                //if within error margin stop
+                if (robotDrive.leftMotor1.isBusy() && robotDrive.rightMotor1.isBusy())
+                {
+                    telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
+                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
+                }
+                else
+                {
+                    // Stop all motion;
+                    setDriveMotorPower(0);
+                    baseStepComplete = true;
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("runningDriveStep()", "Complete         ");
+                    }
+                    mCurrentDriveState = stepState.STATE_COMPLETE;
+                }
+            }
+            break;
+        }
     }
 
     //--------------------------------------------------------------------------
     //  Execute the state.
     //--------------------------------------------------------------------------
-    public void runningTurnStepPivot ()
-    {
-        switch (mCurrentTurnState) {
-            case STATE_INIT: {
-                fileLogger.writeEvent("runningTurnStep()","mStepTurnL      :- " + mStepTurnL  );
-                fileLogger.writeEvent("runningTurnStep()","mStepTurnR      :- " + mStepTurnR  );
 
+   private void PivotTurnStep ()  //should be same as radius turn with radius of 1/2 robot width, so this function can be deleted once radius turn is completed
+    {
+        switch (mCurrentPivotTurnState) {
+            case STATE_INIT: {
+                mStepTurnL = 0;
+                mStepTurnR = 0;
+
+                switch (mRobotCommand.substring(0, 2)) {
+                    case "LT":
+                        mStepTurnL = Double.parseDouble(mRobotCommand.substring(2));
+                        mStepTurnR = 0;
+                        mCurrentTankTurnState = stepState.STATE_INIT;
+                        break;
+                    case "RT":
+                        mStepTurnL = 0;
+                        mStepTurnR = Double.parseDouble(mRobotCommand.substring(2));
+                        mCurrentTankTurnState = stepState.STATE_INIT;
+                        break;
+                }
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("runningTurnStep()", "mStepTurnL      :- " + mStepTurnL);
+                    fileLogger.writeEvent("runningTurnStep()", "mStepTurnR      :- " + mStepTurnR);
+                }
                 // Turn On RUN_TO_POSITION
                 if(mStepTurnR == 0) {
                     // Determine new target position
-                    fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("runningTurnStep()", "Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
+                    }
                     mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepTurnL * COUNTS_PER_DEGREE);
                     mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepTurnR * COUNTS_PER_DEGREE);
-                    fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget:-  " + mStepLeftTarget);
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("runningTurnStep()", "mStepLeftTarget:-  " + mStepLeftTarget);
+                    }
                     // pass target position to motor controller
                     robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget);
                     // set motor controller to mode
@@ -452,10 +1067,16 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
                 }
                 else {
                     // Determine new target position
-                    fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("runningTurnStep()", "Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
+                    }
                     mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepTurnL * COUNTS_PER_DEGREE);
                     mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepTurnR * COUNTS_PER_DEGREE);
-                    fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget);
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("runningTurnStep()", "mStepRightTarget:- " + mStepRightTarget);
+                    }
                     // pass target position to motor controller
                     robotDrive.rightMotor1.setTargetPosition(mStepRightTarget);
                     // set motor controller to mode, Turn On RUN_TO_POSITION
@@ -463,66 +1084,99 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
                     // set power on motor controller to start moving
                     setDriveRightMotorPower(Math.abs(.5));
                 }
-
-                fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget :- " + mStepLeftTarget  );
-                fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget  );
-
-                mCurrentTurnState = stepState.STATE_RUNNING;
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("runningTurnStep()", "mStepLeftTarget :- " + mStepLeftTarget);
+                    fileLogger.writeEvent("runningTurnStep()", "mStepRightTarget:- " + mStepRightTarget);
+                }
+                mCurrentPivotTurnState = stepState.STATE_RUNNING;
             }
             break;
             case STATE_RUNNING: {
                 //if (robotDrive.leftMotor.isBusy() || robotDrive.rightMotor.isBusy()) {
-                fileLogger.writeEvent("runningTurnStep()","Running         " );
-                fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
-                fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("runningTurnStep()", "Running         ");
+                    fileLogger.writeEvent("runningTurnStep()", "Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
+                    fileLogger.writeEvent("runningTurnStep()", "Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
+                }
                 if (mStepTurnR == 0) {
-                    fileLogger.writeEvent("runningTurnStep()","Running         " );
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("runningTurnStep()", "Running         ");
+                    }
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
                     telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
                     if (!robotDrive.leftMotor1.isBusy()) {
-                        fileLogger.writeEvent("runningTurnStep()","Complete         " );
-                        mCurrentTurnState = stepState.STATE_COMPLETE;
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent("runningTurnStep()","Complete         " );
+                        }
+                        mCurrentPivotTurnState = stepState.STATE_COMPLETE;
                     }
                 } else if (mStepTurnL == 0) {
-                    fileLogger.writeEvent("runningTurnStep()","Running         " );
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("runningTurnStep()","Running         " );
+                    }
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
                     telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
                     if (!robotDrive.rightMotor1.isBusy()) {
-                        fileLogger.writeEvent("runningTurnStep()","Complete         " );
-                        mCurrentTurnState = stepState.STATE_COMPLETE;
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent("runningTurnStep()","Complete         " );
+                        }
+                        mCurrentPivotTurnState = stepState.STATE_COMPLETE;
                     }
                 } else {
                     // Stop all motion by setting power to 0
                     setDriveMotorPower(0);
-                    fileLogger.writeEvent("runningTurnStep()","Complete         " );
-                    mCurrentTurnState = stepState.STATE_COMPLETE;
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("runningTurnStep()","Complete         " );
+                    }
+                    mCurrentPivotTurnState = stepState.STATE_COMPLETE;
                 }
             }
             break;
         }
     }
 
-    public void runningTurnStep ()
+    private void TankTurnStep ()
     {
-        switch (mCurrentTurnState) {
+        switch (mCurrentTankTurnState) {
             case STATE_INIT: {
-                fileLogger.writeEvent("runningTurnStep()","mStepTurnL      :- " + mStepTurnL  );
-                fileLogger.writeEvent("runningTurnStep()","mStepTurnR      :- " + mStepTurnR  );
 
-                // Turn On RUN_TO_POSITION
-                if(mStepTurnR == 0) {
-                    // Determine new target position
-                    fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
-                    mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int)(0.5 * mStepTurnL * COUNTS_PER_DEGREE);
-                    mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() - (int)(0.5 * mStepTurnL * COUNTS_PER_DEGREE);
-                    fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget:-  " + mStepLeftTarget);
-                }
-                else {
-                    // Determine new target position
-                    fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
-                    mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() - (int)(0.5 * mStepTurnR * COUNTS_PER_DEGREE);
-                    mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int)(0.5 * mStepTurnR * COUNTS_PER_DEGREE);
-                    fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget);
+                mStepTurnL = 0;
+                mStepTurnR = 0;
+
+                switch (mRobotCommand.substring(0, 2)) {
+                    case "LT":
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
+                        }
+                        mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int)(0.5 * Double.parseDouble(mRobotCommand.substring(2)) * COUNTS_PER_DEGREE);
+                        mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() - (int)(0.5 * Double.parseDouble(mRobotCommand.substring(2)) * COUNTS_PER_DEGREE);
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget:-  " + mStepLeftTarget);
+                        }
+
+                        break;
+                    case "RT":
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
+                        }
+                        mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() - (int)(0.5 * Double.parseDouble(mRobotCommand.substring(2)) * COUNTS_PER_DEGREE);
+                        mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int)(0.5 * Double.parseDouble(mRobotCommand.substring(2)) * COUNTS_PER_DEGREE);
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget);
+                        }
+
+                        break;
                 }
 
                 // pass target position to motor controller
@@ -534,157 +1188,254 @@ public class AutoDriveEncoder_Linear extends LinearOpMode {
                 // set power on motor controller to start moving
                 setDriveMotorPower(Math.abs(.5));
 
-                fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget :- " + mStepLeftTarget  );
-                fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget  );
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget :- " + mStepLeftTarget  );
+                    fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget  );
+                }
 
-                mCurrentTurnState = stepState.STATE_RUNNING;
+                mCurrentTankTurnState = stepState.STATE_RUNNING;
             }
             break;
             case STATE_RUNNING: {
                 //if (robotDrive.leftMotor.isBusy() || robotDrive.rightMotor.isBusy()) {
-                fileLogger.writeEvent("runningTurnStep()","Running         " );
-                fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
-                fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
-                if (mStepTurnR == 0) {
+                if (debug >= 3)
+                {
                     fileLogger.writeEvent("runningTurnStep()","Running         " );
-                    telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
-                    if (!robotDrive.leftMotor1.isBusy()) {
-                        fileLogger.writeEvent("runningTurnStep()","Complete         " );
-                        mCurrentTurnState = stepState.STATE_COMPLETE;
-                    }
-                } else if (mStepTurnL == 0) {
-                    fileLogger.writeEvent("runningTurnStep()","Running         " );
-                    telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
-                    if (!robotDrive.rightMotor1.isBusy()) {
-                        fileLogger.writeEvent("runningTurnStep()","Complete         " );
-                        mCurrentTurnState = stepState.STATE_COMPLETE;
-                    }
-                } else {
-                    // Stop all motion by setting power to 0
-                    setDriveMotorPower(0);
-                    fileLogger.writeEvent("runningTurnStep()","Complete         " );
-                    mCurrentTurnState = stepState.STATE_COMPLETE;
+                    fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
+                    fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
+                }
+
+                telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
+                telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
+
+                switch (mRobotCommand.substring(0, 2)) {
+                    case "LT":
+                        if (!robotDrive.leftMotor1.isBusy())
+                        {
+                            if (debug >= 3)
+                            {
+                                fileLogger.writeEvent("runningTurnStep()","Complete         " );
+                            }
+                            setDriveMotorPower(0);
+                            mCurrentTankTurnState = stepState.STATE_COMPLETE;
+                        }
+                        break;
+                    case "RT":
+                        if (!robotDrive.rightMotor1.isBusy())
+                        {
+                            if (debug >= 3)
+                            {
+                                fileLogger.writeEvent("runningTurnStep()", "Complete         ");
+                            }
+                            setDriveMotorPower(0);
+                            mCurrentTankTurnState = stepState.STATE_COMPLETE;
+                        }
+                        break;
                 }
             }
             break;
         }
     }
 
-    public void DriveStep()
+    private void RadiusTurnStep ()
     {
-        switch (mCurrentDriveState) {
+        switch (mCurrentRadiusTurnState) {
             case STATE_INIT: {
-                fileLogger.writeEvent("runningDriveStep()", "mStepDistance   :- " + mStepDistance);
-                fileLogger.writeEvent("runningDriveStep()", "mStepDistance   :- " + mStepDistance);
 
-                // Determine new target position
-                mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepDistance * COUNTS_PER_INCH);
-                mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepDistance * COUNTS_PER_INCH);
 
-                // pass target position to motor controller
-                robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget);
-                robotDrive.rightMotor1.setTargetPosition(mStepRightTarget);
-
-                fileLogger.writeEvent("runningDriveStep()", "mStepLeftTarget :- " + mStepLeftTarget);
-                fileLogger.writeEvent("runningDriveStep()", "mStepRightTarget:- " + mStepRightTarget);
-
-                // set motor controller to mode, Turn On RUN_TO_POSITION
-                robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                mCurrentDriveState = stepState.STATE_RUNNING;
+                mCurrentRadiusTurnState = stepState.STATE_RUNNING;
             }
             break;
-            case STATE_RUNNING: {
-                // ramp up speed - need to write function to ramp up speed
-                // set power on motor controller to start moving
-                setDriveMotorPower(Math.abs(mStepSpeed));
+            case STATE_RUNNING:
+            {
 
-                //determine how close to target we are
-
-
-                //if getting close ramp down speed
-
-
-                //if within error marging stop
-
-
-                if (robotDrive.leftMotor1.isBusy() && robotDrive.rightMotor1.isBusy()) {
-                    telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                    telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
-                } else {
-                    // Stop all motion;
-                    setDriveMotorPower(0);
-                    baseStepComplete = true;
-                    fileLogger.writeEvent("runningDriveStep()", "Complete         ");
-                    mCurrentDriveState = stepState.STATE_COMPLETE;
+                setDriveMotorPower(0);
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("runningTurnStep()","Complete         " );
                 }
+                mCurrentRadiusTurnState = stepState.STATE_COMPLETE;
+
             }
             break;
         }
     }
 
-    public void runningDriveStep()
+    private String getAngle(int angle1, int angle2)
     {
-        if (mCurrentTurnState == stepState.STATE_COMPLETE) {
-            switch (mCurrentDriveState) {
-                case STATE_INIT: {
-                    fileLogger.writeEvent("runningDriveStep()","mStepDistance   :- " + mStepDistance  );
-                    fileLogger.writeEvent("runningDriveStep()","mStepDistance   :- " + mStepDistance  );
-
-                    // Determine new target position
-                    mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepDistance * COUNTS_PER_INCH);
-                    mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepDistance * COUNTS_PER_INCH);
-                    // pass target position to motor controller
-                    robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget);
-                    robotDrive.rightMotor1.setTargetPosition(mStepRightTarget);
-
-                    fileLogger.writeEvent("runningDriveStep()","mStepLeftTarget :- " + mStepLeftTarget  );
-                    fileLogger.writeEvent("runningDriveStep()","mStepRightTarget:- " + mStepRightTarget  );
-
-                    // set motor controller to mode, Turn On RUN_TO_POSITION
-                    robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                    // set power on motor controller to start moving
-                    setDriveMotorPower(Math.abs(mStepSpeed));
-
-                    mCurrentDriveState = stepState.STATE_RUNNING;
+        switch (angle1)
+        {
+            case 0:
+                switch (angle2)
+                {
+                    case 45:
+                        return "RT45";
+                    case 90:
+                        return "RT90";
+                    case 135:
+                        return "RT135";
+                    case 180:
+                        return "RT180";
+                    case 225:
+                        return "LT135";
+                    case 270:
+                        return "LT90";
+                    case 315:
+                        return "LT45";
                 }
                 break;
-                case STATE_RUNNING: {
-                    if (robotDrive.leftMotor1.isBusy() && robotDrive.rightMotor1.isBusy()) {
-                        telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
-                        telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
-                    } else {
-                        // Stop all motion;
-                        setDriveMotorPower(0);
-                        baseStepComplete = true;
-                        fileLogger.writeEvent("runningDriveStep()","Complete         " );
-                        mCurrentDriveState = stepState.STATE_COMPLETE;
-                    }
+            case 45:
+                switch (angle2)
+                {
+                    case 0:
+                        return "LT45";
+                    case 90:
+                        return "RT45";
+                    case 135:
+                        return "RT90";
+                    case 180:
+                        return "RT135";
+                    case 225:
+                        return "RT180";
+                    case 270:
+                        return "LT135";
+                    case 315:
+                        return "LT90";
                 }
                 break;
-            }
+            case 90:
+                switch (angle2)
+                {
+                    case 0:
+                        return "LT90";
+                    case 45:
+                        return "LT45";
+                    case 135:
+                        return "RT45";
+                    case 180:
+                        return "RT90";
+                    case 225:
+                        return "RT135";
+                    case 270:
+                        return "RT180";
+                    case 315:
+                        return "LT135";
+                }
+                break;
+            case 135:
+                switch (angle2)
+                {
+                    case 0:
+                        return "LT135";
+                    case 45:
+                        return "LT90";
+                    case 90:
+                        return "LT45";
+                    case 180:
+                        return "RT45";
+                    case 225:
+                        return "RT90";
+                    case 270:
+                        return "RT135";
+                    case 315:
+                        return "RT180";
+                }
+                break;
+            case 180:
+                switch (angle2)
+                {
+                    case 0:
+                        return "LT180";
+                    case 45:
+                        return "LT135";
+                    case 90:
+                        return "LT90";
+                    case 135:
+                        return "LT45";
+                    case 225:
+                        return "RT45";
+                    case 270:
+                        return "RT90";
+                    case 315:
+                        return "RT135";
+                }
+                break;
+            case 225:
+                switch (angle2)
+                {
+                    case 0:
+                        return "RT135";
+                    case 45:
+                        return "LT180";
+                    case 90:
+                        return "LT135";
+                    case 135:
+                        return "LT90";
+                    case 180:
+                        return "LT45";
+                    case 270:
+                        return "RT45";
+                    case 315:
+                        return "RT90";
+                }
+                break;
+            case 270:
+                switch (angle2)
+                {
+                    case 0:
+                        return "RT90";
+                    case 45:
+                        return "RT45";
+                    case 90:
+                        return "LT180";
+                    case 135:
+                        return "LT135";
+                    case 180:
+                        return "LT90";
+                    case 225:
+                        return "LT45";
+                    case 315:
+                        return "RT135";
+                }
+                break;
+            case 315:
+                switch (angle2)
+                {
+                    case 0:
+                        return "RT135";
+                    case 45:
+                        return "RT90";
+                    case 90:
+                        return "RT45";
+                    case 135:
+                        return "LT180";
+                    case 180:
+                        return "LT135";
+                    case 225:
+                        return "LT90";
+                    case 270:
+                        return "LT45";
+                }
+                break;
         }
+        return "ERROR";
     }
 
     //set the drive motors power, both left and right
-    void setDriveMotorPower (double power) {
+    private void setDriveMotorPower (double power) {
         setDriveRightMotorPower(power);
         setDriveLeftMotorPower(power);
     }
 
     //set the right drive motors power
-    void setDriveRightMotorPower (double power) {
+    private void setDriveRightMotorPower (double power) {
         robotDrive.rightMotor1.setPower(power);
         robotDrive.rightMotor2.setPower(power);
     }
 
     //set the left motors drive power
-    void setDriveLeftMotorPower (double power) {
+    private void setDriveLeftMotorPower (double power) {
         robotDrive.leftMotor1.setPower(power);
         robotDrive.leftMotor2.setPower(power);
     }
