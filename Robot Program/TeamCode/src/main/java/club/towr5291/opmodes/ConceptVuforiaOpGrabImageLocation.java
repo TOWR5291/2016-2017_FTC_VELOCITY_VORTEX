@@ -1,22 +1,17 @@
 package club.towr5291.opmodes;
 
 import android.graphics.Bitmap;
-import android.os.Environment;
-import android.util.Log;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.RobotLog;
 import com.vuforia.HINT;
-import com.vuforia.Image;
 import com.vuforia.Matrix34F;
-import com.vuforia.PIXEL_FORMAT;
 import com.vuforia.Tool;
 import com.vuforia.Vec2F;
 import com.vuforia.Vec3F;
 import com.vuforia.Vuforia;
 
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.MatrixF;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
@@ -29,83 +24,30 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 
-import org.opencv.android.Utils;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
-import org.opencv.imgcodecs.Imgcodecs; // imread, imwrite, etc
-
-import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-
-import club.towr5291.functions.FileLogger;
-
-import static org.opencv.imgproc.Imgproc.resize;
-
 
 /**
  * Created by ianhaden on 4/10/2016.
  */
 
-@Autonomous(name="Concept Vuforia Grab Image", group="5291Test")
-public class ConceptVuforiaOpGrabImage extends LinearOpMode{
+@Autonomous(name="Concept Vuforia Grab Image Location", group="5291Test")
+public class ConceptVuforiaOpGrabImageLocation extends LinearOpMode{
     OpenGLMatrix lastLocation = null;
     private double robotX;
     private double robotY;
     private double robotBearing;
 
-    //set up the variables for the logger
-    private String startDate;
-    private ElapsedTime runtime = new ElapsedTime();
-    private FileLogger fileLogger;
-
-    //set up openCV stuff
-
-
-    private Point redpoint = new Point(0,0);
-    private Point bluepoint = new Point(0,0);
-
-    private double contourarea;
-    private double ContourAreaLast;
-    private double redlength;
-    private double bluelength;
-    private double directionOfBeacon;
-    private boolean beaconLeft;
-    private double beaconLeftXPos;
-
-
-
 
     @Override
     public void runOpMode() throws InterruptedException {
-
-        //start the log
-        startDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
-        fileLogger = new FileLogger(runtime);
-        fileLogger.open();
-        fileLogger.write("Time,SysMS,Thread,Event,Desc");
-        fileLogger.writeEvent("init()","Log Started");
-
-
-
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(R.id.cameraMonitorViewId);
         parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
         parameters.vuforiaLicenseKey = "AVATY7T/////AAAAGQJxfNYzLUgGjSx0aOEU0Q0rpcfZO2h2sY1MhUZUr+Bu6RgoUMUP/nERGmD87ybv1/lM2LBFDxcBGRHkXvxtkHel4XEUCsNHFTGWYcVkMIZqctQsIrTe13MnUvSOfQj8ig7xw3iULcwDpY+xAftW61dKTJ0IAOCxx2F0QjJWqRJBxrEUR/DfQi4LyrgnciNMXCiZ8KFyBdC63XMYkQj2joTN579+2u5f8aSCe8jkAFnBLcB1slyaU9lhnlTEMcFjwrLBcWoYIFAZluvFT0LpqZRlS1/XYf45QBSJztFKHIsj1rbCgotAE36novnAQBs74ewnWsJifokJGOYWdFJveWzn3GE9OEH23Y5l7kFDu4wc";
-        //parameters.cameraMonitorFeedback = VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES;
+        parameters.cameraMonitorFeedback = VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES;
 
-        VuforiaLocalizer vuforia = ClassFactory.createVuforiaLocalizer(parameters);
-        Vuforia.setFrameFormat(PIXEL_FORMAT.RGB565, true);                                          //enables RGB565 format for the image
-        vuforia.setFrameQueueCapacity(1);                                                           //tells VuforiaLocalizer to only store one frame at a time
-        //ConceptVuforiaGrabImage vuforia = new ConceptVuforiaGrabImage(parameters);
+        ConceptVuforiaGrabImage vuforia = new ConceptVuforiaGrabImage(parameters);
         Vuforia.setHint(HINT.HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS,4);
 
         VuforiaTrackables velocityVortex = vuforia.loadTrackablesFromAsset("FTC_2016-17");
@@ -125,7 +67,6 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
         allTrackables.addAll(velocityVortex);
 
-        Vuforia.setFrameFormat(PIXEL_FORMAT.RGB565, true);
 
         /**
          * We use units of mm here because that's the recommended units of measurement for the
@@ -305,112 +246,17 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
          * @see VuforiaTrackableDefaultListener#getRobotLocation()
          */
 
-        //set up openCV stuff
-        Scalar RED_LOWER_BOUNDS_HSV = new Scalar(0,100,150);
-        Scalar RED_UPPER_BOUNDS_HSV = new Scalar(22,255,255);  //was 30,255,255
-
-        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(150,100,100);
-        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(270,255,255);
-
-
-        Mat mat1 = new Mat(640,480, CvType.CV_8UC4);  //was 480x320
-        Mat mat2 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat3 = new Mat(640,480, CvType.CV_8UC4);
-        //Mat mat4 = new Mat(640,480, CvType.CV_8UC4);
-        //Mat mat5 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat6 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat7 = new Mat(640,480, CvType.CV_8UC4);
-
-        //Mat mat1 = new Mat();
-        //Mat mat2 = new Mat();
-        //Mat mat3 = new Mat();
-        Mat mat4 = new Mat();
-        Mat mat5 = new Mat();
-
-
-
-        Mat houghlines = new Mat();
-        Mat lines = new Mat();
-        Mat mHierarchy = new Mat();
-
-        MatOfPoint2f approxCurve = new MatOfPoint2f();
 
         waitForStart();
 
-        //Mat tmp = new Mat();
-
         velocityVortex.activate();
-
-        Image rgb = null;
-
 
         while (opModeIsActive()) {
 
-            VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().take(); //takes the frame at the head of the queue
-
-            long numImages = frame.getNumImages();
-
-            for (int i = 0; i < numImages; i++)
-            {
-                if (frame.getImage(i).getFormat() == PIXEL_FORMAT.RGB565)
-                {
-                    rgb = frame.getImage(i);
-                    break;
-                }
-            }
-
-            /*rgb is now the Image object that we’ve used in the video*/
-            Log.d("OPENCV","Height " + rgb.getHeight() + " Width " + rgb.getWidth());
-
-            Bitmap bm = Bitmap.createBitmap(rgb.getWidth(), rgb.getHeight(), Bitmap.Config.RGB_565);
-            bm.copyPixelsFromBuffer(rgb.getPixels());
-            //Mat tmp = OCVUtils.bitmapToMat(bm, CvType.CV_8UC4);
-            Mat tmp = new Mat(rgb.getWidth(), rgb.getHeight(), CvType.CV_8UC4);
-            Utils.bitmapToMat(bm, tmp);
-
-            SaveImage(tmp, "-raw");
-            fileLogger.writeEvent("process()","Saved original file ");
-            Log.d("OPENCV","CV_8UC4 Height " + tmp.height() + " Width " + tmp.width());
-            Log.d("OPENCV","Channels " + tmp.channels());
-
-            tmp.convertTo(mat1, CvType.CV_8UC4);
-            Size size = new Size(640,480);//the dst image size,e.g.100x100
-
-            resize(mat1,mat1,size);//resize image
-            SaveImage(mat1, "-convertcv_8uc4");
-            Log.d("OPENCV","CV_8UC4 Height " + mat1.height() + " Width " + mat1.width());
-            fileLogger.writeEvent("process()","converted to cv_8uc4");
-            Log.d("OPENCV","Channels " + mat1.channels());
-
-            Imgproc.cvtColor(mat1, mat2, Imgproc.COLOR_RGB2HSV_FULL);
-            SaveImage(mat2, "-COLOR_RGB2HSV_FULL");
-            Log.d("OPENCV","COLOR_RGB2HSV Height " + mat2.height() + " Width " + mat2.width());
-            Log.d("OPENCV","Channels " + mat2.channels());
-
-            //Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
-            Log.d("OPENCV","mat2 Channels " + mat2.channels() + " empty " + mat2.empty());
-            Log.d("OPENCV","mat3 Channels " + mat3.channels() + " empty " + mat3.empty());
-            Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
-                        fileLogger.writeEvent("process()","Set Red window Limits: ");
-            SaveImage(mat3, "-red limits");
-     /*
-            Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
-            fileLogger.writeEvent("process()","Set Blue window Limits: ");
-            SaveImage(mat4, "-blue limits");
-*/
-
-            //Core.bitwise_or(mat1, mat2, mat5);
-            //SaveImage(mat5, "-bitwise red and blue images");
-
-
-
-
-            //Log.d("OPENCV","Channels " + tmp.channels());
-
-
-            frame.close();
-
-
+            //if (vuforia.rgb != null) {
+            //    Bitmap image = Bitmap.createBitmap(vuforia.rgb.getWidth(), vuforia.rgb.getBufferHeight(), Bitmap.Config.RGB_565);
+            //    image.copyPixelsFromBuffer(vuforia.rgb.getPixels());
+            //}
 
             for (VuforiaTrackable beac : velocityVortex) {
 
@@ -450,40 +296,23 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
             if (lastLocation != null) {
                 // Then you can extract the positions and angles using the getTranslation and getOrientation methods.
                 VectorF trans = lastLocation.getTranslation();
-                Orientation rot = Orientation.getOrientation(lastLocation, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
+                Orientation rot = Orientation.getOrientation(lastLocation, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.RADIANS);
                 // Robot position is defined by the standard Matrix translation (x and y)
                 robotX = trans.get(0);
                 robotY = trans.get(1);
 
                 // Robot bearing (in Cartesian system) position is defined by the standard Matrix z rotation
                 robotBearing = rot.thirdAngle;
-                if (robotBearing < 0)
-                {
-                    robotBearing = 360 + robotBearing;
-                }
 
                 telemetry.addData("Pos X ", robotX);
                 telemetry.addData("Pos Y ", robotY);
                 telemetry.addData("Bear  ", robotBearing);
                 //  RobotLog.vv(TAG, "robot=%s", format(lastLocation));
                 telemetry.addData("Pos   ", format(lastLocation));
-
-                telemetry.addData("Text ", "*** Vision Data***");
-                //telemetry.addData("Red  ", "Red :  " + redpoint);
-                //telemetry.addData("Blue ", "Blue:  " + bluepoint);
-                //telemetry.addData("Dir  ", "Direction:  " + directionOfBeacon);
             } else {
                 telemetry.addData("Pos   ", "Unknown");
             }
             telemetry.update();
-        }
-
-        //stop the log
-        if (fileLogger != null)
-        {
-            fileLogger.writeEvent("stop()","Stopped");
-            fileLogger.close();
-            fileLogger = null;
         }
     }
 
@@ -493,24 +322,5 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
      */
     String format(OpenGLMatrix transformationMatrix) {
         return transformationMatrix.formatAsTransform();
-    }
-
-    public void SaveImage (Mat mat, String info) {
-        Mat mIntermediateMat = new Mat();
-
-        Imgproc.cvtColor(mat, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
-
-        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        String filename = "ian" + info + ".png";
-        File file = new File(path, filename);
-
-        Boolean bool = null;
-        filename = file.toString();
-        bool = Imgcodecs.imwrite(filename, mIntermediateMat);
-
-        if (bool == true)
-            Log.d("filesave", "SUCCESS writing image to external storage");
-        else
-            Log.d("filesave", "Fail writing image to external storage");
     }
 }

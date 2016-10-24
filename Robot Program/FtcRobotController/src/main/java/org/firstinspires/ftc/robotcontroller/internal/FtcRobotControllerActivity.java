@@ -45,6 +45,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -90,6 +91,10 @@ import com.qualcomm.robotcore.wifi.WifiDirectAssistant;
 
 import org.firstinspires.ftc.robotcore.internal.AppUtil;
 import org.firstinspires.inspection.RcInspectionActivity;
+
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 
 import java.io.File;
 import java.util.Queue;
@@ -141,6 +146,24 @@ public class FtcRobotControllerActivity extends Activity {
     }
 
   }
+
+private BaseLoaderCallback mOpenCVCallBack = new BaseLoaderCallback(this) {
+    @Override
+    public void onManagerConnected(int status) {
+      switch (status) {
+        case LoaderCallbackInterface.SUCCESS:
+        {
+          Log.i(TAG, "OpenCV loaded successfully");
+          // Create and set View
+
+        } break;
+        default:
+        {
+          super.onManagerConnected(status);
+        } break;
+      }
+    }
+  };
 
   protected ServiceConnection connection = new ServiceConnection() {
     @Override
@@ -256,6 +279,14 @@ public class FtcRobotControllerActivity extends Activity {
     wifiLock.acquire();
     callback.networkConnectionUpdate(WifiDirectAssistant.Event.DISCONNECTED);
     bindToService();
+
+    if (!OpenCVLoader.initDebug()) {
+      Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+      OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, this, mOpenCVCallBack);
+    } else {
+      Log.d("OpenCV", "OpenCV library found inside package. Using it!");
+      mOpenCVCallBack.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+    }
   }
 
   protected UpdateUI createUpdateUI() {
