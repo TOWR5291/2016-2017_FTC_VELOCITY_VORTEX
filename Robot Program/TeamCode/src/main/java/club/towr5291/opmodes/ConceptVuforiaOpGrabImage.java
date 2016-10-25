@@ -313,7 +313,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(270,255,255);
 
 
-        Mat mat1 = new Mat(640,480, CvType.CV_8UC4);  //was 480x320
+        Mat mat1 = new Mat(640,480, CvType.CV_8UC4);
         Mat mat2 = new Mat(640,480, CvType.CV_8UC4);
         Mat mat3 = new Mat(640,480, CvType.CV_8UC4);
         //Mat mat4 = new Mat(640,480, CvType.CV_8UC4);
