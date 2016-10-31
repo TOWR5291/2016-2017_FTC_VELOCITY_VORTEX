@@ -3,6 +3,7 @@ package club.towr5291.opmodes;
 import android.graphics.Bitmap;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.ImageView;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -83,6 +84,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
     private double beaconLeftXPos;
 
 
+    protected ImageView grabbedImage;
 
 
     @Override
@@ -306,26 +308,32 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
          */
 
         //set up openCV stuff
-        Scalar RED_LOWER_BOUNDS_HSV = new Scalar(0,100,150);
-        Scalar RED_UPPER_BOUNDS_HSV = new Scalar(22,255,255);  //was 30,255,255
+        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(0,100,150);
+        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar(22,255,255);  //was 30,255,255
 
-        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(150,100,100);
-        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(270,255,255);
+        Scalar RED_LOWER_BOUNDS_HSV = new Scalar((int) (300.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
+        Scalar RED_UPPER_BOUNDS_HSV = new Scalar((int) (400.0 / 360.0 * 255.0), 255, 255);  //was 30,255,255
+
+        //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(150,100,100);
+        //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(270,255,255);
+
+        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar((int) (170.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
+        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar((int) (270.0 / 360.0 * 255.0), 255, 255);
 
 
-        Mat mat1 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat2 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat3 = new Mat(640,480, CvType.CV_8UC4);
-        //Mat mat4 = new Mat(640,480, CvType.CV_8UC4);
-        //Mat mat5 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat6 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat7 = new Mat(640,480, CvType.CV_8UC4);
+        Mat mat1 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat2 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat3 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat4 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat5 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat6 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat7 = new Mat(720,1280, CvType.CV_8UC4);
 
         //Mat mat1 = new Mat();
         //Mat mat2 = new Mat();
         //Mat mat3 = new Mat();
-        Mat mat4 = new Mat();
-        Mat mat5 = new Mat();
+        //Mat mat4 = new Mat();
+        //Mat mat5 = new Mat();
 
 
 
@@ -334,7 +342,6 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         Mat mHierarchy = new Mat();
 
         MatOfPoint2f approxCurve = new MatOfPoint2f();
-
         waitForStart();
 
         //Mat tmp = new Mat();
@@ -370,47 +377,49 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
 
             SaveImage(tmp, "-raw");
             fileLogger.writeEvent("process()","Saved original file ");
-            Log.d("OPENCV","CV_8UC4 Height " + tmp.height() + " Width " + tmp.width());
+            Log.d("OPENCV","tmp CV_8UC4 Height " + tmp.height() + " Width " + tmp.width());
             Log.d("OPENCV","Channels " + tmp.channels());
 
             tmp.convertTo(mat1, CvType.CV_8UC4);
-            Size size = new Size(640,480);//the dst image size,e.g.100x100
+            //Size size = new Size(640,480);//the dst image size,e.g.100x100
 
-            resize(mat1,mat1,size);//resize image
+            //resize(mat1,mat1,size);//resize image
             SaveImage(mat1, "-convertcv_8uc4");
-            Log.d("OPENCV","CV_8UC4 Height " + mat1.height() + " Width " + mat1.width());
-            fileLogger.writeEvent("process()","converted to cv_8uc4");
-            Log.d("OPENCV","Channels " + mat1.channels());
+            Log.d("OPENCV","mat1 CV_8UC4 Height " + mat1.height() + " Width " + mat1.width());
+            fileLogger.writeEvent("process()","converted to cv_8uc3");
+            Log.d("OPENCV","mat1 convertcv_8uc4 Channels " + mat1.channels());
 
             Imgproc.cvtColor(mat1, mat2, Imgproc.COLOR_RGB2HSV_FULL);
+            mat2.convertTo(mat2, CvType.CV_8UC4);
             SaveImage(mat2, "-COLOR_RGB2HSV_FULL");
-            Log.d("OPENCV","COLOR_RGB2HSV Height " + mat2.height() + " Width " + mat2.width());
-            Log.d("OPENCV","Channels " + mat2.channels());
+            Log.d("OPENCV","mat2 COLOR_RGB2HSV Height " + mat2.height() + " Width " + mat2.width());
+            Log.d("OPENCV","mat2 Channels " + mat2.channels());
 
-            //Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
+            Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
             Log.d("OPENCV","mat2 Channels " + mat2.channels() + " empty " + mat2.empty());
             Log.d("OPENCV","mat3 Channels " + mat3.channels() + " empty " + mat3.empty());
-            Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
-                        fileLogger.writeEvent("process()","Set Red window Limits: ");
+            Log.d("OPENCV","mat3 COLOR_RGB2HSV Height " + mat3.height() + " Width " + mat3.width());
+            //Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
+            fileLogger.writeEvent("process()","Set Red window Limits: ");
             SaveImage(mat3, "-red limits");
-     /*
+
             Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
             fileLogger.writeEvent("process()","Set Blue window Limits: ");
+            Log.d("OPENCV","mat4 COLOR_RGB2HSV Height " + mat4.height() + " Width " + mat4.width());
             SaveImage(mat4, "-blue limits");
-*/
 
-            //Core.bitwise_or(mat1, mat2, mat5);
-            //SaveImage(mat5, "-bitwise red and blue images");
+            //Log.d("OPENCV","mat1 Channels " + mat1.channels() + " Height " + mat1.height() + " Width " + mat1.width());
+            //Log.d("OPENCV","mat2 Channels " + mat2.channels() + " Height " + mat2.height() + " Width " + mat2.width());
 
+            Log.d("OPENCV","mat5 Channels " + mat5.channels() + " Height " + mat5.height() + " Width " + mat5.width());
+            Core.bitwise_or(mat3, mat4, mat5);
+            SaveImage(mat5, "-bitwise red and blue images");
 
-
-
-            //Log.d("OPENCV","Channels " + tmp.channels());
-
-
+            // convert to bitmap:
+            Bitmap bmDisplay = Bitmap.createBitmap(mat5.cols(), mat5.rows(),Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(mat5, bm);
+            
             frame.close();
-
-
 
             for (VuforiaTrackable beac : velocityVortex) {
 
@@ -498,7 +507,8 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
     public void SaveImage (Mat mat, String info) {
         Mat mIntermediateMat = new Mat();
 
-        Imgproc.cvtColor(mat, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
+        mat.convertTo(mIntermediateMat, CvType.CV_8UC3);
+        //Imgproc.cvtColor(mat, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
 
         File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         String filename = "ian" + info + ".png";

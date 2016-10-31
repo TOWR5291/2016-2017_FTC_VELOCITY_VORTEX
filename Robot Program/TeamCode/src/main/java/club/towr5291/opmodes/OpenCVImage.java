@@ -8,19 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.matrices.MatrixF;
-import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
-import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -58,9 +46,6 @@ public class OpenCVImage extends LinearOpMode{
 
     //set up openCV stuff
 
-    private Point redpoint = new Point(0,0);
-    private Point bluepoint = new Point(0,0);
-
     private double contourarea;
     private double ContourAreaLast;
     private double redlength;
@@ -68,9 +53,22 @@ public class OpenCVImage extends LinearOpMode{
     private double directionOfBeacon;
     private boolean beaconLeft;
     private double beaconLeftXPos;
+/*
+
+    static {
+        if (!OpenCVLoader.initDebug()) {
+            Log.d("OpenCV", "OpenCV Not Loaded");
+        } else {
+            Log.d("OpenCV", "OpenCV Loaded");
+
+        }
+    }
+
+*/
 
 
-
+    private Point redpoint = new Point(0,0);
+    private Point bluepoint = new Point(0,0);
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -123,16 +121,15 @@ public class OpenCVImage extends LinearOpMode{
 
 
 
-//            /*rgb is now the Image object that we’ve used in the video*/
-//            Log.d("OPENCV","Height " + rgb.getHeight() + " Width " + rgb.getWidth());
-//
-//            Bitmap bm = Bitmap.createBitmap(rgb.getWidth(), rgb.getHeight(), Bitmap.Config.RGB_565);
-//            bm.copyPixelsFromBuffer(rgb.getPixels());
-//            //Mat tmp = OCVUtils.bitmapToMat(bm, CvType.CV_8UC4);
-//            Mat tmp = new Mat(rgb.getWidth(), rgb.getHeight(), CvType.CV_8UC4);
-//            Utils.bitmapToMat(bm, tmp);
+            /*rgb is now the Image object that we’ve used in the video*/
+            /*Log.d("OPENCV","Height " + rgb.getHeight() + " Width " + rgb.getWidth());
 
-             Mat tmp = loadImageFromFile("ian-master.png");
+            Bitmap bm = Bitmap.createBitmap(rgb.getWidth(), rgb.getHeight(), Bitmap.Config.RGB_565);
+            bm.copyPixelsFromBuffer(rgb.getPixels());
+            //Mat tmp = OCVUtils.bitmapToMat(bm, CvType.CV_8UC4);
+            Mat tmp = new Mat(rgb.getWidth(), rgb.getHeight(), CvType.CV_8UC4);
+            Utils.bitmapToMat(bm, tmp);*/
+             Mat tmp = loadImageFromFile("ian-master.jpg");
 
             SaveImage(tmp, "-raw");
             fileLogger.writeEvent("process()","Saved original file ");
@@ -153,10 +150,10 @@ public class OpenCVImage extends LinearOpMode{
             Log.d("OPENCV","COLOR_RGB2HSV Height " + mat2.height() + " Width " + mat2.width());
             Log.d("OPENCV","Channels " + mat2.channels());
 
-            //Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
+            Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
             Log.d("OPENCV","mat2 Channels " + mat2.channels() + " empty " + mat2.empty());
             Log.d("OPENCV","mat3 Channels " + mat3.channels() + " empty " + mat3.empty());
-            Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
+            //Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
             fileLogger.writeEvent("process()","Set Red window Limits: ");
             SaveImage(mat3, "-red limits");
 
@@ -183,7 +180,8 @@ public class OpenCVImage extends LinearOpMode{
     public void SaveImage (Mat mat, String info) {
         Mat mIntermediateMat = new Mat();
 
-        Imgproc.cvtColor(mat, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
+        mat.convertTo(mIntermediateMat, CvType.CV_8UC4);
+        //Imgproc.cvtColor(mat, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
 
         File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         String filename = "ian" + info + ".png";

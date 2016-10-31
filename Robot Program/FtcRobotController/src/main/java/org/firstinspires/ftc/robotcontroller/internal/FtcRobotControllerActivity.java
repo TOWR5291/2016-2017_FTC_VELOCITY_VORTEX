@@ -52,6 +52,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -147,15 +148,13 @@ public class FtcRobotControllerActivity extends Activity {
 
   }
 
-private BaseLoaderCallback mOpenCVCallBack = new BaseLoaderCallback(this) {
+  private BaseLoaderCallback mOpenCVCallBack = new BaseLoaderCallback(this) {
     @Override
     public void onManagerConnected(int status) {
       switch (status) {
         case LoaderCallbackInterface.SUCCESS:
         {
-          Log.i(TAG, "OpenCV loaded successfully");
-          // Create and set View
-
+          RobotLog.i(TAG, "OpenCV loaded successfully");
         } break;
         default:
         {
@@ -276,17 +275,17 @@ private BaseLoaderCallback mOpenCVCallBack = new BaseLoaderCallback(this) {
 
     if (USE_DEVICE_EMULATION) { HardwareFactory.enableDeviceEmulation(); }
 
+    if (!OpenCVLoader.initDebug()) {
+      RobotLog.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+      OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mOpenCVCallBack);
+    } else {
+      RobotLog.d("OpenCV", "OpenCV library found inside package. Using it!");
+      mOpenCVCallBack.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+    }
+
     wifiLock.acquire();
     callback.networkConnectionUpdate(WifiDirectAssistant.Event.DISCONNECTED);
     bindToService();
-
-    if (!OpenCVLoader.initDebug()) {
-      Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
-      OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, this, mOpenCVCallBack);
-    } else {
-      Log.d("OpenCV", "OpenCV library found inside package. Using it!");
-      mOpenCVCallBack.onManagerConnected(LoaderCallbackInterface.SUCCESS);
-    }
   }
 
   protected UpdateUI createUpdateUI() {
@@ -467,6 +466,12 @@ private BaseLoaderCallback mOpenCVCallBack = new BaseLoaderCallback(this) {
     else if (id == R.id.action_about) {
       Intent intent = new Intent(AboutActivity.launchIntent);
       intent.putExtra(LaunchActivityConstantsList.ABOUT_ACTIVITY_CONNECTION_TYPE, networkType);
+      startActivity(intent);
+      return true;
+    }
+    //********************ADDED CODE********************
+    else if (id == R.id.action_configure_autonomous) {
+      Intent intent = new Intent(this, AutonomousConfiguration.class);
       startActivity(intent);
       return true;
     }

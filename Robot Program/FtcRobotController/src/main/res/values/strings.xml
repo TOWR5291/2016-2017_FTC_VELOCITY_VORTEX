@@ -59,4 +59,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <string name="toastRestartingRobot">Restarting Robot</string>
   <string name="toastConfigureRobotBeforeProgrammingMode">You must Configure Robot before starting Programming Mode.</string>
 
+  <!---*******************ADDED CODE*******************-->
+  <string name="title_activity_settings">Settings</string>
+  <string name="configure_autonomous_menu_item">Configure Autonomous</string>
+  <string-array name="alliance_color_options">
+      <item>Red</item>
+      <item>Blue</item>
+  </string-array>
+  <string-array name="alliance_position_options">
+    <item>Left</item>
+    <item>Right</item>
+  </string-array>
+
 </resources>
