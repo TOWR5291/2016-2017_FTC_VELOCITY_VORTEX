@@ -109,12 +109,24 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
     private int mStartPositionLeft;
     private int mStartPositionRight;
 
-    /*
+    //set up range sensor variables
     private ModernRoboticsI2cRangeSensor rangeSensorLeft;
     private ModernRoboticsI2cRangeSensor rangeSensorRight;
+    private boolean rangeError = false;
 
+    //set up colour sensor variables
     ColorSensor colorSensor;    // Hardware Device Object
-    */
+    private boolean colorError = false;
+
+    //set up Gyro variables
+    private boolean gyroError = false;
+    //set up gyro sensor
+    private ModernRoboticsI2cGyro gyro;   // Hardware Device Object
+    private int gyroXVal, gyroYVal, yroZVal = 0;     // Gyro rate Values
+    private int gyroHeading = 0;              // Gyro integrated heading
+    private int gyroAngleZ = 0;
+    private boolean gyroLastResetState = false;
+    private boolean gyroCurResetState  = false;
 
     //define each state for the step.  Each step should go through some of the states below
     private enum stepState {
@@ -203,31 +215,6 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
     @Override
     public void runOpMode() throws InterruptedException
     {
-        //set up gyro sensor
-        ModernRoboticsI2cGyro gyro;   // Hardware Device Object
-        int gyroXVal, gyroYVal, yroZVal = 0;     // Gyro rate Values
-        int gyroHeading = 0;              // Gyro integrated heading
-        int gyroAngleZ = 0;
-        boolean gyroLastResetState = false;
-        boolean gyroCurResetState  = false;
-/*
-
-        // get a reference to a Modern Robotics GyroSensor object.
-        gyro = (ModernRoboticsI2cGyro)hardwareMap.gyroSensor.get("gyro");
-
-        // calibrate the gyro, this takes a few seconds
-        gyro.calibrate();
-*/
-
-        LibraryStateSegAuto processingSteps = new LibraryStateSegAuto(0,0,"",0,0,0,0,0,0,0,false);
-        AStarGetPathEnhanced getPathValues = new AStarGetPathEnhanced();
-        sixValues[] pathValues = new sixValues[1000];
-        A0Star a0Star = new A0Star();
-        String fieldOutput;
-        String strAngleChange;
-        int BlueRed;
-        HashMap<String,LibraryStateSegAuto> autonomousStepsAStar = new HashMap<>();
-
         if (debug >= 1)
         {
             startDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
@@ -240,6 +227,29 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
             telemetry.addData("FileLogger Op Out File: ", fileLogger.getFilename());
         }
 
+        try {
+            // get a reference to a Modern Robotics GyroSensor object.
+            gyro = (ModernRoboticsI2cGyro)hardwareMap.gyroSensor.get("gyro");
+
+            // calibrate the gyro, this takes a few seconds
+            gyro.calibrate();
+        } catch (Exception e) {
+            if (debug >= 1)
+            {
+                fileLogger.writeEvent(TAG, "Gyro Error " +  e.getMessage());
+            }
+            gyroError = true;
+        }
+
+        LibraryStateSegAuto processingSteps = new LibraryStateSegAuto(0,0,"",0,0,0,0,0,0,0,false);
+        AStarGetPathEnhanced getPathValues = new AStarGetPathEnhanced();
+        sixValues[] pathValues = new sixValues[1000];
+        A0Star a0Star = new A0Star();
+        String fieldOutput;
+        String strAngleChange;
+        int BlueRed;
+        HashMap<String,LibraryStateSegAuto> autonomousStepsAStar = new HashMap<>();
+
         loadStaticSteps();                                                          //load all the steps into the hashmaps
         loadPowerTable();                                                           //load the power table
 
@@ -248,14 +258,29 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         * The init() method of the hardware class does all the work here
         */
         robotDrive.init(hardwareMap);
-/*
 
-        rangeSensorLeft = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "sensorrangeleft");
-        rangeSensorRight = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "sensorrangeright");
+        //get a reference to the range sensors
+        try {
+            rangeSensorLeft = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "sensorrangeleft");
+            rangeSensorRight = hardwareMap.get(ModernRoboticsI2cRangeSensor.class, "sensorrangeright");
+        } catch (Exception e) {
+            if (debug >= 1)
+            {
+                fileLogger.writeEvent(TAG, "range Error " +  e.getMessage());
+            }
+            rangeError = true;
+        }
 
         // get a reference to our ColorSensor object.
-        colorSensor = hardwareMap.colorSensor.get("sensorcolor");
-*/
+        try {
+                colorSensor = hardwareMap.colorSensor.get("sensorcolor");
+        } catch (Exception e) {
+            if (debug >= 1)
+            {
+                fileLogger.writeEvent(TAG, "color Error " +  e.getMessage());
+            }
+            colorError = true;
+        }
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Resetting Encoders");    //
@@ -281,13 +306,14 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         mCurrentTankTurnState = stepState.STATE_INIT;
         mCurrentDriveState = stepState.STATE_INIT;
         mCurrentPivotTurnState = stepState.STATE_INIT;
-/*
+        mCurrentRadiusTurnState = stepState.STATE_INIT;
 
-        while (!isStopRequested() && gyro.isCalibrating())  {
-            sleep(50);
-            idle();
+        if (!gyroError) {
+            while (!isStopRequested() && gyro.isCalibrating()) {
+                sleep(50);
+                idle();
+            }
         }
-*/
 
         if (debug >= 1)
         {
@@ -919,39 +945,6 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                 //if moving ramp up
                 distanceFromStart = (distanceFromStartLeft + distanceFromStartRight) / 2;
 
-                if (distanceFromStart <= 0.5 )
-                {
-                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(0.5)));
-                }
-                else if (distanceFromStart <= 1 )
-                {
-                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(1)));
-                }
-                else if (distanceFromStart <= 2 )
-                {
-                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(2)));
-                }
-                else if (distanceFromStart <= 4 )
-                {
-                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(4)));
-                }
-                else if (distanceFromStart <= 6 )
-                {
-                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(6)));
-                }
-                else if (distanceFromStart <= 8 )
-                {
-                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(8)));
-                }
-                else if (distanceFromStart <= 10 )
-                {
-                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(10)));
-                }
-                else if (distanceFromStart <= 12 )
-                {
-                    mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(12)));
-                }
-
                 //determine how close to target we are
                 distanceToEndLeft = (mStepLeftTarget - robotDrive.leftMotor1.getCurrentPosition()) / COUNTS_PER_INCH;
                 distanceToEndRight = (mStepRightTarget - robotDrive.rightMotor1.getCurrentPosition()) / COUNTS_PER_INCH;
@@ -959,35 +952,35 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                 //if getting close ramp down speed
                 distanceToEnd = (distanceToEndLeft + distanceToEndRight) / 2;
 
-                if (distanceToEnd <= 0.5 )
+                if ((distanceFromStart <= 0.5 ) || (distanceToEnd <= 0.5 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(0.5)));
                 }
-                else if (distanceToEnd <= 1 )
+                else if ((distanceFromStart <= 1 ) || (distanceToEnd <= 1 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(1)));
                 }
-                else if (distanceToEnd <= 2 )
+                else if ((distanceFromStart <= 2 ) || (distanceToEnd <= 2 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(2)));
                 }
-                else if (distanceToEnd <= 4 )
+                else if ((distanceFromStart <= 4 ) || (distanceToEnd <= 4 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(4)));
                 }
-                else if (distanceToEnd <= 6 )
+                else if ((distanceFromStart <= 6 ) || (distanceToEnd <= 6 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(6)));
                 }
-                else if (distanceToEnd <= 8 )
+                else if ((distanceFromStart <= 8 ) || (distanceToEnd <= 8 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(8)));
                 }
-                else if (distanceToEnd <= 10 )
+                else if ((distanceFromStart <= 10 ) || (distanceToEnd <= 10 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(10)));
                 }
-                else if (distanceToEnd <= 12 )
+                else if ((distanceFromStart <= 12 ) || (distanceToEnd <= 12 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(12)));
                 }
@@ -1067,7 +1060,7 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                     // set motor controller to mode
                     robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     // set power on motor controller to start moving
-                    setDriveLeftMotorPower(Math.abs(.5));
+                    setDriveLeftMotorPower(Math.abs(.3));
                 }
                 else {
                     // Determine new target position
@@ -1086,7 +1079,7 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                     // set motor controller to mode, Turn On RUN_TO_POSITION
                     robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     // set power on motor controller to start moving
-                    setDriveRightMotorPower(Math.abs(.5));
+                    setDriveRightMotorPower(Math.abs(.3));
                 }
                 if (debug >= 3)
                 {
