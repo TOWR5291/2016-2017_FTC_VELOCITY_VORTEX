@@ -32,6 +32,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package club.towr5291.opmodes;
 
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -80,19 +83,29 @@ import club.towr5291.robotconfig.HardwareDriveMotors;
 public class AutoDriveEncoder_Linear extends LinearOpMode
 {
 
+    SharedPreferences sharedPreferences;
+
     private static final String TAG = "AutoDriveEncoder_Linear";
 
     /* Declare OpMode members. */
     private HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use a Pushbot's hardware
     private ElapsedTime     runtime = new ElapsedTime();
 
-    private static final double     COUNTS_PER_MOTOR_REV    = 560 ;     // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
-    private static final double     DRIVE_GEAR_REDUCTION    = 0.78 ;    // This is < 1.0 if geared UP, Tilerunner is geared up
-    private static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
+    //for competition base
+    //private static final double     COUNTS_PER_MOTOR_REV    = 560 ;     // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
+    //private static final double     DRIVE_GEAR_REDUCTION    = 0.78 ;    // This is < 1.0 if geared UP, Tilerunner is geared up
+    //private static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
+    //private static final double     WHEEL_ACTUAL_FUDGE      = 1;        // Fine tuning amount
+
+    //for tank tread base
+    private static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
+    private static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // Tank Tread is 1:1 ration
+    private static final double     WHEEL_DIAMETER_INCHES   = 3.8 ;     // For figuring circumference
     private static final double     WHEEL_ACTUAL_FUDGE      = 1;        // Fine tuning amount
+
     private static final double     COUNTS_PER_INCH         = ((COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415)) * WHEEL_ACTUAL_FUDGE ;
     private static final double     ROBOT_TRACK             = 16.5;     //  distance between centerline of rear wheels robot will pivot on rear wheel of omni on front, 16.5 track is 103.67 inches full circle
-    private static final double     COUNTS_PER_DEGREE       =  ((2 * 3.1415 * ROBOT_TRACK) * COUNTS_PER_INCH) / 360;
+    private static final double     COUNTS_PER_DEGREE       = ((2 * 3.1415 * ROBOT_TRACK) * COUNTS_PER_INCH) / 360;
 
     //set up the variables for the file logger
     private String startDate;
@@ -172,6 +185,8 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
 
     private HashMap<String,String> powerTable = new HashMap<String,String>();
 
+    private int loadStep = 1;
+
     private void loadPowerTable ()
     {
         powerTable.put(String.valueOf(0.5), ".2");
@@ -201,15 +216,32 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         //  Red Beacon 2 = (12, 84)
         //  Blue Beacon 1 = (24,12)
         //  Blue Beacon 2 = (84,12)
+        //       time, comm,  parm, parm, parm, parm, parm, parm, powe
+        //       out   and    1     2     3     4     5     6     r
+        //        s                                               %
+        //loadSteps(10, "FW24", 0,    0,    0,    0,    0,    0,    1);
+        //loadSteps(10, "FW48", 0,    0,    0,    0,    0,    0,    1);
+        //loadSteps(10, "AS",  120,  110,   0,   12,   24,  279,  0.5);
+        loadSteps(10, "RT90", 0,    0,    0,    0,    0,    0,  0.5);
+        loadSteps(10, "LT90", 0,    0,    0,    0,    0,    0,  0.5);
+        //loadSteps(10, "FW24", 0,    0,    0,    0,    0,    0,    1);
+        //loadSteps(10, "RP90", 0,    0,    0,    0,    0,    0,  0.5);
+        //loadSteps(10, "LP90", 0,    0,    0,    0,    0,    0,  0.5);
+
         //                                                              step time, comm,  parm, parm, parm, parm, parm, parm, powe  comp
         //                                                                   out   and    1     2     3     4     5     6     r     lete
         //                                                                   s                                                %
-        autonomousSteps.put(String.valueOf(1), new LibraryStateSegAuto (1,   10,  "FW12", 0,    0,    0,    0,    0,    0,    1,    false));
-        autonomousSteps.put(String.valueOf(2), new LibraryStateSegAuto (2,   10,  "FW12", 0,    0,    0,    0,    0,    0,    1,    false));
+        //autonomousSteps.put(String.valueOf(1), new LibraryStateSegAuto (1,   10,  "FW12", 0,    0,    0,    0,    0,    0,    1,    false));
+        //autonomousSteps.put(String.valueOf(2), new LibraryStateSegAuto (2,   10,  "FW12", 0,    0,    0,    0,    0,    0,    1,    false));
         //autonomousSteps.put(String.valueOf(2), new LibraryStateSegAuto (2,   10,  "AS  ", 120,  110,  0,    12,   24,   270,  0.5,  false));
-      //autonomousSteps.put(String.valueOf(3), new LibraryStateSegAuto (3,   10,  "RT90", 0,    0,    0,    0,    0,    0,    0.5,  false));
-      //autonomousSteps.put(String.valueOf(4), new LibraryStateSegAuto (4,   10,  "RV6" , 0,    0,    0,    0,    0,    0,    0.3,  false));
+        //autonomousSteps.put(String.valueOf(3), new LibraryStateSegAuto (3,   10,  "RT90", 0,    0,    0,    0,    0,    0,    0.5,  false));
+        //autonomousSteps.put(String.valueOf(4), new LibraryStateSegAuto (4,   10,  "RV6" , 0,    0,    0,    0,    0,    0,    0.3,  false));
+    }
 
+    private void loadSteps(int timeOut, String command, int parm1, int parm2, int parm3, int parm4, int parm5, int parm6, double power)
+    {
+        autonomousSteps.put(String.valueOf(loadStep), new LibraryStateSegAuto (loadStep, timeOut, command, parm1, parm2, parm3, parm4, parm5, parm6, power, false));
+        loadStep++;
     }
 
     @Override
@@ -226,6 +258,27 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
             telemetry.addData("FileLogger: ", runtime.toString());
             telemetry.addData("FileLogger Op Out File: ", fileLogger.getFilename());
         }
+
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(hardwareMap.appContext);
+
+        String allianceColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "null");
+        String alliancePosition = sharedPreferences.getString("club.towr5291.Autonomous.Position", "null");
+        int delay = sharedPreferences.getInt("club.towr5291.Autonomous.Delay", 0);
+
+        if (debug >= 1)
+        {
+            fileLogger.writeEvent(TAG, "Alliance Colour   " +  allianceColor);
+            fileLogger.writeEvent(TAG, "Alliance Position " +  alliancePosition);
+            fileLogger.writeEvent(TAG, "Alliance Delay    " +  delay);
+        }
+
+        telemetry.addData("Ali Colour ",  allianceColor);
+        telemetry.addData("Ali Pos    ",  alliancePosition);
+        telemetry.addData("Ali Dealy  ",  delay);
+        telemetry.update();
+
+        loadStaticSteps();                                                          //load all the steps into the hashmaps
+        loadPowerTable();                                                           //load the power table
 
         try {
             // get a reference to a Modern Robotics GyroSensor object.
@@ -249,9 +302,6 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         String strAngleChange;
         int BlueRed;
         HashMap<String,LibraryStateSegAuto> autonomousStepsAStar = new HashMap<>();
-
-        loadStaticSteps();                                                          //load all the steps into the hashmaps
-        loadPowerTable();                                                           //load the power table
 
         /*
         * Initialize the drive system variables.
@@ -303,10 +353,10 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         mCurrentStepState = stepState.STATE_INIT;
-        mCurrentTankTurnState = stepState.STATE_INIT;
-        mCurrentDriveState = stepState.STATE_INIT;
-        mCurrentPivotTurnState = stepState.STATE_INIT;
-        mCurrentRadiusTurnState = stepState.STATE_INIT;
+        mCurrentTankTurnState = stepState.STATE_COMPLETE;
+        mCurrentDriveState = stepState.STATE_COMPLETE;
+        mCurrentPivotTurnState = stepState.STATE_COMPLETE;
+        mCurrentRadiusTurnState = stepState.STATE_COMPLETE;
 
         if (!gyroError) {
             while (!isStopRequested() && gyro.isCalibrating()) {
@@ -365,12 +415,12 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                 break;
                 case STATE_RUNNING:
                 {
-                    //TankTurnStep();
-                    //PivotTurnStep();
+                    TankTurnStep();
+                    PivotTurnStep();
                     //RadiusTurnStep();
                     DriveStep();
-                    //if ((mCurrentDriveState == stepState.STATE_COMPLETE) && (mCurrentPivotTurnState == stepState.STATE_COMPLETE) && (mCurrentTankTurnState == stepState.STATE_COMPLETE) && (mCurrentRadiusTurnState == stepState.STATE_COMPLETE))
-                        if ((mCurrentDriveState == stepState.STATE_COMPLETE))
+                    if ((mCurrentDriveState == stepState.STATE_COMPLETE) && (mCurrentPivotTurnState == stepState.STATE_COMPLETE) && (mCurrentTankTurnState == stepState.STATE_COMPLETE) && (mCurrentRadiusTurnState == stepState.STATE_COMPLETE))
+                    //if ((mCurrentDriveState == stepState.STATE_COMPLETE))
                     {
                         mCurrentStepState = stepState.STATE_COMPLETE;
                     }
@@ -691,7 +741,6 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                     //  Transition to a new state and next step.
                     mCurrentStep++;
                     mCurrentStepState = stepState.STATE_INIT;
-
                 }
                 break;
             }
@@ -714,7 +763,6 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         }
     }
 
-
     //--------------------------------------------------------------------------
     // User Defined Utility functions here....
     //--------------------------------------------------------------------------
@@ -729,7 +777,7 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         double mRobotParm4;
         double mRobotParm5;
         double mRobotParm6;
-
+        mStepDistance = 0;
 
         if (debug >= 3)
         {
@@ -752,11 +800,11 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         mRobotStepComplete = mStateSegAuto.getmRobotStepComplete();
 
         if (debug >= 3) {
-            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 0)    :- " + mRobotCommand.substring(0, 0));
-            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 1)    :- " + mRobotCommand.substring(0, 1));
+            //fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 0)    :- " + mRobotCommand.substring(0, 0));
+            //fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 1)    :- " + mRobotCommand.substring(0, 1));
             fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 2)    :- " + mRobotCommand.substring(0, 2));
-            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 3)    :- " + mRobotCommand.substring(0, 3));
-            fileLogger.writeEvent("initStep()", "mRobotCommand.substring(1)       :- " + mRobotCommand.substring(1));
+            //fileLogger.writeEvent("initStep()", "mRobotCommand.substring(0, 3)    :- " + mRobotCommand.substring(0, 3));
+            //fileLogger.writeEvent("initStep()", "mRobotCommand.substring(1)       :- " + mRobotCommand.substring(1));
         }
 
         mCurrentStepState = stepState.STATE_RUNNING;
@@ -817,6 +865,7 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
         double mRobotParm4;
         double mRobotParm5;
         double mRobotParm6;
+        mStepDistance = 0;
 
         if (debug >= 3)
         {
@@ -1026,34 +1075,32 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                 mStepTurnR = 0;
 
                 switch (mRobotCommand.substring(0, 2)) {
-                    case "LT":
+                    case "LP":
                         mStepTurnL = Double.parseDouble(mRobotCommand.substring(2));
                         mStepTurnR = 0;
-                        mCurrentTankTurnState = stepState.STATE_INIT;
                         break;
-                    case "RT":
+                    case "RP":
                         mStepTurnL = 0;
                         mStepTurnR = Double.parseDouble(mRobotCommand.substring(2));
-                        mCurrentTankTurnState = stepState.STATE_INIT;
                         break;
                 }
                 if (debug >= 3)
                 {
-                    fileLogger.writeEvent("runningTurnStep()", "mStepTurnL      :- " + mStepTurnL);
-                    fileLogger.writeEvent("runningTurnStep()", "mStepTurnR      :- " + mStepTurnR);
+                    fileLogger.writeEvent("PivotTurnStep()", "mStepTurnL      :- " + mStepTurnL);
+                    fileLogger.writeEvent("PivotTurnStep()", "mStepTurnR      :- " + mStepTurnR);
                 }
                 // Turn On RUN_TO_POSITION
                 if(mStepTurnR == 0) {
                     // Determine new target position
                     if (debug >= 3)
                     {
-                        fileLogger.writeEvent("runningTurnStep()", "Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
+                        fileLogger.writeEvent("PivotTurnStep()", "Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
                     }
                     mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepTurnL * COUNTS_PER_DEGREE);
                     mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepTurnR * COUNTS_PER_DEGREE);
                     if (debug >= 3)
                     {
-                        fileLogger.writeEvent("runningTurnStep()", "mStepLeftTarget:-  " + mStepLeftTarget);
+                        fileLogger.writeEvent("PivotTurnStep()", "mStepLeftTarget:-  " + mStepLeftTarget);
                     }
                     // pass target position to motor controller
                     robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget);
@@ -1066,13 +1113,13 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                     // Determine new target position
                     if (debug >= 3)
                     {
-                        fileLogger.writeEvent("runningTurnStep()", "Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
+                        fileLogger.writeEvent("PivotTurnStep()", "Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
                     }
                     mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepTurnL * COUNTS_PER_DEGREE);
                     mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepTurnR * COUNTS_PER_DEGREE);
                     if (debug >= 3)
                     {
-                        fileLogger.writeEvent("runningTurnStep()", "mStepRightTarget:- " + mStepRightTarget);
+                        fileLogger.writeEvent("PivotTurnStep()", "mStepRightTarget:- " + mStepRightTarget);
                     }
                     // pass target position to motor controller
                     robotDrive.rightMotor1.setTargetPosition(mStepRightTarget);
@@ -1083,8 +1130,8 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                 }
                 if (debug >= 3)
                 {
-                    fileLogger.writeEvent("runningTurnStep()", "mStepLeftTarget :- " + mStepLeftTarget);
-                    fileLogger.writeEvent("runningTurnStep()", "mStepRightTarget:- " + mStepRightTarget);
+                    fileLogger.writeEvent("PivotTurnStep()", "mStepLeftTarget :- " + mStepLeftTarget);
+                    fileLogger.writeEvent("PivotTurnStep()", "mStepRightTarget:- " + mStepRightTarget);
                 }
                 mCurrentPivotTurnState = stepState.STATE_RUNNING;
             }
@@ -1093,35 +1140,35 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                 //if (robotDrive.leftMotor.isBusy() || robotDrive.rightMotor.isBusy()) {
                 if (debug >= 3)
                 {
-                    fileLogger.writeEvent("runningTurnStep()", "Running         ");
-                    fileLogger.writeEvent("runningTurnStep()", "Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
-                    fileLogger.writeEvent("runningTurnStep()", "Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
+                    fileLogger.writeEvent("PivotTurnStep()", "Running         ");
+                    fileLogger.writeEvent("PivotTurnStep()", "Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
+                    fileLogger.writeEvent("PivotTurnStep()", "Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
                 }
                 if (mStepTurnR == 0) {
                     if (debug >= 3)
                     {
-                        fileLogger.writeEvent("runningTurnStep()", "Running         ");
+                        fileLogger.writeEvent("PivotTurnStep()", "Running         ");
                     }
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
                     telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
                     if (!robotDrive.leftMotor1.isBusy()) {
                         if (debug >= 3)
                         {
-                            fileLogger.writeEvent("runningTurnStep()","Complete         " );
+                            fileLogger.writeEvent("PivotTurnStep()","Complete         " );
                         }
                         mCurrentPivotTurnState = stepState.STATE_COMPLETE;
                     }
                 } else if (mStepTurnL == 0) {
                     if (debug >= 3)
                     {
-                        fileLogger.writeEvent("runningTurnStep()","Running         " );
+                        fileLogger.writeEvent("PivotTurnStep()","Running         " );
                     }
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
                     telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
                     if (!robotDrive.rightMotor1.isBusy()) {
                         if (debug >= 3)
                         {
-                            fileLogger.writeEvent("runningTurnStep()","Complete         " );
+                            fileLogger.writeEvent("PivotTurnStep()","Complete         " );
                         }
                         mCurrentPivotTurnState = stepState.STATE_COMPLETE;
                     }
@@ -1130,7 +1177,7 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                     setDriveMotorPower(0);
                     if (debug >= 3)
                     {
-                        fileLogger.writeEvent("runningTurnStep()","Complete         " );
+                        fileLogger.writeEvent("PivotTurnStep()","Complete         " );
                     }
                     mCurrentPivotTurnState = stepState.STATE_COMPLETE;
                 }
@@ -1149,31 +1196,18 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
 
                 switch (mRobotCommand.substring(0, 2)) {
                     case "LT":
-                        if (debug >= 3)
-                        {
-                            fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition());
-                        }
                         mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() + (int)(0.5 * Double.parseDouble(mRobotCommand.substring(2)) * COUNTS_PER_DEGREE);
                         mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() - (int)(0.5 * Double.parseDouble(mRobotCommand.substring(2)) * COUNTS_PER_DEGREE);
-                        if (debug >= 3)
-                        {
-                            fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget:-  " + mStepLeftTarget);
-                        }
-
                         break;
                     case "RT":
-                        if (debug >= 3)
-                        {
-                            fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition());
-                        }
                         mStepLeftTarget = robotDrive.leftMotor1.getCurrentPosition() - (int)(0.5 * Double.parseDouble(mRobotCommand.substring(2)) * COUNTS_PER_DEGREE);
                         mStepRightTarget = robotDrive.rightMotor1.getCurrentPosition() + (int)(0.5 * Double.parseDouble(mRobotCommand.substring(2)) * COUNTS_PER_DEGREE);
-                        if (debug >= 3)
-                        {
-                            fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget);
-                        }
-
                         break;
+                }
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("TankTurnStep()","Current LPosition:- " + robotDrive.leftMotor1.getCurrentPosition() + "mStepLeftTarget:-   " +mStepLeftTarget );
+                    fileLogger.writeEvent("TankTurnStep()","Current RPosition:- " + robotDrive.rightMotor1.getCurrentPosition() + "mStepRightTarget:- " + mStepRightTarget );
                 }
 
                 // pass target position to motor controller
@@ -1184,11 +1218,11 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                 robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 // set power on motor controller to start moving
                 setDriveMotorPower(Math.abs(.5));
-
+                matchDrivePowerAndDirection();
                 if (debug >= 3)
                 {
-                    fileLogger.writeEvent("runningTurnStep()","mStepLeftTarget :- " + mStepLeftTarget  );
-                    fileLogger.writeEvent("runningTurnStep()","mStepRightTarget:- " + mStepRightTarget  );
+                    fileLogger.writeEvent("TankTurnStep()","mStepLeftTarget :- " + mStepLeftTarget  );
+                    fileLogger.writeEvent("TankTurnStep()","mStepRightTarget:- " + mStepRightTarget  );
                 }
 
                 mCurrentTankTurnState = stepState.STATE_RUNNING;
@@ -1196,39 +1230,30 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
             break;
             case STATE_RUNNING: {
                 //if (robotDrive.leftMotor.isBusy() || robotDrive.rightMotor.isBusy()) {
+                matchDrivePowerAndDirection();
+
                 if (debug >= 3)
                 {
-                    fileLogger.writeEvent("runningTurnStep()","Running         " );
-                    fileLogger.writeEvent("runningTurnStep()","Current LPosition:-" + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
-                    fileLogger.writeEvent("runningTurnStep()","Current RPosition:-" + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
+                    fileLogger.writeEvent("TankTurnStep()","Running         " );
+                    fileLogger.writeEvent("TankTurnStep()","Current LPosition:- " + robotDrive.leftMotor1.getCurrentPosition() + " LTarget:- " + mStepLeftTarget);
+                    fileLogger.writeEvent("TankTurnStep()","Current RPosition:- " + robotDrive.rightMotor1.getCurrentPosition() + " RTarget:- " + mStepRightTarget);
+                    fileLogger.writeEvent("TankTurnStep()", "robotDrive.leftMotor1.getDirection() " + robotDrive.leftMotor1.getDirection());
+                    fileLogger.writeEvent("TankTurnStep()", "robotDrive.rightMotor1.getDirection() " + robotDrive.rightMotor1.getDirection());
+                    fileLogger.writeEvent("TankTurnStep()", "robotDrive.leftMotor1.getPower() " + robotDrive.leftMotor1.getPower());
+                    fileLogger.writeEvent("TankTurnStep()", "robotDrive.rightMotor1.getPower() " + robotDrive.rightMotor1.getPower());
                 }
 
                 telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget, mStepRightTarget);
                 telemetry.addData("Path2", "Running at %7d :%7d", robotDrive.leftMotor1.getCurrentPosition(), robotDrive.rightMotor1.getCurrentPosition());
 
-                switch (mRobotCommand.substring(0, 2)) {
-                    case "LT":
-                        if (!robotDrive.leftMotor1.isBusy())
-                        {
-                            if (debug >= 3)
-                            {
-                                fileLogger.writeEvent("runningTurnStep()","Complete         " );
-                            }
-                            setDriveMotorPower(0);
-                            mCurrentTankTurnState = stepState.STATE_COMPLETE;
-                        }
-                        break;
-                    case "RT":
-                        if (!robotDrive.rightMotor1.isBusy())
-                        {
-                            if (debug >= 3)
-                            {
-                                fileLogger.writeEvent("runningTurnStep()", "Complete         ");
-                            }
-                            setDriveMotorPower(0);
-                            mCurrentTankTurnState = stepState.STATE_COMPLETE;
-                        }
-                        break;
+                if (!robotDrive.leftMotor1.isBusy() || (!robotDrive.rightMotor1.isBusy()))
+                {
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("TankTurnStep()","Complete         " );
+                    }
+                    setDriveMotorPower(0);
+                    mCurrentTankTurnState = stepState.STATE_COMPLETE;
                 }
             }
             break;
@@ -1250,7 +1275,7 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
                 setDriveMotorPower(0);
                 if (debug >= 3)
                 {
-                    fileLogger.writeEvent("runningTurnStep()","Complete         " );
+                    fileLogger.writeEvent("RadiusTurnStep()","Complete         " );
                 }
                 mCurrentRadiusTurnState = stepState.STATE_COMPLETE;
 
@@ -1435,5 +1460,22 @@ public class AutoDriveEncoder_Linear extends LinearOpMode
     private void setDriveLeftMotorPower (double power) {
         robotDrive.leftMotor1.setPower(power);
         robotDrive.leftMotor2.setPower(power);
+    }
+    private void matchDrivePowerAndDirection() {
+        //rive1 have the encoder, so when drive 1 change direction or power we need to read that and match with motor2
+        //robotDrive.leftMotor2.setDirection(robotDrive.leftMotor1.getDirection());
+        //robotDrive.leftMotor2.setPower(-robotDrive.leftMotor1.getPower());
+        //robotDrive.rightMotor2.setDirection(robotDrive.rightMotor1.getDirection());
+        //robotDrive.rightMotor2.setPower(-robotDrive.rightMotor1.getPower());
+
+        fileLogger.writeEvent("matchDrivePowerAndDirection()", "robotDrive.leftMotor1.getDirection() " + robotDrive.leftMotor1.getDirection());
+        fileLogger.writeEvent("matchDrivePowerAndDirection()", "robotDrive.rightMotor1.getDirection() " + robotDrive.rightMotor1.getDirection());
+        fileLogger.writeEvent("matchDrivePowerAndDirection()", "robotDrive.leftMotor2.getDirection() " + robotDrive.leftMotor2.getDirection());
+        fileLogger.writeEvent("matchDrivePowerAndDirection()", "robotDrive.rightMotor2.getDirection() " + robotDrive.rightMotor2.getDirection());
+        fileLogger.writeEvent("matchDrivePowerAndDirection()", "robotDrive.leftMotor1.getPower() " + robotDrive.leftMotor1.getPower());
+        fileLogger.writeEvent("matchDrivePowerAndDirection()", "robotDrive.leftMotor2.getPower() " + robotDrive.leftMotor2.getPower());
+        fileLogger.writeEvent("matchDrivePowerAndDirection()", "robotDrive.rightMotor1.getPower() " + robotDrive.rightMotor1.getPower());
+        fileLogger.writeEvent("matchDrivePowerAndDirection()", "robotDrive.rightMotor2.getPower() " + robotDrive.rightMotor2.getPower());
+
     }
 }

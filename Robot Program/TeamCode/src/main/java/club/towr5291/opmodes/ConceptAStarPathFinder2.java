@@ -13,6 +13,7 @@ import club.towr5291.astarpathfinder.A0Star;
 import club.towr5291.astarpathfinder.sixValues;
 import club.towr5291.functions.AStarGetPathBasic;
 import club.towr5291.functions.AStarGetPathEnhanced;
+import club.towr5291.functions.AStarGetPathVer2;
 import club.towr5291.functions.FileLogger;
 
 
@@ -38,7 +39,8 @@ public class ConceptAStarPathFinder2 extends OpMode {
     String fieldOutput = "";
 
     //public AStarGetPathBasic pathValues2 = new AStarGetPathBasic();
-    public AStarGetPathEnhanced pathValues2 = new AStarGetPathEnhanced();
+    //public AStarGetPathEnhanced pathValues2 = new AStarGetPathEnhanced();
+    public AStarGetPathVer2 pathValues2 = new AStarGetPathVer2();
 
     public int pathIndex = 0;
 
@@ -124,7 +126,6 @@ public class ConceptAStarPathFinder2 extends OpMode {
                             mapComplete[y][x] = "0";
                         }
                     }
-
                 }
             }
         }
@@ -137,7 +138,8 @@ public class ConceptAStarPathFinder2 extends OpMode {
         for (int i = 0; i < pathValues.length; i++)
         {
             //fileLogger.writeEvent("init()","Path " + pathValues[i].val1 + " " + pathValues[i].val2 + " " + pathValues[i].val3 + " Dir:= " + pathValues[i].val4 );
-            mapComplete[(int)pathValues[i].val3][(int)pathValues[i].val2] = "P";
+            if (pathValues[i].val1 != 0)
+                mapComplete[(int)pathValues[i].val3][(int)pathValues[i].val2] = "P";
             if ((pathValues[i].val2 == startX) && (pathValues[i].val3 == startY))
             {
                 mapComplete[(int) pathValues[i].val3][(int) pathValues[i].val2] = "S";
@@ -152,6 +154,7 @@ public class ConceptAStarPathFinder2 extends OpMode {
                 fieldOutput = "" + fieldOutput + mapComplete[y][x];
             }
             fileLogger.writeEvent("loop()", fieldOutput);
+            Log.d(TAG, "Path Through Field " + fieldOutput);
             fieldOutput = "";
         }
         fileLogger.writeEvent("init()","Init Complete");

@@ -505,6 +505,8 @@ public class AStarGetPathEnhanced {
                 //delete the fValue - make it real big so its not lowest anymore
                 AStarValueMap.put(String.valueOf(lowestFKey), new AStarValue(AStarValueCurrentIJ.ID, 99999999, AStarValueCurrentIJ.GValue, AStarValueCurrentIJ.HValue, AStarValueCurrentIJ.Parent, AStarValueCurrentIJ.xvalue, AStarValueCurrentIJ.yvalue, AStarValueCurrentIJ.zvalue));
 
+                //**TO DO** should be removing from OPENLIST and ADDING TO CLOSED LIST HERE
+
                 if (debug >= 3)
                 {
                     fileLogger.writeEvent(TAG, "Made F Realy Big, Trying Key " + getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength) + " - point (" + currentX + "," + currentY + ")");
@@ -556,6 +558,15 @@ public class AStarGetPathEnhanced {
     public sixValues[] findPathAStar (int startX, int startY, int startZ, int endX, int endY, int endDir)
     {
         boolean searching = true;
+
+        if (debug >= 1)
+        {
+            startDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+            fileLogger = new FileLogger(runtime);
+            fileLogger.open();
+            fileLogger.write("Time,SysMS,Thread,Event,Desc");
+            fileLogger.writeEvent(TAG, "Log Started");
+        }
 
 
         AStarValues.xvalue = startX;
