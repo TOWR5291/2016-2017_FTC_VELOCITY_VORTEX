@@ -28,6 +28,11 @@ public class BaseDriveWorking extends OpMode {
 
     @Override
     public void init() {
+        leftFront = hardwareMap.dcMotor.get("leftMotor1");
+        leftBack = hardwareMap.dcMotor.get("leftMotor2");
+        rightFront = hardwareMap.dcMotor.get("rightMotor1");
+        rightBack = hardwareMap.dcMotor.get("rightMotor2");
+
         leftFront.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
         leftBack.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.REVERSE);
@@ -44,10 +49,10 @@ public class BaseDriveWorking extends OpMode {
     public void loop() {
 
         if(gamepad1.left_bumper) {
-            //leftMotor1.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-            //leftMotor2.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-            //rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-            //rightMotor2.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
+            leftFront.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
+            leftBack.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
+            rightFront.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
+            rightBack.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
 
             rightPow =  gamepad1.left_stick_y;
             leftPow =  gamepad1.right_stick_y;
@@ -57,10 +62,10 @@ public class BaseDriveWorking extends OpMode {
             leftPow =  gamepad1.left_stick_y;
             rightPow =  gamepad1.right_stick_y;
 
-//                //leftMotor1.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
-//                //leftMotor2.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
-//                //rightMotor1.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
-//                //rightMotor2.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
+            leftFront.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
+                leftBack.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
+                rightFront.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
+            rightBack.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
 
             reverse = false;
         }
