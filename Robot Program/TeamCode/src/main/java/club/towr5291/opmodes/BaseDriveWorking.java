@@ -18,6 +18,9 @@ public class BaseDriveWorking extends OpMode {
     DcMotor rightFront;
     DcMotor rightBack;
 
+    DcMotor intake;
+    DcMotor shooter;
+
     double leftPow;
     double rightPow;
     boolean leftNegative;
@@ -25,6 +28,9 @@ public class BaseDriveWorking extends OpMode {
     double max;
     boolean reverse = false;
     boolean slowdown = false;
+    boolean intakeOn = true;
+    boolean intakeFlip = false;
+    boolean launch = false;
 
     @Override
     public void init() {
@@ -43,6 +49,16 @@ public class BaseDriveWorking extends OpMode {
         leftBack.setPower(0);
         rightFront.setPower(0);
         rightBack.setPower(0);
+
+        intake = hardwareMap.dcMotor.get("intake");
+        shooter = hardwareMap.dcMotor.get("shooter");
+
+        intake.setDirection(DcMotor.Direction.FORWARD);
+        shooter.setDirection(DcMotor.Direction.REVERSE);
+
+        intake.setPower(0);
+        shooter.setPower(0);
+
     }
 
     @Override
@@ -63,8 +79,8 @@ public class BaseDriveWorking extends OpMode {
             rightPow =  gamepad1.right_stick_y;
 
             leftFront.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
-                leftBack.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
-                rightFront.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
+            leftBack.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
+            rightFront.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
             rightBack.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
 
             reverse = false;
@@ -102,9 +118,51 @@ public class BaseDriveWorking extends OpMode {
             rightPow = -max;
         }
 
-        leftFront.setPower(-gamepad1.left_stick_y);
-        leftBack.setPower(-gamepad1.left_stick_y);
-        rightFront.setPower(-gamepad1.right_stick_y);
-        rightBack.setPower(-gamepad1.right_stick_y);
+        leftFront.setPower(-leftPow);
+        leftBack.setPower(-leftPow);
+        rightFront.setPower(-rightPow);
+        rightBack.setPower(-rightPow);
+
+        telemetry.addData("Left Speed Raw", -gamepad1.left_stick_y);
+        telemetry.addData("Right Speed Raw", -gamepad1.right_stick_y);
+        telemetry.addData("Left Speed", -leftPow);
+        telemetry.addData("Right Speed", -rightPow);
+        telemetry.addData("Reverse", reverse);
+        telemetry.addData("Slowdown", slowdown);
+
+        if(gamepad2.left_trigger != 0) {
+            intakeFlip = true;
+
+            intake.setDirection(DcMotor.Direction.REVERSE);
+        } else {
+            intakeFlip = false;
+
+            intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        }
+
+
+        if(gamepad2.left_bumper) {
+            intakeOn = true;
+
+            intake.setPower(1);
+        } else {
+            intakeOn = false;
+
+            intake.setPower(0);
+        }
+
+        if(gamepad2.right_bumper) {
+            launch = true;
+
+            shooter.setPower(1);
+        } else {
+            launch = false;
+
+            shooter.setPower(0);
+        }
+
+        telemetry.addData("Intake", intakeOn);
+        telemetry.addData("Intake Flip", intakeFlip);
+        telemetry.addData("Shooter", launch);
     }
 }
