@@ -1,9 +1,7 @@
 package club.towr5291.robotconfig;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /**
@@ -21,20 +19,17 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Motor channel:  Right drive motor:        "rightmotor1"
  * Motor channel:  Right drive motor:        "rightmotor2"
  */
-public class HardwareDriveMotors
+public class HardwareArmMotors
 {
     /* Public OpMode members. */
-    public DcMotor  leftMotor1   = null;
-    public DcMotor  leftMotor2   = null;
-    public DcMotor  rightMotor1  = null;
-    public DcMotor  rightMotor2  = null;
+    public DcMotor  flicker   = null;
 
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
     private ElapsedTime period  = new ElapsedTime();
 
     /* Constructor */
-    public HardwareDriveMotors(){
+    public HardwareArmMotors(){
 
     }
 
@@ -44,27 +39,17 @@ public class HardwareDriveMotors
         hwMap = ahwMap;
 
         // Define and Initialize Motors
-        leftMotor1   = hwMap.dcMotor.get("leftmotor1");
-        leftMotor2   = hwMap.dcMotor.get("leftmotor2");
-        rightMotor1  = hwMap.dcMotor.get("rightmotor1");
-        rightMotor2  = hwMap.dcMotor.get("rightmotor2");
-        leftMotor1.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        leftMotor2.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-        rightMotor2.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
+        flicker   = hwMap.dcMotor.get("flicker");
+
+        flicker.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
 
         // Set all motors to zero power
-        leftMotor1.setPower(0);
-        leftMotor2.setPower(0);
-        rightMotor1.setPower(0);
-        rightMotor2.setPower(0);
+        flicker.setPower(0);
 
         // Set all motors to run without encoders.
         // May want to use RUN_USING_ENCODERS if encoders are installed.
-        leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        flicker.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
 
     }
 

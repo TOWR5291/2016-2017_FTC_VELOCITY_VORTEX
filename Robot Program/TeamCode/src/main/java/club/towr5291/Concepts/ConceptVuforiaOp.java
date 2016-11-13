@@ -1,4 +1,4 @@
-package club.towr5291.opmodes;
+package club.towr5291.Concepts;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.vuforia.HINT;

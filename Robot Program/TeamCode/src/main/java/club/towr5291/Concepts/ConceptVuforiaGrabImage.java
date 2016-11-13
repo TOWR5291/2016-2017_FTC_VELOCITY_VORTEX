@@ -1,4 +1,4 @@
-package club.towr5291.opmodes;
+package club.towr5291.Concepts;
 
 import com.qualcomm.robotcore.util.RobotLog;
 import com.vuforia.Frame;

@@ -1,4 +1,4 @@
-package club.towr5291.opmodes;
+package club.towr5291.Concepts;
 
 import android.graphics.Bitmap;
 import android.os.Environment;
@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.vuforia.CameraCalibration;
 import com.vuforia.HINT;
 import com.vuforia.Image;
 import com.vuforia.Matrix34F;
@@ -34,12 +35,14 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgcodecs.Imgcodecs; // imread, imwrite, etc
+import org.opencv.imgproc.Moments;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -48,9 +51,12 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import club.towr5291.functions.Constants;
+import club.towr5291.functions.BeaconAnalysisOCV;
 import club.towr5291.functions.FileLogger;
+import club.towr5291.opmodes.R;
 
-import static org.opencv.imgproc.Imgproc.resize;
+import static org.opencv.imgproc.Imgproc.contourArea;
 
 
 /**
@@ -97,7 +103,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         fileLogger.write("Time,SysMS,Thread,Event,Desc");
         fileLogger.writeEvent("init()","Log Started");
 
-
+        BeaconAnalysisOCV beaconColour = new BeaconAnalysisOCV();
 
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(R.id.cameraMonitorViewId);
         parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
@@ -272,7 +278,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
          * plane) is then CCW, as one would normally expect from the usual classic 2D geometry.
          */
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
-                .translation(mmBotWidth/2,0,0)
+                .translation((mmBotWidth/2), 50,0)
                 .multiplied(Orientation.getRotationMatrix(
                         AxesReference.EXTRINSIC, AxesOrder.YZY,
                         AngleUnit.DEGREES, -90, 0, 0));
@@ -311,14 +317,31 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(0,100,150);
         //Scalar RED_UPPER_BOUNDS_HSV = new Scalar(22,255,255);  //was 30,255,255
 
-        Scalar RED_LOWER_BOUNDS_HSV = new Scalar((int) (300.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
-        Scalar RED_UPPER_BOUNDS_HSV = new Scalar((int) (400.0 / 360.0 * 255.0), 255, 255);  //was 30,255,255
+        //these work pretty good
+        Scalar RED_LOWER_BOUNDS_HSV = new Scalar ((int) (300.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
+        Scalar RED_UPPER_BOUNDS_HSV = new Scalar ((int) (400.0 / 360.0 * 255.0), 255, 255);
 
-        //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(150,100,100);
-        //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(270,255,255);
+        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar ((int) (300.0 / 360.0 * 255.0), (int) (0.09 * 255.0), (int) (0.500 * 255.0));
+        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar (255, 255, 255);
 
+//        Scalar RED_LOWER_BOUNDS_HSV = new Scalar(0, 160, 160);
+//        Scalar RED_UPPER_BOUNDS_HSV = new Scalar(180,255,255);
+
+        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(240, 229, 127);
+        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar(30,255,255);
+
+        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(30,100,100);  //get nothing with this set
+        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar(120,100,255);
+
+//        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(150,100,100);
+//        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(270,255,255);
+
+        //get really good blue with this set
         Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar((int) (170.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
         Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar((int) (270.0 / 360.0 * 255.0), 255, 255);
+
+        //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(120, 230, 127);  //Get nothing with this set, got no idea why
+        //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(192, 255, 255);
 
 
         Mat mat1 = new Mat(720,1280, CvType.CV_8UC4);
@@ -328,12 +351,8 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         Mat mat5 = new Mat(720,1280, CvType.CV_8UC4);
         Mat mat6 = new Mat(720,1280, CvType.CV_8UC4);
         Mat mat7 = new Mat(720,1280, CvType.CV_8UC4);
-
-        //Mat mat1 = new Mat();
-        //Mat mat2 = new Mat();
-        //Mat mat3 = new Mat();
-        //Mat mat4 = new Mat();
-        //Mat mat5 = new Mat();
+        Mat mat8 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat9 = new Mat(720,1280, CvType.CV_8UC4);
 
 
 
@@ -341,7 +360,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         Mat lines = new Mat();
         Mat mHierarchy = new Mat();
 
-        MatOfPoint2f approxCurve = new MatOfPoint2f();
+        //MatOfPoint2f approxCurve = new MatOfPoint2f();
         waitForStart();
 
         //Mat tmp = new Mat();
@@ -350,8 +369,11 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
 
         Image rgb = null;
 
+        int loop = 0;
 
         while (opModeIsActive()) {
+            List<MatOfPoint> contoursRed  = new ArrayList<MatOfPoint>();
+            List<MatOfPoint> contoursBlue = new ArrayList<MatOfPoint>();
 
             VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().take(); //takes the frame at the head of the queue
 
@@ -371,29 +393,34 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
 
             Bitmap bm = Bitmap.createBitmap(rgb.getWidth(), rgb.getHeight(), Bitmap.Config.RGB_565);
             bm.copyPixelsFromBuffer(rgb.getPixels());
-            //Mat tmp = OCVUtils.bitmapToMat(bm, CvType.CV_8UC4);
             Mat tmp = new Mat(rgb.getWidth(), rgb.getHeight(), CvType.CV_8UC4);
             Utils.bitmapToMat(bm, tmp);
 
+            Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop);
+
+            Log.d("OPENCV","Returned " + Colour);
+/*
             SaveImage(tmp, "-raw");
             fileLogger.writeEvent("process()","Saved original file ");
             Log.d("OPENCV","tmp CV_8UC4 Height " + tmp.height() + " Width " + tmp.width());
             Log.d("OPENCV","Channels " + tmp.channels());
 
             tmp.convertTo(mat1, CvType.CV_8UC4);
-            //Size size = new Size(640,480);//the dst image size,e.g.100x100
-
-            //resize(mat1,mat1,size);//resize image
             SaveImage(mat1, "-convertcv_8uc4");
             Log.d("OPENCV","mat1 CV_8UC4 Height " + mat1.height() + " Width " + mat1.width());
             fileLogger.writeEvent("process()","converted to cv_8uc3");
             Log.d("OPENCV","mat1 convertcv_8uc4 Channels " + mat1.channels());
 
             Imgproc.cvtColor(mat1, mat2, Imgproc.COLOR_RGB2HSV_FULL);
-            mat2.convertTo(mat2, CvType.CV_8UC4);
+            //mat2.convertTo(mat2, CvType.CV_8UC4);
             SaveImage(mat2, "-COLOR_RGB2HSV_FULL");
             Log.d("OPENCV","mat2 COLOR_RGB2HSV Height " + mat2.height() + " Width " + mat2.width());
             Log.d("OPENCV","mat2 Channels " + mat2.channels());
+
+            Imgproc.cvtColor(tmp, mat6, Imgproc.COLOR_RGB2YCrCb);
+            SaveImage(mat6, "-COLOR_RGB2YCrCb");
+            Log.d("OPENCV","mat6 COLOR_RGB2HSV Height " + mat6.height() + " Width " + mat6.width());
+            Log.d("OPENCV","mat6 Channels " + mat6.channels());
 
             Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
             Log.d("OPENCV","mat2 Channels " + mat2.channels() + " empty " + mat2.empty());
@@ -401,7 +428,25 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
             Log.d("OPENCV","mat3 COLOR_RGB2HSV Height " + mat3.height() + " Width " + mat3.width());
             //Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
             fileLogger.writeEvent("process()","Set Red window Limits: ");
+
+
             SaveImage(mat3, "-red limits");
+
+            Imgproc.dilate(mat3, mat7, new Mat());
+            Imgproc.dilate(mat7, mat8, new Mat()); //fill in holes
+            Imgproc.Canny(mat8, mat9, 20, 100);
+            Imgproc.findContours(mat9, contoursRed, mHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            Imgproc.drawContours(mat9, contoursRed, -1, new Scalar(255,255,255), 4);
+
+
+            Point centroid = massCenterMatOfPoint2f(contoursRed.get(0));
+            Log.d("OPENCV","Centroid " + centroid);
+            Imgproc.circle(mat9, centroid, 50, new Scalar(255, 255, 255), 5);
+            Imgproc.putText(mat9,"RED",centroid, 3, 0.5, new Scalar(255, 255, 255), 1);
+            MatOfPoint line = contoursRed.get(0);
+            double area = contourArea(contoursRed.get(0));
+            Log.d("OPENCV","Area " + area);
+            SaveImage(mat9, "-red contours");
 
             Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
             fileLogger.writeEvent("process()","Set Blue window Limits: ");
@@ -417,9 +462,10 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
 
             // convert to bitmap:
             Bitmap bmDisplay = Bitmap.createBitmap(mat5.cols(), mat5.rows(),Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(mat5, bm);
-            
+            Utils.matToBitmap(mat5, bmDisplay);
+            */
             frame.close();
+
 
             for (VuforiaTrackable beac : velocityVortex) {
 
@@ -485,6 +531,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
                 telemetry.addData("Pos   ", "Unknown");
             }
             telemetry.update();
+            loop++;
         }
 
         //stop the log
@@ -494,6 +541,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
             fileLogger.close();
             fileLogger = null;
         }
+
     }
 
     /**
@@ -506,9 +554,14 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
 
     public void SaveImage (Mat mat, String info) {
         Mat mIntermediateMat = new Mat();
+        Mat mIntermediateMat2 = new Mat();
 
-        mat.convertTo(mIntermediateMat, CvType.CV_8UC3);
-        //Imgproc.cvtColor(mat, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
+        mat.convertTo(mIntermediateMat2, CvType.CV_8UC4);
+        if (mIntermediateMat2.channels() > 2)
+            Imgproc.cvtColor(mIntermediateMat2, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
+        else
+            mIntermediateMat = mIntermediateMat2;
+
 
         File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         String filename = "ian" + info + ".png";
@@ -522,5 +575,40 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
             Log.d("filesave", "SUCCESS writing image to external storage");
         else
             Log.d("filesave", "Fail writing image to external storage");
+    }
+
+    public Mat loadImageFromFile(String fileName) {
+
+        Mat rgbLoadedImage = null;
+
+        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        File file = new File(path, fileName);
+
+        // this should be in BGR format according to the
+        // documentation.
+        Mat image = Imgcodecs.imread(file.getAbsolutePath());
+
+        if (image.width() > 0) {
+
+            rgbLoadedImage = new Mat(image.size(), image.type());
+            Imgproc.cvtColor(image, rgbLoadedImage, Imgproc.COLOR_RGB2HSV_FULL);
+
+            Log.d("OpenCVLoadImage", "loadedImage: " + "chans: " + image.channels() + ", (" + image.width() + ", " + image.height() + ")");
+
+            image.release();
+            image = null;
+        }
+
+        return rgbLoadedImage;
+
+    }
+
+    private Point massCenterMatOfPoint2f(MatOfPoint map)
+    {
+        Moments moments = Imgproc.moments(map, true);
+        Point centroid = new Point();
+        centroid.x = moments.get_m10() / moments.get_m00();
+        centroid.y = moments.get_m01() / moments.get_m00();
+        return centroid;
     }
 }

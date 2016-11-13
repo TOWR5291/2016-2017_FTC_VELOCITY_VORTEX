@@ -5,26 +5,28 @@ package org.firstinspires.ftc.robotcontroller.internal;
  */
 
 
-        import android.app.Activity;
-        import android.content.SharedPreferences;
-        import android.os.Bundle;
-        import android.preference.PreferenceManager;
-        import android.util.Log;
-        import android.view.View;
-        import android.widget.AdapterView;
-        import android.widget.NumberPicker;
-        import android.widget.Spinner;
-        import android.widget.Toast;
+import android.app.Activity;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.NumberPicker;
+import android.widget.Spinner;
+import android.widget.Toast;
 
-        import com.qualcomm.ftcrobotcontroller.R;
+import com.qualcomm.ftcrobotcontroller.R;
 
 
-public class AutonomousConfiguration extends Activity implements NumberPicker.OnValueChangeListener, Spinner.OnItemSelectedListener {
+public class AutonomousConfiguration extends Activity implements Spinner.OnItemSelectedListener {
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
     Spinner allianceColor;
     Spinner alliancePosition;
-    NumberPicker delay;
+    Spinner allianceBeacons;
+    Spinner robotConfig;
+    Spinner delay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +42,11 @@ public class AutonomousConfiguration extends Activity implements NumberPicker.On
 
         String savedColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "null");
         String savedPosition = sharedPreferences.getString("club.towr5291.Autonomous.Position", "null");
-        int savedDelay = sharedPreferences.getInt("club.towr5291.Autonomous.Delay", 0);
+        String savedBeacons = sharedPreferences.getString("club.towr5291.Autonomous.Beacons", "null");
+        String savedConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "null");
+        String savedDelay = sharedPreferences.getString("club.towr5291.Autonomous.Delay", "null");
 
-        allianceColor = (Spinner) findViewById(R.id.spinner);
+        allianceColor = (Spinner) findViewById(R.id.alliance_color_options);
         allianceColor.setOnItemSelectedListener(this);
         allianceColor.setSelection(savedColor.equals("Red") ? 0 : 1, true);
 
@@ -50,40 +54,35 @@ public class AutonomousConfiguration extends Activity implements NumberPicker.On
         alliancePosition.setOnItemSelectedListener(this);
         alliancePosition.setSelection(savedPosition.equals("Left") ? 0 : 1, true);
 
-        delay = (NumberPicker) findViewById(R.id.delay);
-        delay.setOnValueChangedListener(this);
-        delay.setMinValue(0);
-        delay.setMaxValue(30);
-        delay.setValue(savedDelay);
-        delay.getValue();
+        allianceBeacons = (Spinner) findViewById(R.id.spinnerBeacons);
+        allianceBeacons.setOnItemSelectedListener(this);
+        allianceBeacons.setSelection(savedBeacons.equals("One") ? 0 : 1, true);
+
+        robotConfig = (Spinner) findViewById(R.id.spinnerRobotConfig);
+        robotConfig.setOnItemSelectedListener(this);
+        robotConfig.setSelection(savedConfig.equals("TileRunner-2x20") ? 0 : 1, true);
+
+        delay = (Spinner) findViewById(R.id.spinnerAllianceDelay);
+        delay.setOnItemSelectedListener(this);
+        delay.setSelection(savedDelay.equals("00") ? 0 : 1, true);
 
         storeValues();
     }
 
     public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-        //editor.putString("com.qualcomm.ftcrobotcontroller.Autonomous.Color", parentView.getItemAtPosition(position).toString());
-        //editor.putString("com.qualcomm.ftcrobotcontroller.Autonomous.Color", allianceColor.getSelectedItem().toString());
-        //editor.putString("com.qualcomm.ftcrobotcontroller.Autonomous.Position", alliancePosition.getSelectedItem().toString());
-        //editor.putInt("com.qualcomm.ftcrobotcontroller.Autonomous.Delay", delay.getValue());
-
         storeValues();
-
     }
 
     public void onNothingSelected(AdapterView<?> parentView) {
 
     }
 
-    public void onValueChange(NumberPicker numberPicker, int oldVal, int newVal) {
-        //editor.putInt("com.qualcomm.ftcrobotcontroller.Autonomous.Delay", newVal);
-        //editor.commit();
-        storeValues();
-    }
-
     private void storeValues() {
         editor.putString("club.towr5291.Autonomous.Color", allianceColor.getSelectedItem().toString());
         editor.putString("club.towr5291.Autonomous.Position", alliancePosition.getSelectedItem().toString());
-        editor.putInt("club.towr5291.Autonomous.Delay", delay.getValue());
+        editor.putString("club.towr5291.Autonomous.Beacons", allianceBeacons.getSelectedItem().toString());
+        editor.putString("club.towr5291.Autonomous.Delay", delay.getSelectedItem().toString());
+        editor.putString("club.towr5291.Autonomous.RobotConfig", robotConfig.getSelectedItem().toString());
 
         editor.commit();
     }
