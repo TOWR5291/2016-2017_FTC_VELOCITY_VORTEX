@@ -76,8 +76,8 @@ public class AutoDriveRedMichael extends OpMode {
             //                          time, head, dist, powe
             //                          out   ing   ance  r
             //                           s    deg   inch   %
-            new LibraryStateSegAutoOld ( 10,  "0",   24,  1 ),
-            new LibraryStateSegAutoOld ( 10,  "0",   24,  1 )
+            new LibraryStateSegAutoOld ( 10,  "45",   96,  1 ),
+            new LibraryStateSegAutoOld ( 10,  "45",   96,  1 )
 
     };
 
