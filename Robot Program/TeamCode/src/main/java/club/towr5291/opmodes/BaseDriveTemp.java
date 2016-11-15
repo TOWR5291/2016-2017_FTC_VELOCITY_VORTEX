@@ -22,7 +22,7 @@ import club.towr5291.robotconfig.HardwareDriveMotors;
 import club.towr5291.robotconfig.HardwareSensors;
 
 /**
- * Created by kids on 10/15/2016 at 9:53 AM.
+ * Created by Andrew Haselton on 10/15/2016 at 9:53 AM.
  */
 @TeleOp(name = "Base Drive Temp", group = "pi")
 public class BaseDriveTemp extends OpMode{

@@ -5,12 +5,12 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import club.towr5291.functions.FileLogger;
+import club.towr5291.libraries.LibraryStateSegAutoOld;
 import club.towr5291.robotconfig.HardwareDriveMotors;
 import club.towr5291.robotconfig.HardwareSensors;
 
@@ -20,7 +20,7 @@ import club.towr5291.robotconfig.HardwareSensors;
  */
 
 @Autonomous(name="Pushbot: Auto Drive Red", group="5291Test")
-//@Disabled
+@Disabled
 public class AutoDriveRed extends OpMode {
     /* Declare OpMode members. */
     HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use base drive hardware configuration

@@ -1,4 +1,4 @@
-package club.towr5291.opmodes;
+package club.towr5291.Concepts;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -12,10 +12,35 @@ import club.towr5291.astarpathfinder.A0Star;
 import club.towr5291.astarpathfinder.AStarValue;
 import club.towr5291.astarpathfinder.sixValues;
 import club.towr5291.functions.FileLogger;
+import club.towr5291.libraries.LibraryStateSegAuto;
+import club.towr5291.libraries.LibraryStateSegAutoOld;
 
 
 /**
  * Created by ianhaden on 2/09/16.
+ *
+ *  TOWR 5291
+ Copyright (c) 2016 TOWR5291
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+
+ Written by Ian Haden October 2016
+ *
  */
 
 @Autonomous(name="Concept: A Star Path Finder", group="5291Concept")

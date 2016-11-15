@@ -1,11 +1,10 @@
-package club.towr5291.opmodes;
+package club.towr5291.libraries;
 
 /**
  * Created by ianhaden on 2/09/16.
  * Define a "PathSegment" object, used for building a path for the robot to follow.
  */
 
-// Michael was here//
 public class LibraryStateSegAuto {
 
     private int mStep;                   //step number

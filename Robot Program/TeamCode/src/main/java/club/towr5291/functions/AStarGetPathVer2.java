@@ -14,6 +14,28 @@ import club.towr5291.astarpathfinder.sixValues;
 
 /**
  * Created by ianhaden on 5/09/16.
+ *  TOWR 5291
+ Copyright (c) 2016 TOWR5291
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+
+ Written by Ian Haden October 2016
+ *
  * //creates a path from (startX,startY) to (endX,endY)
  // param startFieldX = startX : starting x position
  // param startFieldY = startY : starting y position
@@ -28,13 +50,13 @@ import club.towr5291.astarpathfinder.sixValues;
  */
 
 public class AStarGetPathVer2 {
-    //private static final String TAG = "AStarGetPathVer2";
-    private AStarValue AStarValues = new AStarValue();
+    private static final String TAG = "AStarGetPathVer2";
+//    private AStarValue AStarValues = new AStarValue();
     private HashMap<String,AStarValue> AStarValueMap = new HashMap<String, AStarValue>();
     private HashMap<String,AStarValue> AStarClosedMap = new HashMap<String,AStarValue>();
     private HashMap<String,AStarValue> AStarOpenMap = new HashMap<String,AStarValue>();
     private A0Star a0Star = new A0Star();
-    private sixValues[] pathValues = new sixValues[1500];
+    private sixValues[] pathValues = new sixValues[500];
 
     private int BlueRed = 0;  //0 is not defined, 1 is blue, 2 is red
 
@@ -93,13 +115,13 @@ public class AStarGetPathVer2 {
         }
     }
 
-    private void addToOpen (int xPos, int yPos, double fValue)   //this will overwrite items with same key
+    private void addToOpen (int xPos, int yPos, int zPos, double fValue)   //this will overwrite items with same key
     {
         final String TAG = "AStarGetPathVer2 addToOpen";
         int key;
         //add point to the open list
         key = getKey(xPos,yPos, a0Star.fieldWidth, a0Star.fieldLength);
-        AStarOpenMap.put(String.valueOf(key), new AStarValue(key, fValue, 0, 0, 0, xPos, yPos, 0));
+        AStarOpenMap.put(String.valueOf(key), new AStarValue(key, fValue, 0, 0, 0, xPos, yPos, zPos));
     }
 
     private void removeFromOpen (int xPos, int yPos)
@@ -131,7 +153,7 @@ public class AStarGetPathVer2 {
         temp.Parent = parent;
         temp.ID = nodeKey;
 
-        if (debug >= 3) {
+        if (debug >= 2) {
             if (nodeKey == 0) {
                 Log.d(TAG, "NOOOOOOOOOOOOOOOOOOOOOOOOOO BAD");
             }
@@ -144,7 +166,7 @@ public class AStarGetPathVer2 {
     private int getTurnCost (int xPos, int yPos, int currentX, int currentY, int currentDir) {
         final String TAG = "AStarGetPathVer2 getTurnCost";
         int costPenalty = 0;
-        int cost = 400;
+        int cost = 1000;
         // /check direction change
         switch (currentDir)
         {
@@ -262,6 +284,13 @@ public class AStarGetPathVer2 {
         {
             newDir = 315;
         }
+
+        if (debug >= 1)
+        {
+            fileLogger.writeEvent(TAG, "x " + x + " y " + y + " currentX " + currentX + " currentY " + currentY + " newDir " + newDir);
+            Log.d(TAG, "x " + x + " y " + " currentX " + currentX + " currentY" + currentY + " newDir " + newDir);
+        }
+
         return newDir;
     }
 
@@ -299,6 +328,7 @@ public class AStarGetPathVer2 {
         sixValues returnValue = new sixValues(0,0,0,0,0,0);
         AStarValue AStarValueCurrentXYNode = new AStarValue();      //The main node - the one in the center
         AStarValue AStarValueCurrentNode = new AStarValue();        //the nodes around the main node - 8 of them
+        AStarValue AStarValueCurrentFNode = new AStarValue();        //the nodes around the main node - 8 of them
         AStarValue AStarValueGetLowestF = new AStarValue();
 
 
@@ -404,7 +434,6 @@ public class AStarGetPathVer2 {
                     tempH = ((Math.abs(x - endX) * 1000 + Math.abs(y - endY) * 1000));                                      //insert heuristic of choice (we use manhattan)
                     tempF = tempG + tempH;
                     int parent = getKey(currentX, currentY, a0Star.fieldWidth, a0Star.fieldLength);
-                    addToOpen(x, y, tempF);
 
                     //see if key is in G Map, means already processed
                     if (AStarValueCurrentNode.ID != 0 )
@@ -423,7 +452,15 @@ public class AStarGetPathVer2 {
                                 Log.d(TAG, "Updating point (" + x + "," + y + ") Key " + getKey(x, y, a0Star.fieldWidth, a0Star.fieldLength) + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF + " Parent " + parent);
                             }
                             //need to update GValue and parent only
-                            updateValuesMap(x, y, newDir, tempF, tempG, tempH, parent);
+                            //updateValuesMap(x, y, newDir, tempF, tempG, tempH, parent);
+                            //int nodekey = getKey(x, y, a0Star.fieldWidth, a0Star.fieldLength);
+                            //AStarValueMap.put(String.valueOf(nodekey), new AStarValue(nodekey, tempF, tempG, tempH, parent, x, y, newDir));
+
+                        } else {  //previous values were better so keep them
+                            tempF = AStarValueCurrentNode.FValue;
+                            tempG = AStarValueCurrentNode.GValue;
+                            parent = AStarValueCurrentNode.Parent;
+                            newDir = AStarValueCurrentNode.zvalue;
                         }
                     }
                     else
@@ -434,8 +471,13 @@ public class AStarGetPathVer2 {
                             Log.d(TAG, "Adding point (" + x + "," + y + ") Key " + getKey(x, y, a0Star.fieldWidth, a0Star.fieldLength) + "    G:" + tempG + "     H:" + tempH + "     F:" + tempF + " Parent " + parent);
                         }
                         //add the new point to the map
-                        updateValuesMap(x, y, newDir, tempF, tempG, tempH, parent);
+                        //updateValuesMap(x, y, newDir, tempF, tempG, tempH, parent);
+                        //int nodekey = getKey(x, y, a0Star.fieldWidth, a0Star.fieldLength);
+                        //AStarValueMap.put(String.valueOf(nodekey), new AStarValue(nodekey, tempF, tempG, tempH, parent, x, y, newDir));
                     }
+                    int nodekey = getKey(x, y, a0Star.fieldWidth, a0Star.fieldLength);
+                    AStarValueMap.put(String.valueOf(nodekey), new AStarValue(nodekey, tempF, tempG, tempH, parent, x, y, newDir));
+                    addToOpen(x, y, newDir, tempF);
                 }
             }
         }
@@ -444,12 +486,9 @@ public class AStarGetPathVer2 {
 
         //next node to check is the one with the lowest F and also on the OPEN list
         for (String nodeKeys: AStarOpenMap.keySet()) {
-            if (debug >= 3) {
-                fileLogger.writeEvent(TAG, "lowestF " + lowestF + " Key " + lowestFKey + " Next Key " + nodeKeys);
-                Log.d(TAG, "lowestF " + lowestF + " Key " + lowestFKey + " Next Key " + nodeKeys);
-            }
+            AStarValueCurrentFNode = AStarOpenMap.get(nodeKeys);
             //load all the values and find the lowest fValue
-            if (AStarValueMap.containsKey(nodeKeys)) {
+            /*if (AStarValueMap.containsKey(nodeKeys)) {
                 if (debug >= 3) {
                     fileLogger.writeEvent(TAG, "Key exists " + nodeKeys);
                     Log.d(TAG, "Key exists " + nodeKeys);
@@ -459,17 +498,25 @@ public class AStarGetPathVer2 {
                     fileLogger.writeEvent(TAG, "No Such Key " + nodeKeys);
                     Log.d(TAG, "No Such Key " + nodeKeys);
                 }
-            }
+            }*/
 
-            AStarValueCurrentNode = AStarValueMap.get(nodeKeys);
-            if (AStarValueCurrentNode.FValue < lowestF)
+            //AStarValueCurrentFNode = AStarValueMap.get(nodeKeys);
+            if (AStarValueCurrentFNode.FValue < lowestF)
             {
-                lowestF = AStarValueCurrentNode.FValue;
-                lowestFKey = AStarValueCurrentNode.ID;
-                if (debug >= 3) {
-                    fileLogger.writeEvent(TAG, "Found LowerF " + lowestF + " Key " + lowestFKey + " sourcekey " + nodeKey + " x,y (" + AStarValueCurrentNode.xvalue + "," + AStarValueCurrentNode.yvalue + ")");
-                    Log.d(TAG, "Found LowerF " + lowestF + " Key " + lowestFKey + " sourcekey " + nodeKey + " x,y (" + AStarValueCurrentNode.xvalue + "," + AStarValueCurrentNode.yvalue + ")");
+                currentX = AStarValueCurrentFNode.xvalue;
+                currentY = AStarValueCurrentFNode.yvalue;
+                currentDir = AStarValueCurrentFNode.zvalue;
+                lowestF = AStarValueCurrentFNode.FValue;
+                //lowestFKey = AStarValueCurrentFNode.ID;
+                lowestFKey =  getKey(currentX,currentY, a0Star.fieldWidth, a0Star.fieldLength);
+                if (debug >= 2) {
+                    fileLogger.writeEvent(TAG, "Found LowerF " + lowestF + " Key " + lowestFKey + " sourcekey " + nodeKeys + " x,y (" + AStarValueCurrentFNode.xvalue + "," + AStarValueCurrentFNode.yvalue + ")");
+                    Log.d(TAG, "Found LowerF " + lowestF + " Key " + lowestFKey + " sourcekey " + nodeKeys + " x,y (" + AStarValueCurrentFNode.xvalue + "," + AStarValueCurrentFNode.yvalue + ")");
                 }
+            }
+            if (debug >= 3) {
+                fileLogger.writeEvent(TAG, "lowestF " + lowestF + " Key " + lowestFKey + " Next Key " + nodeKeys);
+                Log.d(TAG, "lowestF " + lowestF + " Key " + lowestFKey + " Next Key " + nodeKeys);
             }
             searching = 1;
             found = 0;
@@ -484,10 +531,10 @@ public class AStarGetPathVer2 {
             }
 
             //process the lowest value next
-            AStarValueGetLowestF = AStarValueMap.get(String.valueOf(lowestFKey));
-            currentX = AStarValueGetLowestF.xvalue;
-            currentY = AStarValueGetLowestF.yvalue;
-            currentDir = AStarValueGetLowestF.zvalue;
+            //AStarValueGetLowestF = AStarValueMap.get(String.valueOf(lowestFKey));
+            //currentX = AStarValueGetLowestF.xvalue;
+            //currentY = AStarValueGetLowestF.yvalue;
+            //currentDir = AStarValueGetLowestF.zvalue;
 
             searching = 1;
             found = 0;
@@ -496,7 +543,7 @@ public class AStarGetPathVer2 {
         {
             searching = 0;
             found = 0;
-            if (debug >= 3)
+            if (debug >= 1)
             {
                 fileLogger.writeEvent(TAG, "no Path Found = No More Nodes Left");
                 Log.d(TAG, "no Path Found = No More Nodes Left");
@@ -610,7 +657,10 @@ public class AStarGetPathVer2 {
         }
 
         //add startpoint to the ValuesMap
-        updateValuesMap(startX, startY, startZ, 0, 0, 0, 0);
+        //updateValuesMap(startX, startY, startZ, 0, 0, 0, 0);
+        int nodekey = getKey(startX, startY, a0Star.fieldWidth, a0Star.fieldLength);
+        AStarValueMap.put(String.valueOf(nodekey), new AStarValue(nodekey, 0, 0, 0, 0, startX, startY, startZ));
+
         //removeFromOpen(startX, startY);
         //addToClosed(startX, startY);
 

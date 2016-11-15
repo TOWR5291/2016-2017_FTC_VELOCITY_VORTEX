@@ -1,27 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <TextView
-            android:text="Alliance Color"
-            android:layout_width="wrap_content"
+
+        <Spinner
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="42dp"
-            android:id="@+id/textView15"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentStart="true" />
-
-
-    <NumberPicker
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/delay"
-        android:layout_alignTop="@+id/textView16"
-        android:layout_toEndOf="@+id/textView15"
-        android:layout_marginStart="14dp" />
-
+            android:id="@+id/alliance_color_options"
+            android:entries="@array/alliance_color_options"
+        android:layout_below="@+id/AllianceColor"
+        android:layout_alignParentStart="true" />
 
     <Spinner
         android:layout_width="match_parent"
@@ -32,28 +23,77 @@
         android:layout_alignParentStart="true" />
 
     <TextView
-        android:text="Delay"
+        android:text="Alliance Color"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="17dp"
-        android:id="@+id/textView16"
-        android:layout_below="@+id/spinnerPosition"
-        android:layout_alignParentStart="true" />
+        android:layout_marginTop="46dp"
+        android:id="@+id/AllianceColor"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
-        <Spinner
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/spinner"
-            android:entries="@array/alliance_color_options"
-            android:layout_below="@+id/textView15"
-            android:layout_alignParentStart="true" />
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinnerAllianceDelay"
+        android:entries="@array/alliance_delay"
+        android:layout_below="@+id/textView16"
+        android:layout_alignParentStart="true" />
 
     <TextView
         android:text="Alliance Position"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/textViewposition"
-        android:layout_below="@+id/spinner"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="18dp"
+        android:layout_below="@+id/alliance_color_options"
+        android:layout_centerHorizontal="true"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinnerBeacons"
+        android:entries="@array/alliance_beacons"
+        android:layout_below="@+id/textViewbeacons"
+        android:layout_alignParentStart="true" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinnerRobotConfig"
+        android:entries="@array/robot_config_options"
+        android:layout_below="@+id/textViewRobotConfig"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:text="Start Delay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView16"
+        android:layout_below="@+id/spinnerPosition"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
+
+    <TextView
+        android:text="Beacons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textViewbeacons"
+        android:layout_below="@+id/spinnerAllianceDelay"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="14dp"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
+
+    <TextView
+        android:text="Robot Config"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textViewRobotConfig"
+        android:layout_marginTop="21dp"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
+        android:layout_below="@+id/spinnerBeacons"
+        android:layout_centerHorizontal="true" />
+
 </RelativeLayout>

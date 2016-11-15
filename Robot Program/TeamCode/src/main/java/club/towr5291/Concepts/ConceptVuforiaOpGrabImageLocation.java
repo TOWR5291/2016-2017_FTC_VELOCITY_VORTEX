@@ -1,10 +1,7 @@
-package club.towr5291.opmodes;
-
-import android.graphics.Bitmap;
+package club.towr5291.Concepts;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.util.RobotLog;
 import com.vuforia.HINT;
 import com.vuforia.Matrix34F;
 import com.vuforia.Tool;
@@ -27,6 +24,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import club.towr5291.Concepts.ConceptVuforiaGrabImage;
+import club.towr5291.opmodes.R;
 
 /**
  * Created by ianhaden on 4/10/2016.
@@ -296,13 +296,17 @@ public class ConceptVuforiaOpGrabImageLocation extends LinearOpMode{
             if (lastLocation != null) {
                 // Then you can extract the positions and angles using the getTranslation and getOrientation methods.
                 VectorF trans = lastLocation.getTranslation();
-                Orientation rot = Orientation.getOrientation(lastLocation, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.RADIANS);
+                Orientation rot = Orientation.getOrientation(lastLocation, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
                 // Robot position is defined by the standard Matrix translation (x and y)
                 robotX = trans.get(0);
                 robotY = trans.get(1);
 
                 // Robot bearing (in Cartesian system) position is defined by the standard Matrix z rotation
                 robotBearing = rot.thirdAngle;
+                if (robotBearing < 0)
+                {
+                    robotBearing = 360 + robotBearing;
+                }
 
                 telemetry.addData("Pos X ", robotX);
                 telemetry.addData("Pos Y ", robotY);

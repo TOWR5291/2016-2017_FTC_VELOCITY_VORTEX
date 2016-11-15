@@ -1,6 +1,7 @@
 package club.towr5291.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -27,6 +28,7 @@ import club.towr5291.astarpathfinder.A0Star;
 import club.towr5291.astarpathfinder.AStarValue;
 import club.towr5291.astarpathfinder.sixValues;
 import club.towr5291.functions.FileLogger;
+import club.towr5291.libraries.LibraryStateSegAutoOld;
 import club.towr5291.robotconfig.HardwareDriveMotors;
 import club.towr5291.robotconfig.HardwareSensors;
 
@@ -36,7 +38,7 @@ import club.towr5291.robotconfig.HardwareSensors;
  */
 
 @Autonomous(name="Pushbot: Auto Drive AStar Path Finder", group="5291Test")
-//@Disabled
+@Disabled
 public class AutoDriveAStarPathFinder extends OpMode {
     /* Declare OpMode members. */
     HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use base drive hardware configuration

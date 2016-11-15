@@ -1,4 +1,4 @@
-package club.towr5291.opmodes;
+package club.towr5291.Concepts;
 
 import android.graphics.Bitmap;
 import android.os.Environment;
@@ -13,6 +13,7 @@ import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -37,7 +38,7 @@ import static org.opencv.imgproc.Imgproc.resize;
  */
 
 @Autonomous(name="OpenCV Images", group="5291Test")
-public class OpenCVImage extends LinearOpMode{
+public class ConceptOpenCVImage extends LinearOpMode{
 
     //set up the variables for the logger
     private String startDate;
@@ -91,21 +92,16 @@ public class OpenCVImage extends LinearOpMode{
         Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(270,255,255);
 
 
-        Mat mat1 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat2 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat3 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat4 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat5 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat6 = new Mat(640,480, CvType.CV_8UC4);
-        Mat mat7 = new Mat(640,480, CvType.CV_8UC4);
+        Mat mat1 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat2 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat3 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat4 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat5 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat6 = new Mat(720,1280, CvType.CV_8UC4);
+        Mat mat7 = new Mat(720,1280, CvType.CV_8UC4);
 
-        //Mat mat1 = new Mat();
-        //Mat mat2 = new Mat();
-        //Mat mat3 = new Mat();
-        //Mat mat4 = new Mat();
-        //Mat mat5 = new Mat();
-
-
+        List<MatOfPoint> contoursRed  = new ArrayList<MatOfPoint>();
+        List<MatOfPoint> contoursBlue = new ArrayList<MatOfPoint>();
 
         Mat houghlines = new Mat();
         Mat lines = new Mat();
@@ -139,29 +135,30 @@ public class OpenCVImage extends LinearOpMode{
             tmp.convertTo(mat1, CvType.CV_8UC4);
             Size size = new Size(640,480);
 
-            resize(mat1,mat1,size);//resize image
-            SaveImage(mat1, "-convertcv_8uc4");
-            Log.d("OPENCV","CV_8UC4 Height " + mat1.height() + " Width " + mat1.width());
-            fileLogger.writeEvent("process()","converted to cv_8uc4");
-            Log.d("OPENCV","Channels " + mat1.channels());
+             resize(mat1,mat1,size);//resize image
+             SaveImage(mat1, "-convertcv_8uc4");
+             Log.d("OPENCV","CV_8UC4 Height " + mat1.height() + " Width " + mat1.width());
+             fileLogger.writeEvent("process()","converted to cv_8uc4");
+             Log.d("OPENCV","Channels " + mat1.channels());
 
-            Imgproc.cvtColor(mat1, mat2, Imgproc.COLOR_RGB2HSV_FULL);
-            SaveImage(mat2, "-COLOR_RGB2HSV_FULL");
-            Log.d("OPENCV","COLOR_RGB2HSV Height " + mat2.height() + " Width " + mat2.width());
-            Log.d("OPENCV","Channels " + mat2.channels());
+             Imgproc.cvtColor(mat1, mat2, Imgproc.COLOR_RGB2HSV_FULL);
+             SaveImage(mat2, "-COLOR_RGB2HSV_FULL");
+             Log.d("OPENCV","COLOR_RGB2HSV Height " + mat2.height() + " Width " + mat2.width());
+             Log.d("OPENCV","Channels " + mat2.channels());
 
-            Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
-            Log.d("OPENCV","mat2 Channels " + mat2.channels() + " empty " + mat2.empty());
-            Log.d("OPENCV","mat3 Channels " + mat3.channels() + " empty " + mat3.empty());
-            //Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
-            fileLogger.writeEvent("process()","Set Red window Limits: ");
-            SaveImage(mat3, "-red limits");
+             Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
+             Log.d("OPENCV","mat2 Channels " + mat2.channels() + " empty " + mat2.empty());
+             Log.d("OPENCV","mat3 Channels " + mat3.channels() + " empty " + mat3.empty());
+             //Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
+             fileLogger.writeEvent("process()","Set Red window Limits: ");
+             SaveImage(mat3, "-red limits");
 
-            Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
+
+             Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
             fileLogger.writeEvent("process()","Set Blue window Limits: ");
             SaveImage(mat4, "-blue limits");
 
-            Core.bitwise_or(mat1, mat2, mat5);
+            Core.bitwise_or(mat3, mat4, mat5);
             SaveImage(mat5, "-bitwise red and blue images");
 
             telemetry.update();
@@ -180,7 +177,7 @@ public class OpenCVImage extends LinearOpMode{
     public void SaveImage (Mat mat, String info) {
         Mat mIntermediateMat = new Mat();
 
-        mat.convertTo(mIntermediateMat, CvType.CV_8UC4);
+        mat.convertTo(mIntermediateMat, CvType.CV_8UC3);
         //Imgproc.cvtColor(mat, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
 
         File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
