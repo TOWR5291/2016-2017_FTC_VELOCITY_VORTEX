@@ -99,7 +99,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <item>Two</item>
   </string-array>
   <string-array name="robot_config_options">
-    <item>TileRunner-2x20</item>
+    <item>TileRunner-2x40</item>
     <item>Tank Tread-2x40</item>
   </string-array>
 

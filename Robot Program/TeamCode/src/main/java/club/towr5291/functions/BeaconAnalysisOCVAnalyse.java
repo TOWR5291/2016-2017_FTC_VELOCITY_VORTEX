@@ -1,17 +1,18 @@
 package club.towr5291.functions;
 
-import android.graphics.Bitmap;
 import android.os.Environment;
 import android.util.Log;
 
-import com.vuforia.CameraCalibration;
-import com.vuforia.Matrix34F;
-import com.vuforia.Tool;
-import com.vuforia.Vec2F;
-import com.vuforia.Vec3F;
-
-import org.opencv.android.Utils;
-import org.opencv.core.*;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
@@ -21,15 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.opencv.imgproc.Imgproc.contourArea;
-import static org.opencv.imgproc.Imgproc.initUndistortRectifyMap;
 
 /**
  * Created by LZTDD0 on 11/7/2016.
  */
 
-public class BeaconAnalysisOCV {
+public class BeaconAnalysisOCVAnalyse {
 
-    public BeaconAnalysisOCV() {
+    public BeaconAnalysisOCVAnalyse() {
 
 
     }
@@ -52,7 +52,7 @@ public class BeaconAnalysisOCV {
        // Scalar RED_UPPER_BOUNDS_HSV = new Scalar((int) (300.0 / 360.0 * 255.0), 255, 255);
 
         //rgb to HSV
-        Scalar RED_LOWER_BOUNDS_HSV = new Scalar(140,70,130);
+        Scalar RED_LOWER_BOUNDS_HSV = new Scalar(130,60,130);
         Scalar RED_UPPER_BOUNDS_HSV = new Scalar(180,150,255);
 
         //rgb to BGR
@@ -143,21 +143,26 @@ public class BeaconAnalysisOCV {
         Mat erode = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
         Mat dilate = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(10, 10));
 
-        //Mat mat10 = cropped.clone();
-        //analyse RED
-        Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
-        //Core.inRange(mat2, new Scalar(x, y, 130),  new Scalar(x + 50, y + 50, 255), mat3);
-        //Log.d("OPENCV","mat3 Red Height " + mat3.height() + " Width " + mat3.width());
-        SaveImage(mat3, "-red limits" + count);
-        //SaveImage(mat3, "-red limits" + count + " x " + x + " y " + y);
+        int x = 0;
+        int y = 0;
 
+        for (x = 120; x < 250; x = x + 10) {
+        for (y = 0; y < 300; y = y + 10) {
+
+        Mat mat10 = cropped.clone();
+        //analyse RED
+        //Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
+        Core.inRange(mat2, new Scalar(x, y, 130),  new Scalar(x + 30, y + 30, 255), mat3);
+        //Log.d("OPENCV","mat3 Red Height " + mat3.height() + " Width " + mat3.width());
+        //SaveImage(mat3, "-red limits" + count);
+        SaveImage(mat3, "-red limits" + count + " x " + x + " y " + y);
 
         Imgproc.GaussianBlur( mat3, mat8, new Size(0,0) , 3);
         Core.addWeighted(mat3, 1.5, mat8, -0.5, 0, mat3);
 
         //Imgproc.blur( mat3, mat3, new Size(3,3) );
-        SaveImage(mat3, "-red limits blurred " + count );
-        //SaveImage(mat3, "-red limits blurred " + count + " x " + x + " y " + y);
+        //SaveImage(mat3, "-red limits blurred " + count );
+        SaveImage(mat3, "-red limits blurred " + count + " x " + x + " y " + y);
 
 
         //fill in any holes
@@ -177,8 +182,6 @@ public class BeaconAnalysisOCV {
 
         //find and draw the contours
         Imgproc.findContours(mat9, contoursRed, mHierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
-
-        Imgproc.drawContours(mat9, contoursRed, -1, new Scalar(255, 0, 0), 4);
 
         if (!(contoursRed.isEmpty())) {
             int largestRed = contoursLargestIndex(contoursRed);
@@ -200,36 +203,40 @@ public class BeaconAnalysisOCV {
                 // Get bounding rect of contour
                 Rect rectRed = Imgproc.boundingRect(pointsRed);
                 Imgproc.rectangle(original, new Point(rectRed.x, rectRed.y), new Point(rectRed.x + rectRed.width, rectRed.y + rectRed.height), new Scalar(255, 0, 0), 3);
-                //Imgproc.rectangle(mat10, new Point(rectRed.x, rectRed.y), new Point(rectRed.x + rectRed.width, rectRed.y + rectRed.height), new Scalar(255, 0, 0), 3);
+                Imgproc.rectangle(mat10, new Point(rectRed.x, rectRed.y), new Point(rectRed.x + rectRed.width, rectRed.y + rectRed.height), new Scalar(255, 0, 0), 3);
 
                 centroidRed = massCenterMatOfPoint2f(contoursRed.get(largestRed));
                 Log.d("OPENCV", "Red Centroid " + centroidRed);
                 Imgproc.circle(original, centroidRed, 50, new Scalar(255, 0, 0), 5);
-                Imgproc.putText(original, "RED Area " + areaRed, centroidRed, 3, 0.5, new Scalar(255, 0, 0), 1);
-                //Imgproc.circle(mat10, centroidRed, 50, new Scalar(255, 0, 0), 5);
+                //Imgproc.putText(original, "RED Area " + areaRed, centroidRed, 3, 0.5, new Scalar(255, 0, 0), 1);
+                Imgproc.circle(mat10, centroidRed, 50, new Scalar(255, 0, 0), 5);
                 //Imgproc.putText(mat10, "RED ", centroidRed, 3, 0.5, new Scalar(255, 0, 0), 1);
-                //Imgproc.putText(mat10, "RED x " + x + " y " + y, centroidRed, 3, 0.5, new Scalar(255, 0, 0), 1);
+                Imgproc.putText(mat10, "RED x " + x + " y " + y, centroidRed, 3, 0.5, new Scalar(255, 0, 0), 1);
                 Log.d("OPENCV", "Area Red " + areaRed);
 
-                //SaveImage(mat9, "-red contours " + count + " x " + x + " y " + y );
-                //SaveImage(mat10, "-final RED " + count + " x " + x + " y " + y );
-                SaveImage(mat9, "-red contours " + count );
+                SaveImage(mat9, "-red contours " + count + " x " + x + " y " + y );
+                SaveImage(mat10, "-final RED " + count + " x " + x + " y " + y );
+                //SaveImage(mat9, "-red contours " + count );
                 //SaveImage(original, "-final RED " + count );
                 mat9.release();
 
             }
-
+        }
 
         }
-        //Imgproc.cvtColor(cropped, mat2, Imgproc.COLOR_RGB2HSV);
+        }
 
-        //for (int x = 60; x < 200; x = x + 10) {
-        //for (int y = 0; y < 300; y = y + 10) {
-        int x=0;
-        int y = 0;
+        for (x = 120; x < 250; x = x + 10) {
+            for (y = 0; y < 300; y = y + 10) {
+
+
+
+                    //Imgproc.cvtColor(cropped, mat2, Imgproc.COLOR_RGB2HSV);
+        Mat mat10 = cropped.clone();
+
         //analyse blue
-        Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
-           // Core.inRange(mat2, new Scalar(x, y, 130),  new Scalar(x + 50, y + 50, 255), mat4);
+        //Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
+        Core.inRange(mat2, new Scalar(x, y, 130),  new Scalar(x + 30, y + 30, 255), mat4);
         //Log.d("OPENCV","mat4 Blue Height " + mat4.height() + " Width " + mat4.width());
         SaveImage(mat4, "-blue limits" + count + " x " + x + " y " + y );
 
@@ -241,6 +248,8 @@ public class BeaconAnalysisOCV {
         Imgproc.GaussianBlur( mat4, mat9, new Size(0,0) , 3);
         Core.addWeighted(mat4, 1.5, mat9, -0.5, 0, mat4);
 
+        SaveImage(mat4, "-blue limits blurred " + count + " x " + x + " y " + y );
+
         //Imgproc.dilate(mat4, mat4, dilate);
 
         //Canny edge detection
@@ -249,13 +258,12 @@ public class BeaconAnalysisOCV {
         //Imgproc.erode(mat4, mat8, erode);
         //Imgproc.erode(mat8, mat8, erode);
         //Imgproc.dilate(mat9, mat9, dilate);
-        Imgproc.dilate(mat9, mat9, dilate);
+        Imgproc.dilate(mat4, mat9, dilate);
         //Imgproc.erode(mat8, mat8, erode);
         //Imgproc.erode(mat8, mat8, erode);
 
         //find and draw the contours
         Imgproc.findContours(mat9, contoursBlue, mHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        Imgproc.drawContours(mat9, contoursBlue, -1, new Scalar(0, 0, 255), 4);
 
         if (!(contoursBlue.isEmpty())) {
 
@@ -263,6 +271,7 @@ public class BeaconAnalysisOCV {
             areaBlue = contourArea(contoursBlue.get(largestBlue));
             //only look for large areas
             if (areaBlue > 10000) {
+                Imgproc.drawContours(mat9, contoursBlue, -1, new Scalar(0, 0, 255), 4);
 
                 //Draw square around contour
                 MatOfPoint2f approxCurveBlue = new MatOfPoint2f();
@@ -277,14 +286,18 @@ public class BeaconAnalysisOCV {
                 // Get bounding rect of contour
                 Rect rectBlue = Imgproc.boundingRect(pointsBlue);
                 Imgproc.rectangle(original, new Point(rectBlue.x, rectBlue.y), new Point(rectBlue.x + rectBlue.width, rectBlue.y + rectBlue.height), new Scalar(0, 0, 255), 3);
+                Imgproc.rectangle(mat10, new Point(rectBlue.x, rectBlue.y), new Point(rectBlue.x + rectBlue.width, rectBlue.y + rectBlue.height), new Scalar(0, 0, 255), 3);
 
                 centroidBlue = massCenterMatOfPoint2f(contoursBlue.get(largestBlue));
                 Log.d("OPENCV", "Blue Centroid " + centroidBlue);
                 Imgproc.circle(original, centroidBlue, 50, new Scalar(0, 0, 255), 5);
+                Imgproc.circle(mat10, centroidBlue, 50, new Scalar(0, 0, 255), 5);
                 Imgproc.putText(original, "BLUE Area " + areaBlue, centroidBlue, 3, 0.5, new Scalar(0, 0, 255), 1);
+                Imgproc.putText(mat10, "BLUE x " + x + " y " + y, centroidBlue, 3, 0.5, new Scalar(0, 0, 255), 1);
                 MatOfPoint lineBlue = contoursBlue.get(0);
                 Log.d("OPENCV", "Area Blue " + areaBlue);
                 SaveImage(mat9, "-blue contours" + count + " x " + x + " y " + y );
+                SaveImage(mat10, "-final BLUE " + count + " x " + x + " y " + y );
 
 
             }
@@ -292,10 +305,10 @@ public class BeaconAnalysisOCV {
             noBlue = true;
         }
 
-        //}
-        //}
+        }
+        }
 
-        SaveImage(original, "-final" + count);
+        SaveImage(original, "-final" + count + " x " + x + " y " + y );
 
         //merge the two images together
         Core.bitwise_or(mat3, mat4, mat5);

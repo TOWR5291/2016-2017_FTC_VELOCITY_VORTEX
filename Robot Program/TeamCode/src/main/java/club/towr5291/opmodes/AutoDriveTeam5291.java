@@ -76,8 +76,8 @@ import club.towr5291.functions.BeaconAnalysisOCV;
 import club.towr5291.functions.Constants;
 import club.towr5291.functions.FileLogger;
 import club.towr5291.libraries.LibraryStateSegAuto;
+import club.towr5291.robotconfig.HardwareArmMotors;
 import club.towr5291.robotconfig.HardwareDriveMotors;
-
 /*
 TOWR 5291 Autonomous
 Copyright (c) 2016 TOWR5291
@@ -121,6 +121,9 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
     // Declare OpMode members.
     private HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use a Pushbot's hardware
+    private HardwareArmMotors armDrive   = new HardwareArmMotors();   // Use a Pushbot's hardware
+
+
     private ElapsedTime     runtime = new ElapsedTime();
 
     //set up the variables for file logger and what level of debug we will log info at
@@ -176,6 +179,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private stepState mCurrentVuforiaTurnState;                                         // Current State of Vuforia Turn
     private stepState mCurrentBeaconColourState;                                        // Current State of Beacon Colour
     private stepState mCurrentAttackBeaconState;                                        // Current State of Attack Beacon
+    private stepState mCurrentShootBallState;                                           // Current State of Shooting Ball in Vortex
     private enum stepState {
         STATE_INIT,
         STATE_START,
@@ -297,7 +301,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         //loadSteps(10, "LP90", 0,    0,    0,    0,    0,    0,  0.5);
     }
 
-    private void loadStaticStepsRed ()
+    private void loadStaticStepsRedRight ()
     {
         // Valid Commands Angle
         // RT = Right Turn Angle
@@ -324,48 +328,36 @@ public class AutoDriveTeam5291 extends LinearOpMode
         //loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
         //loadSteps(10,  "BC",  0,    0,    0,    0,    0,    0,    0);
         //loadSteps(10,  "AB",  0,    0,    0,    0,    0,    0,    0);
-        loadSteps(15, "FW8", 0,    0,    0,    0,    0,    0,    0.8);
-        loadSteps(10, "LT45", 0,    0,    0,    0,    0,    0,    .6);
-        loadSteps(15, "FW90", 0,    0,    0,    0,    0,    0,    0.9);
-        loadSteps(15, "RT45", 0,    0,    0,    0,    0,    0,    0.8);
-        loadSteps(15, "FW18", 0,    0,    0,    0,    0,    0,    0.8);
-        loadSteps(15, "LT90", 0,    0,    0,    0,    0,    0,    0.7);
-        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(5,  "VL",   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "VM",   0,    0,    0,  -1016, 914,  180,   0.6);
-        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.4);
-        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.3);
-        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-//        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.3);
-//        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10,  "BC",  0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10,  "AB",  0,    0,    0,    0,    0,    0,    0);
-        loadSteps(15, "LT100", 0,    0,    0,    0,    0,    0,    0.7);
-        loadSteps(15, "FW48", 0,    0,    0,    0,    0,    0,    0.9);
-        loadSteps(15, "RT50", 0,    0,    0,    0,    0,    0,    0.9);
-        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.4);
-        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.3);
-        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
 
-//
-//
+        loadSteps(7, "DL3000", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(15, "FW8",  0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "LT46", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "SB" , 2500,  0,    0,    0,    0,    0,    0  );
+        loadSteps(10, "LT16", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "FW52", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "RT31", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "FW40", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "RT31", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "FW5", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "LT90", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VM",   0,    0,    0,  -1250, 914,  180,   0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.7);
+        loadSteps(10, "LT141", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(15, "FW60",  0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "BC",   0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "AB",   0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "LT126", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(15, "FW48",  0,    0,    0,    0,    0,    0,    0.6);
+
         //loadSteps(30, "AS",   0,    0,    0,   12,   24,  270,  0.5);
         //loadSteps(10, "VM",   0,    0,    0,  -1016, -305,  180,   0.6);
-        //loadSteps(10, "RT90", 0,    0,    0,    0,    0,    0,    1);
-        //loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
-        //loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.6);
 
-
-        //loadSteps(30, "AS",  84,   120,   0,   12,   24,  270,  0.5);
         loadSteps(2, "DL0",   0,    0,    0,    0,    0,    0,    0);
     }
 
-    private void loadStaticStepsBlue ()
+    private void loadStaticStepsRedLeft ()
     {
         // Valid Commands Angle
         // RT = Right Turn Angle
@@ -379,6 +371,9 @@ public class AutoDriveTeam5291 extends LinearOpMode
         // AS = AutoStar From Current Pos to X,Y
         // FN = Special Function
         // VL = Vuforia Localise
+        // VM = Vuforia Move
+        // AB = Attack the Beacon
+        // SB = Shoot Ball
         // Red Beacon 1 = (32, 36), (-1016, 914)
         // Red Beacon 2 = (32, 84), (-1016, -305)
         // Blue Beacon 1 = (36,32), (-914, 1016) <270
@@ -386,15 +381,155 @@ public class AutoDriveTeam5291 extends LinearOpMode
         //       time, comm,  parm, parm, parm, parm, parm, parm, powe
         //       out   and    1     2     3     4     5     6     r
         //        s                                               %
-        //loadSteps(10, "FW24", 0,    0,    0,    0,    0,    0,    1);
-        //loadSteps(10, "FW48", 0,    0,    0,    0,    0,    0,    1);
-        //loadSteps(10, "AS",  120,  110,   0,   24,   12,  270,  0.5);
-        //loadSteps(10, "AS",  120,  110,   0,   84,   12,  270,  0.5);
-        loadSteps(10, "RT90", 0,    0,    0,    0,    0,    0,  0.5);
-        loadSteps(10, "LT90", 0,    0,    0,    0,    0,    0,  0.5);
-        //loadSteps(10, "FW24", 0,    0,    0,    0,    0,    0,    1);
-        //loadSteps(10, "RP90", 0,    0,    0,    0,    0,    0,  0.5);
-        //loadSteps(10, "LP90", 0,    0,    0,    0,    0,    0,  0.5);
+
+
+        loadSteps(10, "SB" , 2500,  0,    0,    0,    0,    0,    0  );
+        loadSteps(15, "FW8",  0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "LT46", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "FW37",  0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "LT36", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VM",   0,    0,    0,  -1150, -350,  180,   0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.7);
+        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.7);
+        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.7);
+        loadSteps(10,  "BC",  0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10,  "AB",  0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "RT96", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "FW36",  0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "LT100", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VM",   0,    0,    0,  -1150, 840,  180,   0.6);
+        loadSteps(10, "LT26", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.7);
+        loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.7);
+        loadSteps(10, "BC",   0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "AB",   0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "LT141", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(15, "FW60",  0,    0,    0,    0,    0,    0,    0.6);
+
+        //leave this delay of 0 in there, inserting a step doesn't work if inserting when at the last step
+        loadSteps(2, "DL0",   0,    0,    0,    0,    0,    0,    0);
+    }
+
+    private void loadStaticStepsBlueLeft ()
+    {
+        // Valid Commands Angle
+        // RT = Right Turn Angle
+        // LT = Left Turn Angle
+        // LP = Left Pivot Angle
+        // RP = Left Pivot Angle
+        // LR = Left turn with radius
+        // RR = Right turn with radius
+        // FW = Drive Forward Distance
+        // RV = Drive Backward Distance
+        // AS = AutoStar From Current Pos to X,Y
+        // FN = Special Function
+        // VL = Vuforia Localise
+        // VM = Vuforia Move
+        // AB = Attack the Beacon
+        // Red Beacon 1 = (32, 36), (-1016, 914)
+        // Red Beacon 2 = (32, 84), (-1016, -305)
+        // Blue Beacon 1 = (36,32), (-914, 1016) <270
+        // Blue Beacon 2 = (84,32), (305, 1016) <270
+        //       time, comm,  parm, parm, parm, parm, parm, parm, powe
+        //       out   and    1     2     3     4     5     6     r
+        //        s                                               %
+
+        //loadSteps(2, "DL500", 0,    0,    0,    0,    0,    0,    0);
+        //loadSteps(10,  "BC",  0,    0,    0,    0,    0,    0,    0);
+        //loadSteps(10,  "AB",  0,    0,    0,    0,    0,    0,    0);
+
+        loadSteps(7, "DL3000", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(15, "FW8",  0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "RT46", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "SB" , 2500,  0,    0,    0,    0,    0,    0  );
+        loadSteps(10, "RT16", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "FW49", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "LT31", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "FW40", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "LT31", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "FW5", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(15, "RT91", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VM",   0,    0,    0,  -1250, 914,  180,   0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,   180,   0.7);
+        loadSteps(10, "RT140", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(15, "FW60",  0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "BC",   0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "AB",   0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "RT126", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(15, "FW48",  0,    0,    0,    0,    0,    0,    0.6);
+
+        //loadSteps(30, "AS",   0,    0,    0,   12,   24,  270,  0.5);
+        //loadSteps(10, "VM",   0,    0,    0,  -1016, -305,  180,   0.6);
+
+        loadSteps(2, "DL0",   0,    0,    0,    0,    0,    0,    0);
+    }
+
+    private void loadStaticStepsBlueRight ()
+    {
+        // Valid Commands Angle
+        // RT = Right Turn Angle
+        // LT = Left Turn Angle
+        // LP = Left Pivot Angle
+        // RP = Left Pivot Angle
+        // LR = Left turn with radius
+        // RR = Right turn with radius
+        // FW = Drive Forward Distance
+        // RV = Drive Backward Distance
+        // AS = AutoStar From Current Pos to X,Y
+        // FN = Special Function
+        // VL = Vuforia Localise
+        // VM = Vuforia Move
+        // AB = Attack the Beacon
+        // SB = Shoot Ball
+        // Red Beacon 1 = (32, 36), (-1016, 914)
+        // Red Beacon 2 = (32, 84), (-1016, -305)
+        // Blue Beacon 1 = (36,32), (-914, 1016) <270
+        // Blue Beacon 2 = (84,32), (305, 1016) <270
+        //       time, comm,  parm, parm, parm, parm, parm, parm, powe
+        //       out   and    1     2     3     4     5     6     r
+        //        s                                               %
+
+        loadSteps(10, "SB" , 2500,  0,    0,    0,    0,    0,    0  );
+        loadSteps(15, "FW8",  0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "RT46", 0,    0,    0,    0,    0,    0,    0.5);
+        loadSteps(15, "FW45", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "RT41", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VM",   0,    0,    0,   330, 1200,   90,   0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,    90,   0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,    90,   0.7);
+        loadSteps(10,  "BC",  0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10,  "AB",  0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "LT106", 0,    0,    0,    0,    0,    0,    0.5);
+        loadSteps(15, "FW47", 0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(10, "RT96",0,    0,    0,    0,    0,    0,    0.6);
+        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VM",   0,    0,    0,  -900, 1200,   90,   0.6);
+        loadSteps(10, "RT26", 0,    0,    0,    0,    0,    0,    0.5);
+        loadSteps(2, "DL700", 0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10, "VT",   0,    0,    0,    0,    0,    90,   0.7);
+//        loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+//        loadSteps(10, "VT",   0,    0,    0,    0,    0,    90,   0.7);
+        loadSteps(10,  "BC",  0,    0,    0,    0,    0,    0,    0);
+        loadSteps(10,  "AB",  0,    0,    0,    0,    0,    0,    0);
+        //loadSteps(2, "DL600", 0,    0,    0,    0,    0,    0,    0);
+        //loadSteps(10, "VM",   0,    0,    0,    0,    0,    90,   0.6);
+        loadSteps(10, "RT126", 0,    0,    0,    0,    0,    0,    0.5);
+        loadSteps(10, "FW50", 0,    0,    0,    0,    0,    0,    0.65);
+
+        //leave this delay of 0 in there, inserting a step doesn't work if inserting when at the last step
+        loadSteps(2, "DL0",   0,    0,    0,    0,    0,    0,    0);
     }
 
     private void loadSteps(int timeOut, String command, int parm1, int parm2, int parm3, int parm4, int parm5, int parm6, double power)
@@ -612,7 +747,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
          * plane) is then CCW, as one would normally expect from the usual classic 2D geometry.
          */
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
-                .translation((mmBotWidth/2), 50,0)
+                .translation((mmBotWidth/2), 0, 300)
                 .multiplied(Orientation.getRotationMatrix(
                         AxesReference.EXTRINSIC, AxesOrder.YZY,
                         AngleUnit.DEGREES, -90, 0, 0));
@@ -649,11 +784,11 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
         //load variables
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(hardwareMap.appContext);
-        allianceColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "Blue");
-        alliancePosition = sharedPreferences.getString("club.towr5291.Autonomous.Position", "Left");
+        allianceColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "Red");
+        alliancePosition = sharedPreferences.getString("club.towr5291.Autonomous.Position", "Right");
         delay = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Delay", "0"));
         numBeacons = sharedPreferences.getString("club.towr5291.Autonomous.Beacons", "One");
-        robotConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "TileRunner-2x20");
+        robotConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "TileRunner-2x40");
         LibraryStateSegAuto processingSteps = new LibraryStateSegAuto(0,0,"",0,0,0,0,0,0,0,false);
         sixValues[] pathValues = new sixValues[1000];
         A0Star a0Star = new A0Star();
@@ -682,14 +817,15 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
         //to add more config options edit strings.xml and AutonomousConfiguration.java
         switch (robotConfig) {
-            case "TileRunner-2x20":   //Velocity Vortex Competition Base
-                COUNTS_PER_MOTOR_REV    = 560 ;                                                     // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
+            case "TileRunner-2x40":   //Velocity Vortex Competition Base
+                COUNTS_PER_MOTOR_REV    = 1120 ;                                                    // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
                 DRIVE_GEAR_REDUCTION    = 0.78 ;                                                    // This is < 1.0 if geared UP, Tilerunner is geared up
                 WHEEL_DIAMETER_INCHES   = 4.0 ;                                                     // For figuring circumference
                 WHEEL_ACTUAL_FUDGE      = 1;                                                        // Fine tuning amount
                 COUNTS_PER_INCH         = ((COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415)) * WHEEL_ACTUAL_FUDGE ;
                 ROBOT_TRACK             = 16.5;                                                     //  distance between centerline of rear wheels robot will pivot on rear wheel of omni on front, 16.5 track is 103.67 inches full circle
-                COUNTS_PER_DEGREE       = ((2 * 3.1415 * ROBOT_TRACK) * COUNTS_PER_INCH) / 360;
+                WHEEL_TURN_FUDGE        = 1.024;                                                        // Fine tuning amount
+                COUNTS_PER_DEGREE       = (((2 * 3.1415 * ROBOT_TRACK) * COUNTS_PER_INCH) / 360) * WHEEL_TURN_FUDGE;
                 loadPowerTableTileRunner();                                                         //load the power table
                 break;
             case "Tank Tread-2x40":   //for tank tread base
@@ -703,9 +839,9 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 COUNTS_PER_DEGREE       = (((2 * 3.1415 * ROBOT_TRACK) * COUNTS_PER_INCH) / 360) * WHEEL_TURN_FUDGE;
                 loadPowerTableTankTread();                                                          //load the power table
                 break;
-            default:  //default for competition TileRunner-2x20
-                COUNTS_PER_MOTOR_REV    = 560 ;                                                     // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
-                DRIVE_GEAR_REDUCTION    = 0.78 ;                                                    // This is < 1.0 if geared UP, Tilerunner is geared up
+            default:  //default for competition TileRunner-2x40
+                COUNTS_PER_MOTOR_REV    = 1120 ;                                                     // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
+                DRIVE_GEAR_REDUCTION    = 1.28 ;                                                    // This is < 1.0 if geared UP, Tilerunner is geared up
                 WHEEL_DIAMETER_INCHES   = 4.0 ;                                                     // For figuring circumference
                 WHEEL_ACTUAL_FUDGE      = 1;                                                        // Fine tuning amount
                 COUNTS_PER_INCH         = ((COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415)) * WHEEL_ACTUAL_FUDGE ;
@@ -728,10 +864,24 @@ public class AutoDriveTeam5291 extends LinearOpMode
         //load the sequence based on alliance colour
         switch (allianceColor) {
             case "Red":
-                loadStaticStepsRed();                                                               //load all the steps into the hashmaps
+                switch (alliancePosition) {
+                    case "Left":
+                        loadStaticStepsRedLeft();                                                               //load all the steps into the hashmaps
+                        break;
+                    case "Right":
+                        loadStaticStepsRedRight();                                                               //load all the steps into the hashmaps
+                        break;
+                }
                 break;
             case "Blue":
-                loadStaticStepsBlue();                                                              //load all the steps into the hashmaps
+                switch (alliancePosition) {
+                    case "Left":
+                        loadStaticStepsBlueLeft();                                                              //load all the steps into the hashmaps
+                        break;
+                    case "Right":
+                        loadStaticStepsBlueRight();                                                               //load all the steps into the hashmaps
+                        break;
+                }
                 break;
             case "Test":
                 loadStaticSteps();                                                                  //load all the steps into the hashmaps
@@ -757,6 +907,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         * The init() method of the hardware class does all the work here
         */
         robotDrive.init(hardwareMap);
+        armDrive.init(hardwareMap);
 
         //get a reference to the range sensors
         try {
@@ -806,6 +957,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         mCurrentVuforiaTurnState = stepState.STATE_COMPLETE;
         mCurrentAttackBeaconState = stepState.STATE_COMPLETE;
         mCurrentBeaconColourState = stepState.STATE_COMPLETE;
+        mCurrentShootBallState = stepState.STATE_COMPLETE;
 
         if (!gyroError) {
             while (!isStopRequested() && gyro.isCalibrating()) {
@@ -851,12 +1003,13 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     /*rgb is now the Image object that we’ve used in the video*/
                     Bitmap bm = Bitmap.createBitmap(rgb.getWidth(), rgb.getHeight(), Bitmap.Config.RGB_565);
                     bm.copyPixelsFromBuffer(rgb.getPixels());
-                    //close the frame, prevents memory leaks and crashing
-                    frame.close();
 
                     //put the image into a MAT for OpenCV
                     Mat tmp = new Mat(rgb.getWidth(), rgb.getHeight(), CvType.CV_8UC4);
                     Utils.bitmapToMat(bm, tmp);
+
+                    //close the frame, prevents memory leaks and crashing
+                    frame.close();
 
                     //analyse the beacons
                     //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop));
@@ -908,11 +1061,12 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 }
             }
 
-            if (debug >= 3)
-            {
-                if (fileLogger != null)
-                    fileLogger.writeEvent(TAG, "mCurrentStepState:- " + mCurrentStepState + " mCurrentStepState " + mCurrentStepState);
-            }
+            //if (debug >= 3)
+            //{
+            //    if (fileLogger != null)
+            //        fileLogger.writeEvent(TAG, "mCurrentStepState:- " + mCurrentStepState + " mCurrentStepState " + mCurrentStepState);
+            //}
+
             switch (mCurrentStepState)
             {
                 case STATE_INIT:
@@ -961,6 +1115,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     VuforiaTurn();
                     AttackBeacon();
                     BeaconColour();
+                    ShootBallStep();
 
                     if ((mCurrentDelayState == stepState.STATE_COMPLETE) &&
                             (mCurrentBeaconColourState == stepState.STATE_COMPLETE) &&
@@ -971,6 +1126,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                             (mCurrentDriveState == stepState.STATE_COMPLETE) &&
                             (mCurrentPivotTurnState == stepState.STATE_COMPLETE) &&
                             (mCurrentTankTurnState == stepState.STATE_COMPLETE) &&
+                            (mCurrentShootBallState == stepState.STATE_COMPLETE) &&
                             (mCurrentRadiusTurnState == stepState.STATE_COMPLETE))
                     {
                         mCurrentStepState = stepState.STATE_COMPLETE;
@@ -1456,6 +1612,9 @@ public class AutoDriveTeam5291 extends LinearOpMode
             case "AB":  // Press the beacon button robot to press the button
                 mCurrentAttackBeaconState = stepState.STATE_INIT;
                 break;
+            case "SB":  // Press the beacon button robot to press the button
+                mCurrentShootBallState = stepState.STATE_INIT;
+                break;
             case "FN":  //  Run a special Function with Parms
 
                 break;
@@ -1655,8 +1814,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 distanceToEndRight2 = (mStepRightTarget2 - intRight2MotorEncoderPosition) / COUNTS_PER_INCH;
 
                 //if getting close ramp down speed
-                distanceToEnd = (distanceToEndLeft1 + distanceToEndRight1 + distanceToEndLeft2 + distanceToEndRight2) / 2;
-
+                distanceToEnd = (distanceToEndLeft1 + distanceToEndRight1 + distanceToEndLeft2 + distanceToEndRight2) / 4;
+/*
                 if ((distanceFromStart <= 0.5 ) || (distanceToEnd <= 0.5 ))
                 {
                     mStepSpeedTemp = Double.valueOf(powerTable.get(String.valueOf(0.5)));
@@ -1695,17 +1854,17 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 }
 
                 if (mStepSpeed < mStepSpeedTemp)
-                    mStepSpeedTemp = mStepSpeed;
+                    mStepSpeedTemp = mStepSpeed;*/
 
                 // set power on motor controller to start moving
-                setDriveMotorPower(Math.abs(mStepSpeedTemp * mStepSpeedTemp));
+                setDriveMotorPower(Math.abs(mStepSpeedTemp));
 
                 //if within error margin stop
                 if (robotDrive.leftMotor1.isBusy() && robotDrive.rightMotor1.isBusy())
                 {
                     if (debug >= 3)
                     {
-                        fileLogger.writeEvent("runningDriveStep()", "distanceFromStart " + distanceFromStart + " distanceToEnd " + distanceToEnd + " Power Level " + mStepSpeedTemp + " Running to target  L1, L2, R1, R2  " + mStepLeftTarget1 + ", " + mStepLeftTarget2 + ", " + mStepRightTarget1 + ",  " + mStepRightTarget2 + ", " + " Running at position L1 " + intLeft1MotorEncoderPosition + " L2 " + intLeft2MotorEncoderPosition + " R1 " + intRight1MotorEncoderPosition + " R2 " + intRight2MotorEncoderPosition);
+                        fileLogger.writeEvent("runningDriveStep()", "Encoder counts per inch = " + COUNTS_PER_INCH + " distanceFromStart " + distanceFromStart + " distanceToEnd " + distanceToEnd + " Power Level " + mStepSpeedTemp + " Running to target  L1, L2, R1, R2  " + mStepLeftTarget1 + ", " + mStepLeftTarget2 + ", " + mStepRightTarget1 + ",  " + mStepRightTarget2 + ", " + " Running at position L1 " + intLeft1MotorEncoderPosition + " L2 " + intLeft2MotorEncoderPosition + " R1 " + intRight1MotorEncoderPosition + " R2 " + intRight2MotorEncoderPosition);
                     }
                     telemetry.addData("Path1", "Running to %7d :%7d", mStepLeftTarget1, mStepRightTarget1);
                     telemetry.addData("Path2", "Running at %7d :%7d", intLeft1MotorEncoderPosition, intRight1MotorEncoderPosition);
@@ -2153,7 +2312,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 correctionAngle = newAngleDirection (intlocalisedRobotBearing, requiredMoveAngle);
 
                 insertSteps(10, "FW"+requiredMoveDistance, 0, 0, 0, 0, 0, 0, 0.6, mCurrentStep + 1);
-                insertSteps(10, correctionAngle, 0, 0, 0, 0, 0, 0, 0.3, mCurrentStep + 1);
+                insertSteps(10, correctionAngle, 0, 0, 0, 0, 0, 0, 0.4, mCurrentStep + 1);
 
                 mCurrentVuforiaMoveState = stepState.STATE_COMPLETE;
             }
@@ -2198,7 +2357,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     fileLogger.writeEvent("VuforiaTurn()", "Localised, determining angles....Alliancecolour= " + allianceColor + " intlocalisedRobotBearing= " + intlocalisedRobotBearing  + " requiredMoveAngle " + requiredMoveAngle);
                 }
 
-                insertSteps(10, correctionAngle, 0, 0, 0, 0, 0, 0, 0.3, mCurrentStep + 1);
+                insertSteps(10, correctionAngle, 0, 0, 0, 0, 0, 0, 0.4, mCurrentStep + 1);
 
                 mCurrentVuforiaTurnState = stepState.STATE_COMPLETE;
             }
@@ -2232,7 +2391,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     fileLogger.writeEvent("BeaconColour()", "Returned " + mColour + " intNumberColourTries" + intNumberColourTries);
                 }
 
-                if (intNumberColourTries > 3) {
+                if (intNumberColourTries > 1) {
                     readyToCapture = false;
                     mCurrentBeaconColourState = stepState.STATE_COMPLETE;
                 }
@@ -2268,12 +2427,30 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 if (allianceColor.equals("Red")) {
                     if (mColour == Constants.BeaconColours.BEACON_BLUE_RED) {    //means red is to the right
                         insertSteps(10, "FW-24", 0, 0, 0, 0, 0, 0, 0.6, mCurrentStep + 1);
-                        insertSteps(10, "FW24", 0, 0, 0, 0, 0, 0, 0.6, mCurrentStep + 1);
-                        insertSteps(10, "RT8", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "FW10", 0, 0, 0, 0, 0, 0, 0.35, mCurrentStep + 1);
+                        insertSteps(10, "LT30", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "FW1", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "RT30", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
                     } else if (mColour == Constants.BeaconColours.BEACON_RED_BLUE) {
                         insertSteps(10, "FW-24", 0, 0, 0, 0, 0, 0, 0.6, mCurrentStep + 1);
-                        insertSteps(10, "FW24", 0, 0, 0, 0, 0, 0, 0.6, mCurrentStep + 1);
-                        insertSteps(10, "LT8", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "FW8", 0, 0, 0, 0, 0, 0, 0.35, mCurrentStep + 1);
+                        insertSteps(10, "RT45", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "FW9", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "LT45", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                    }
+                } else if (allianceColor.equals("Blue")) {
+                    if (mColour == Constants.BeaconColours.BEACON_BLUE_RED) {    //means red is to the right
+                        insertSteps(10, "FW-24", 0, 0, 0, 0, 0, 0, 0.6, mCurrentStep + 1);
+                        insertSteps(10, "FW8", 0, 0, 0, 0, 0, 0, 0.35, mCurrentStep + 1);
+                        insertSteps(10, "RT45", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "FW9", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "LT45", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                    } else if (mColour == Constants.BeaconColours.BEACON_RED_BLUE) {
+                        insertSteps(10, "FW-24", 0, 0, 0, 0, 0, 0, 0.6, mCurrentStep + 1);
+                        insertSteps(10, "FW10", 0, 0, 0, 0, 0, 0, 0.35, mCurrentStep + 1);
+                        insertSteps(10, "LT30", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "FW6", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
+                        insertSteps(10, "RT30", 0, 0, 0, 0, 0, 0, 0.5, mCurrentStep + 1);
                     }
                 }
 
@@ -2311,6 +2488,43 @@ public class AutoDriveTeam5291 extends LinearOpMode
             break;
         }
     }
+
+    private void ShootBallStep ()
+    {
+        switch (mCurrentShootBallState) {
+            case STATE_INIT: {
+                mCurrentShootBallState = stepState.STATE_RUNNING;
+                if (debug >= 2) {
+                    fileLogger.writeEvent("ShootBallStep()", "Init");
+                }
+            }
+            break;
+            case STATE_RUNNING:
+            {
+                if (mStateTime.milliseconds() >= (int)mRobotParm1) {
+                    //stop shooting we are complete
+                    armDrive.sweeper.setPower(0);
+                    armDrive.flicker.setPower(0);
+                    if (debug >= 1) {
+                        fileLogger.writeEvent("ShootBallStep()", "Complete         ");
+                    }
+                    mCurrentShootBallState = stepState.STATE_COMPLETE;
+                } else {
+                    //start shooting
+                    armDrive.sweeper.setPower(1);
+                    armDrive.flicker.setPower(1);
+
+                    if (debug >= 3) {
+                        fileLogger.writeEvent("ShootBallStep()", "Running        ");
+                    }
+
+                }
+
+            }
+            break;
+        }
+    }
+
 
     private String getAngle(int angle1, int angle2)
     {

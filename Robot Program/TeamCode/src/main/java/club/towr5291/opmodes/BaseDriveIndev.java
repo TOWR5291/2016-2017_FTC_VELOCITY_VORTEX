@@ -24,7 +24,7 @@ import club.towr5291.robotconfig.HardwareSensors;
 /**
  * Created by kids on 10/15/2016 at 9:53 AM.
  */
-@TeleOp(name = "Base Drive Temp", group = "pi")
+@TeleOp(name = "Base Drive In Dev", group = "pi")
 public class BaseDriveIndev extends OpMode{
 
     HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use base drive hardware configuration

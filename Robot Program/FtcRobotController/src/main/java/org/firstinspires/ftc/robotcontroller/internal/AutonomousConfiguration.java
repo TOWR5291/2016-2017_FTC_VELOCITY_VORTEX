@@ -60,7 +60,7 @@ public class AutonomousConfiguration extends Activity implements Spinner.OnItemS
 
         robotConfig = (Spinner) findViewById(R.id.spinnerRobotConfig);
         robotConfig.setOnItemSelectedListener(this);
-        robotConfig.setSelection(savedConfig.equals("TileRunner-2x20") ? 0 : 1, true);
+        robotConfig.setSelection(savedConfig.equals("TileRunner-2x40") ? 0 : 1, true);
 
         delay = (Spinner) findViewById(R.id.spinnerAllianceDelay);
         delay.setOnItemSelectedListener(this);

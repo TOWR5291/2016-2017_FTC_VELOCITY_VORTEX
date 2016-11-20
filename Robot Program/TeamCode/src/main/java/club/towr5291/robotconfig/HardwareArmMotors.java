@@ -23,6 +23,7 @@ public class HardwareArmMotors
 {
     /* Public OpMode members. */
     public DcMotor  flicker   = null;
+    public DcMotor  sweeper   = null;
 
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
@@ -40,16 +41,19 @@ public class HardwareArmMotors
 
         // Define and Initialize Motors
         flicker   = hwMap.dcMotor.get("flicker");
+        sweeper   = hwMap.dcMotor.get("sweeper");
 
         flicker.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
+        sweeper.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
 
         // Set all motors to zero power
         flicker.setPower(0);
+        sweeper.setPower(0);
 
         // Set all motors to run without encoders.
         // May want to use RUN_USING_ENCODERS if encoders are installed.
-        flicker.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
+        flicker.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        sweeper.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
     }
 

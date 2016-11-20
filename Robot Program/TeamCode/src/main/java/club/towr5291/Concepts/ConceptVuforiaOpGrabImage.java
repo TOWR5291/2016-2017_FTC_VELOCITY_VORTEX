@@ -53,6 +53,7 @@ import java.util.List;
 
 import club.towr5291.functions.Constants;
 import club.towr5291.functions.BeaconAnalysisOCV;
+import club.towr5291.functions.BeaconAnalysisOCVAnalyse;
 import club.towr5291.functions.FileLogger;
 import club.towr5291.opmodes.R;
 
@@ -104,6 +105,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         fileLogger.writeEvent("init()","Log Started");
 
         BeaconAnalysisOCV beaconColour = new BeaconAnalysisOCV();
+        //BeaconAnalysisOCVAnalyse beaconColour = new BeaconAnalysisOCVAnalyse();
 
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(R.id.cameraMonitorViewId);
         parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
