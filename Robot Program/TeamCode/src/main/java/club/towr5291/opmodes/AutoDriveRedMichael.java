@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import club.towr5291.functions.FileLogger;
+import club.towr5291.libraries.LibraryStateSegAutoOld;
 import club.towr5291.robotconfig.HardwareDriveMotors;
 import club.towr5291.robotconfig.HardwareSensors;
 
