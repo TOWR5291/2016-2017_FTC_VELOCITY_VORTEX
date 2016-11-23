@@ -43,6 +43,9 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DeviceInterfaceModule;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.DigitalChannelController;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.vuforia.HINT;
 import com.vuforia.Image;
@@ -134,6 +137,12 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private ModernRoboticsI2cRangeSensor rangeSensorLeft;
     private ModernRoboticsI2cRangeSensor rangeSensorRight;
     private boolean rangeError = false;
+
+    //set up the CDIM
+    private DeviceInterfaceModule dim;                                  // Device Object
+    private DigitalChannel digIn;                                       // Device Object
+    private DigitalChannel digOut;                                      // Device Object
+    private boolean cdimError = false;
 
     //set up colour sensor variables
     ColorSensor colorSensor;    // Hardware Device Object
@@ -900,6 +909,26 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 fileLogger.writeEvent(TAG, "Gyro Error " +  e.getMessage());
             }
             gyroError = true;
+        }
+
+        //don't crash the program if the CDIM is faulty, just bypass it
+        try {
+
+            // get a reference to a Modern Robotics DIM, and IO channels.
+            dim = hardwareMap.get(DeviceInterfaceModule.class, "dim");      //  Use generic form of device mapping
+            digIn = hardwareMap.get(DigitalChannel.class, "digin");         //  Use generic form of device mapping
+            digOut = hardwareMap.get(DigitalChannel.class, "digout");       //  Use generic form of device mapping
+            digIn.setMode(DigitalChannelController.Mode.INPUT);             // Set the direction of each channel
+            digOut.setMode(DigitalChannelController.Mode.OUTPUT);           // Set the direction of each channel
+            //dim.setPulseWidthPeriod();
+
+
+        } catch (Exception e) {
+            if (debug >= 1)
+            {
+                fileLogger.writeEvent(TAG, "CDIM Error " +  e.getMessage());
+            }
+            cdimError = true;
         }
 
         /*

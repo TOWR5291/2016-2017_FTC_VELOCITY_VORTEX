@@ -43,8 +43,8 @@ public class BeaconAnalysisOCV {
         //Scalar RED_LOWER_BOUNDS_HSV = new Scalar((int) (300.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
         //Scalar RED_UPPER_BOUNDS_HSV = new Scalar((int) (400.0 / 360.0 * 255.0), 255, 255);
 
-        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar((int) (220.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
-        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar((int) (500.0 / 360.0 * 255.0), 255, 255);
+        Scalar RED_LOWER_BOUNDS_HSV = new Scalar((int) (220.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
+        Scalar RED_UPPER_BOUNDS_HSV = new Scalar((int) (500.0 / 360.0 * 255.0), 255, 255);
 
 
         //on bgr
@@ -52,8 +52,8 @@ public class BeaconAnalysisOCV {
        // Scalar RED_UPPER_BOUNDS_HSV = new Scalar((int) (300.0 / 360.0 * 255.0), 255, 255);
 
         //rgb to HSV
-        Scalar RED_LOWER_BOUNDS_HSV = new Scalar(140,70,130);
-        Scalar RED_UPPER_BOUNDS_HSV = new Scalar(180,150,255);
+        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(140,70,130);
+        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar(180,150,255);
 
         //rgb to BGR
         //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(105,150,120);
@@ -62,11 +62,11 @@ public class BeaconAnalysisOCV {
 
         //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar((int) (170.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
         //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar((int) (270.0 / 360.0 * 255.0), 255, 255);
-        //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar((int) (170.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
-        //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar((int) (250.0 / 360.0 * 255.0), 255, 255);
+        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar((int) (170.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
+        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar((int) (250.0 / 360.0 * 255.0), 255, 255);
 
-        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(80,140,130);
-        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(150,255,255);
+        //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(80,140,130);
+        //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(150,255,255);
 
         //Mat mat1 = new Mat(720, 1280, CvType.CV_8UC4);
         //Mat mat2 = new Mat(720, 1280, CvType.CV_8UC4);
