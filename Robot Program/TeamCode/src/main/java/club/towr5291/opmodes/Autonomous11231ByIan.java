@@ -1,5 +1,10 @@
 package club.towr5291.opmodes;
 
+import club.towr5291.functions.FileLogger;
+import club.towr5291.libraries.LibraryStateSegAuto;
+import club.towr5291.robotconfig.HardwareDriveMotors;
+
+
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -36,11 +41,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import club.towr5291.functions.FileLogger;
-import club.towr5291.libraries.LibraryStateSegAuto;
-import club.towr5291.robotconfig.HardwareDriveMotors;
-
 
 @Autonomous(name="11231 Autonomous Comp", group="5291Test")
 public class Autonomous11231ByIan extends LinearOpMode
@@ -297,25 +297,27 @@ public class Autonomous11231ByIan extends LinearOpMode
         // RR = Right turn with radius
         // FW = Drive Forward Distance
         // RV = Drive Backward Distance
-        // GT = Guro Turn at Set Degrees
+        // GT = Guro Turn at Set Degrees NEGATIVE NUMBER IS RIGHT and POSITIVE IS LEFT
         // BC = Push beacon color based on distance, 1 = BLUE Alliance and 2 = RED Alliance
         //       time, comm,  parm, parm, parm, parm, parm, parm, powe
         //       out   and    1     2     3     4     5     6     r
         //        s                                               %
 
-        loadSteps(10, "FW10", 0,    0,    0,    0,    0,    0,    0.3);     //
-        loadSteps(10, "GT45", 0,    0,    0,    0,    0,    0,    0);     //
-        loadSteps(10, "FW10", 0,    0,    0,    0,    0,    0,    0);     //
-        loadSteps(5, "SP", 4,    0,    0,    0,    0,    0,  0);
-        // loadSteps(10, "FW6", 0,    0,    0,    0,    0,    0,    0.3);     //
-        // loadSteps(10, "RT45", 0,    0,    0,    0,    0,    0,  0.3);       //
+        //loadSteps(10, "FW10", 0,    0,    0,    0,    0,    0,    0.3);     //
+        //loadSteps(10, "GT90", 0,    0,    0,    0,    0,    0,    0);     //
+        //loadSteps(10, "FW10", 0,    0,    0,    0,    0,    0,    .3);     //
+        loadSteps(10, "FW3", 0,    0,    0,    0,    0,    0,    0.3);     //
+        //loadSteps(5, "SP", 3,    0,    0,    0,    0,    0,  0);
+        loadSteps(5, "BC5", 1,    0,    0,    0,    0,    0,    0);     //
+        loadSteps(5, "RV10", 0,    0,    0,    0,    0,    0,    0.3);     //
+        //loadSteps(10, "RT45", 0,    0,    0,    0,    0,    0,  0.3);       //
         // loadSteps(10, "FW24", 0,    0,    0,    0,    0,    0,  0.3);       //
         //loadSteps(10, "RT40", 0,    0,    0,    0,    0,    0,  0.3);       //
         //loadSteps(10, "RT12.5",    0,  0,  0,  0,  0,  0,  0.2);       //
         // loadSteps(10, "FW21.5",    0,  0,  0,  0,  0,  0,  0.2);      //
         // loadSteps(10, "LT45", 0,    0,    0,    0,    0,    0,  0.3);       //
         //loadSteps(5, "SP", 4,    0,    0,    0,    0,    0,  0);
-        //loadSteps(5, "BC2", 1,    0,    0,    0,    0,    0,    0.2);     //
+
         //loadSteps(10, "RT45", 0,    0,    0,    0,    0,    0,    0.3);     //
         //loadSteps(10, "FW14", 0,    0,    0,    0,    0,    0,    0.3);     //
         //loadSteps(5, "SP", 3,    0,    0,    0,    0,    0,  0);            //
@@ -349,7 +351,7 @@ public class Autonomous11231ByIan extends LinearOpMode
 
     private void loadSteps(int timeOut, String command, int parm1, int parm2, int parm3, int parm4, int parm5, int parm6, double power)
     {
-        autonomousSteps.put(String.valueOf(loadStep), new LibraryStateSegAuto(loadStep, timeOut, command, parm1, parm2, parm3, parm4, parm5, parm6, power, false));
+        autonomousSteps.put(String.valueOf(loadStep), new LibraryStateSegAuto (loadStep, timeOut, command, parm1, parm2, parm3, parm4, parm5, parm6, power, false));
         loadStep++;
     }
 
@@ -740,12 +742,20 @@ public class Autonomous11231ByIan extends LinearOpMode
         robotDrive.leftMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robotDrive.rightMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robotDrive.rightMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //robotDrive.sweeper.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        idle();
 
         robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //robotDrive.sweeper.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        /*----------------------------------------------------------------------------------------*/
+        //11/28/17
+        //Each STATE that is added must be initialized
+        //
+        /*----------------------------------------------------------------------------------------*/
         mCurrentStepState = stepState.STATE_INIT;
         mCurrentTankTurnState = stepState.STATE_COMPLETE;
         mCurrentDriveState = stepState.STATE_COMPLETE;
@@ -753,6 +763,7 @@ public class Autonomous11231ByIan extends LinearOpMode
         mCurrentDelayState = stepState.STATE_COMPLETE;
         mShootParticleState = stepState.STATE_COMPLETE;
         mBeaconAllianceColorState = stepState.STATE_COMPLETE;
+        mTurnRobotState = stepState.STATE_COMPLETE;
 
         if (!gyroError) {
             while (!isStopRequested() && gyro.isCalibrating()) {
@@ -819,10 +830,6 @@ public class Autonomous11231ByIan extends LinearOpMode
                 telemetry.addData("Pos   ", "Unknown");
             }
 
-            if (debug >= 3)
-            {
-                fileLogger.writeEvent(TAG, "mCurrentStepState:- " + mCurrentStepState + " mCurrentStepState " + mCurrentStepState);
-            }
             switch (mCurrentStepState)
             {
                 case STATE_INIT:
@@ -832,6 +839,7 @@ public class Autonomous11231ByIan extends LinearOpMode
                         fileLogger.writeEvent(TAG, "mCurrentStepState:- " + mCurrentStepState + " mCurrentStepState " + mCurrentStepState);
                         fileLogger.writeEvent(TAG, "About to check if step exists " + mCurrentStep);
                     }
+
                     // get step from hashmap, send it to the initStep for decoding
                     if (autonomousSteps.containsKey(String.valueOf(mCurrentStep)))
                     {
@@ -866,7 +874,7 @@ public class Autonomous11231ByIan extends LinearOpMode
                     PivotTurnStep();
                     DriveStep();
                     setParticleShooter();
-                    setBeaconAllianceColor();
+                    setBeaconAllianceColor(); //
                     setTurnRobot();
                     if ((mCurrentDelayState == stepState.STATE_COMPLETE) &&
                             (mCurrentDriveState == stepState.STATE_COMPLETE) &&
@@ -1012,6 +1020,7 @@ public class Autonomous11231ByIan extends LinearOpMode
                 break;
             case "GT": //code added 11/27/16 to be able to make a robot turn based on commanded angle
                 mTurnRobotState =  stepState.STATE_INIT;
+                break;
             case "FN":  //  Run a special Function with Parms
                 break;
         }
@@ -1061,6 +1070,10 @@ public class Autonomous11231ByIan extends LinearOpMode
                         robotDrive.leftMotor2.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
                         robotDrive.rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
                         robotDrive.rightMotor2.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
+                        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                         break;
                     //code added 11/25/16 to set a reverse distance
                     case "RV":  // Drive forward a distance in inches and power setting
@@ -1069,6 +1082,10 @@ public class Autonomous11231ByIan extends LinearOpMode
                         robotDrive.leftMotor2.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
                         robotDrive.rightMotor1.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
                         robotDrive.rightMotor2.setDirection(DcMotor.Direction.REVERSE);// Set to FORWARD if using AndyMark motors
+                        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                         break;
                 }
 
@@ -1383,35 +1400,52 @@ public class Autonomous11231ByIan extends LinearOpMode
     //
     //----------------------------------------------------------------------------------------------
     private void setBeaconAllianceColor()
+    //loadSteps(5, "BC2", 1,    0,    0,    0,    0,    0,    0.2);     //1 = ALLIANCE COLOR BLUE, and 2 = ALLIANCE COLOR RED
     {
         switch(mBeaconAllianceColorState){
             case  STATE_INIT: {
                 ultaDistance = 0;
                 OpticalDist = 0;
-                ultaDistanceTarget = (float) 3;
-                mStepDistanceTempSP = Double.parseDouble(mRobotCommand.substring(2));
+                //ultaDistanceTarget = (float) 3;
+                mStepDistanceTempSP = Double.parseDouble(mRobotCommand.substring(2));//Distance from Target
                 BeaconAllianceColorBlue = false;
                 BeaconAllianceColorRed = false;
                 isBeaconColorRed = false;
                 isBeaconColorBlue = false;
-                if (debug >= 3) {
-                    fileLogger.writeEvent("Beacon Alliance Color State Init()","Beacon Alliance BLUE:- " +  BeaconAllianceColorBlue  );
-                    fileLogger.writeEvent("Beacon Alliance Color State Init()","Beacon Alliance RED:- " +  BeaconAllianceColorRed  );
-                    fileLogger.writeEvent("Beacon Alliance Color State Init()","Beacon Alliance Blue:- " +  isBeaconColorRed  );
-                    fileLogger.writeEvent("Beacon Alliance Color State Init()","Beacon Alliance Blue:- " +  isBeaconColorBlue  );
-                }
                 mBeaconAllianceColorState = stepState.STATE_RUNNING;
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("mBeaconAllianceColorState()","INIT");
+                    fileLogger.writeEvent("mBeaconAllianceColorState()","Alliance Color     "+ mRobotParm1);
+                }
             }//end INIT state
             break;
             case STATE_RUNNING: {
+
                 range1Cache = RANGE1Reader.read(RANGE1_REG_START, RANGE1_READ_LENGTH);
                 ultaDistance = (range1Cache[0] & 0xFF);
                 OpticalDist = (range1Cache[1] & 0xFF);
-                if (mRobotParm1 == 1.0) {
+
+                if (mRobotParm1 == 1.0)
+                {
                     BeaconAllianceColorBlue = true;
-                }else if (mRobotParm1 == 2.0){
+                }else if (mRobotParm1 == 2.0)
+                {
                     BeaconAllianceColorRed = true;
                 }
+
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("mBeaconAllianceColorState()     ","RUNNING");
+                    fileLogger.writeEvent("mBeaconAllianceColorState()     ","ultaDistance   "+ ultaDistance);
+                    fileLogger.writeEvent("mBeaconAllianceColorState()     ","OpticalDist   "+ OpticalDist);
+                    fileLogger.writeEvent("mBeaconAllianceColorState()     ","Color Red   "+ colorSensor.red());
+                    fileLogger.writeEvent("mBeaconAllianceColorState()     ","Color Blue   "+ colorSensor.blue());
+                    fileLogger.writeEvent("mBeaconAllianceColorState()     ","Color Green   "+ colorSensor.green());
+                    fileLogger.writeEvent("mBeaconAllianceColorState()     ","BeaconAllianceColorBlue   "+ BeaconAllianceColorBlue);
+                    fileLogger.writeEvent("mBeaconAllianceColorState()     ","BeaconAllianceColorRed   "+ BeaconAllianceColorRed);
+                }
+
                 // RED ON,  BLUE OFF
                 if (colorSensor.red() > colorSensor.blue() && colorSensor.red() > colorSensor.green()) {
                     isBeaconColorRed = true;
@@ -1423,79 +1457,62 @@ public class Autonomous11231ByIan extends LinearOpMode
                     isBeaconColorRed = false;
                     isBeaconColorBlue = false;
                 }
+
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("mBeaconAllianceColorState()","isBeaconColorRed    " + isBeaconColorRed);
+                    fileLogger.writeEvent("mBeaconAllianceColorState()","isBeaconColorBlue   "+ isBeaconColorBlue);
+                }
+
+                telemetry.addData("mBeaconAllianceColorState()","isBeaconColorBlue   "+ isBeaconColorBlue);
+                telemetry.addData("mBeaconAllianceColorState()","isBeaconColorRed   " + isBeaconColorRed);
+
+
                 if(BeaconAllianceColorBlue && isBeaconColorBlue ){
-                    if (ultaDistance < ultaDistanceTarget){//MOVE ROBOT
-                        setDriveMotorPower(Math.abs(.2));
+                    if (ultaDistance > mStepDistanceTempSP){//ultra distance is the senor reading and DistanceTarget is when to stop
+                        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        setDriveMotorPower(Math.abs(.3));
+                        if (debug >= 3)
+                        {
+                            fileLogger.writeEvent("mBeaconAllianceColorState()","BLUE_ultaDistance   "+ ultaDistance);
+                            fileLogger.writeEvent("mBeaconAllianceColorState()","BLUE_mStepDistanceTempSP   "+ mStepDistanceTempSP);
+                        }
                     }
                     else{
+                        mBeaconAllianceColorState = stepState.STATE_COMPLETE;
                         setDriveMotorPower(Math.abs(0));
-                    }
-
-                    //mStepLeftTarget1 = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepDistanceTempSP * COUNTS_PER_DEGREE);
-                    //mStepLeftTarget2 = robotDrive.leftMotor2.getCurrentPosition() + (int) (mStepDistanceTempSP * COUNTS_PER_DEGREE);
-                    //mStepRightTarget1 = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepDistanceTempSP * COUNTS_PER_DEGREE);
-                    //mStepRightTarget2 = robotDrive.rightMotor2.getCurrentPosition() + (int) (mStepDistanceTempSP * COUNTS_PER_DEGREE);
-                    // pass target position to motor controller
-                    //robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget1);
-                    //robotDrive.leftMotor2.setTargetPosition(mStepLeftTarget2);
-                    //robotDrive.rightMotor1.setTargetPosition(mStepRightTarget1);
-                    //robotDrive.rightMotor2.setTargetPosition(mStepRightTarget2);
-
-                    // set motor controller to mode
-                    //robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    //robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    //robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    //robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    // set power on motor controller to start moving
-                    //setDriveMotorPower(Math.abs(.2));
-                    if (debug >= 3)
-                    {
-                        fileLogger.writeEvent("Beacon Color is Blue()","Drive Complete         " );
+                        if (debug >= 3) {
+                            fileLogger.writeEvent("mBeaconAllianceColorState()   ", "BLUE_STATE COMPLETE");
+                        }
                     }
 
                 } else if (BeaconAllianceColorRed && isBeaconColorRed) {
                     //move robot
-                    if (ultaDistance < ultaDistanceTarget){//MOVE ROBOT
-                        setDriveMotorPower(Math.abs(.2));
-                    }
-                    else{
+                    if (ultaDistance > mStepDistanceTempSP) {//MOVE ROBOT
+                        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        setDriveMotorPower(Math.abs(.3));
+                        if (debug >= 3) {
+                            fileLogger.writeEvent("mBeaconAllianceColorState()", "RED_ultaDistance   " + ultaDistance);
+                            fileLogger.writeEvent("mBeaconAllianceColorState()", "RED_mStepDistanceTempSP   " + mStepDistanceTempSP);
+                        }
+                    } else {
                         setDriveMotorPower(Math.abs(0));
+                        mBeaconAllianceColorState = stepState.STATE_COMPLETE;
+                        if (debug >= 3) {
+                            fileLogger.writeEvent("mBeaconAllianceColorState()  ", "RED_STATE COMPLETE");
+                        }
                     }
-                    //mStepLeftTarget1 = robotDrive.leftMotor1.getCurrentPosition() + (int) (mStepDistanceTempSP  * COUNTS_PER_DEGREE);
-                    //mStepLeftTarget2 = robotDrive.leftMotor2.getCurrentPosition() + (int) (mStepDistanceTempSP  * COUNTS_PER_DEGREE);
-                    //mStepRightTarget1 = robotDrive.rightMotor1.getCurrentPosition() + (int) (mStepDistanceTempSP  * COUNTS_PER_DEGREE);
-                    //mStepRightTarget2 = robotDrive.rightMotor2.getCurrentPosition() + (int) (mStepDistanceTempSP  * COUNTS_PER_DEGREE);
-                    // pass target position to motor controller
-                    //robotDrive.leftMotor1.setTargetPosition(mStepLeftTarget1);
-                    //robotDrive.leftMotor2.setTargetPosition(mStepLeftTarget2);
-                    //robotDrive.rightMotor1.setTargetPosition(mStepRightTarget1);
-                    //robotDrive.rightMotor2.setTargetPosition(mStepRightTarget2);
-                    // set motor controller to mode
-                    //robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    //robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    //robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    //robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    // set power on motor controller to start moving
-                    //setDriveMotorPower(Math.abs(.2));
-                    if (debug >= 3)
-                    {
-                        fileLogger.writeEvent("Beacon Color is Red()","Drive Complete         " );
+                }else{
+                    mBeaconAllianceColorState = stepState.STATE_COMPLETE;
+                    if (debug >= 3) {
+                        fileLogger.writeEvent("mBeaconAllianceColorState()  ", "ALL_OF_STATE COMPLETE");
                     }
-                }
-                // if (!robotDrive.leftMotor1.isBusy() || (!robotDrive.rightMotor1.isBusy()))
-                //{
-                //if (debug >= 3)
-                //{
-                //fileLogger.writeEvent("Beacon Push()","Complete         " );
-                //}
-                //setDriveMotorPower(0);
-                mCurrentTankTurnState = stepState.STATE_COMPLETE;
-                //}
-                if (debug >= 3) {
-                    fileLogger.writeEvent("Beacon Alliance Color State Complete()","Beacon Alliance BLUE:- " +  BeaconAllianceColorBlue  );
-                    fileLogger.writeEvent("Beacon Alliance Color State Complete()","Beacon Alliance RED:- " +  BeaconAllianceColorRed  );
-                    fileLogger.writeEvent("Beacon Alliance Color State Complete()","Beacon Color is Red:- " +  isBeaconColorRed  );
-                    fileLogger.writeEvent("Beacon Alliance Color State Complete()","Beacon Color is Blue:- " +  isBeaconColorBlue  );
                 }
             }//end RUNNING state
             break;
@@ -1507,34 +1524,71 @@ public class Autonomous11231ByIan extends LinearOpMode
         switch (mTurnRobotState){
             case STATE_INIT:
             {
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("setTurnRobot()","INIT");
+                }
                 mRobotTurnAngle = Double.parseDouble(mRobotCommand.substring(2));
                 mTurnRobotState = stepState.STATE_RUNNING;
-                turnAbsolute = 0;
-                gyroTurnSpeed = 0;
-            }
+                turnAbsolute = mRobotTurnAngle + (gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER); //Target
+
+                gyroTurnSpeed = .5;
+            }//end case INIT
             break;
             case STATE_RUNNING:
             {
-                turnAbsolute = mRobotTurnAngle + (gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER); //Target
                 gyrozAccumulated = gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER;  //Set variables to gyro readings
-                gyroTurnSpeed = .4;
-                while (Math.abs(gyrozAccumulated - turnAbsolute) > 3) {  //Continue while the robot direction is further than three degrees from the target
+                if (debug >= 3)
+                {
+                    fileLogger.writeEvent("setTurnRobot()","gyrozAccumulated="+ gyrozAccumulated);
+                    fileLogger.writeEvent("setTurnRobot()","RUNNING");
+                    fileLogger.writeEvent("setTurnRobot()","Robot Turn Angle="+ mRobotTurnAngle);
+                    fileLogger.writeEvent("setTurnRobot()","Robot Turn Target="+ turnAbsolute);
+                    fileLogger.writeEvent("setTurnRobot()","STATE"  + mTurnRobotState);
+                    fileLogger.writeEvent("setTurnRobot()","Turn Speed"  + gyroTurnSpeed);
+                }
+                if (Math.abs(gyrozAccumulated - turnAbsolute) > 4) {  //Continue while the robot direction is further than three degrees from the target
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("setTurnRobot()","Turning Robot="+ gyrozAccumulated);
+                        fileLogger.writeEvent("setTurnRobot()","Turning Angel="+ turnAbsolute);
+                    }
                     if (gyrozAccumulated > turnAbsolute) {  //if gyro is positive, we will turn right
+                        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                         setDriveLeftMotorPower(gyroTurnSpeed);
                         setDriveRightMotorPower(-gyroTurnSpeed);
+                        if (debug >= 3) {
+                            fileLogger.writeEvent("setTurnRobot()","TURN RIGHT gyrozAccumulated > turnAbsolute");
+                        }
                     }
+
                     if (gyrozAccumulated < turnAbsolute) {  //if gyro is positive, we will turn left
+                        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                         setDriveLeftMotorPower(-gyroTurnSpeed);
                         setDriveRightMotorPower(gyroTurnSpeed);
+                        if (debug >= 3) {
+                            fileLogger.writeEvent("setTurnRobot()","TURN LEFT gyrozAccumulated < turnAbsolute");
+                        }
                     }
                     //gyrozAccumulated = gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER;;  //Set variables to gyro readings
                     //telemetry.addData("1. accu", gyrozAccumulated);
+                }else {
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("setTurnRobot()","TURN COMPLETE");
+                    }
+                    setDriveMotorPower(0);
+                    mTurnRobotState = stepState.STATE_COMPLETE;
                 }
-                setDriveMotorPower(0);
-                mTurnRobotState = stepState.STATE_COMPLETE;
-            }
+            }//end case RUNNING
             break;
-        }
+        }//end SWITCH
     }//end METHOD
     //----------------------------------------------------------------------------------------------
     //code added 11/2/16 to shoot particles
@@ -1545,26 +1599,28 @@ public class Autonomous11231ByIan extends LinearOpMode
     {
         switch (mShootParticleState) {
             case STATE_INIT: {
+                //robotDrive.sweeper.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 //robotDrive.sweeper.setPower(0);
                 mShootParticleState = stepState.STATE_RUNNING;
-                //if (debug >= 3) {
-                //fileLogger.writeEvent("DelayStep()", "Init Delay Time    " + mStepDelay);
-                //fileLogger.writeEvent("PARTICLE STATE MACHINE",  "INIT");
-                // }
+                {
+                    fileLogger.writeEvent("setParticleShooter()","INIT");
+                }
             }
             break;
             case STATE_RUNNING: {
                 if (mStateTime.seconds() <= mRobotParm1) {
                     //robotDrive.sweeper.setPower(1);
-                    //if (debug >= 3 ) {
-                    //fileLogger.writeEvent("DelayStep()", "Init Delay Time    " + mStepDelay);
-                    // fileLogger.writeEvent("PARTICLE STATE MACHINE", "RUNNING");
-                    //}
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("setParticleShooter()","Sweeper ON");
+                        fileLogger.writeEvent("setParticleShooter()","RUNNING");
+                    }
                 } else {
-                    //if (debug >= 3) {
-                    //fileLogger.writeEvent("Particle Shooter", "Stop Particle State Complete         ");
-                    //fileLogger.writeEvent("PARTICLE STATE MACHINE", "COMPLETE");
-                    //}
+                    if (debug >= 3)
+                    {
+                        fileLogger.writeEvent("setParticleShooter()","Sweeper OFF");
+                        fileLogger.writeEvent("setParticleShooter()","Complete");
+                    }
                     //robotDrive.sweeper.setPower(0);
                     mShootParticleState = stepState.STATE_COMPLETE;
                 }
