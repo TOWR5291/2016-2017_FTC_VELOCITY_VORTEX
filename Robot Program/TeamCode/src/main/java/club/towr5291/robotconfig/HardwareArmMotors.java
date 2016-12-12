@@ -3,6 +3,9 @@ package club.towr5291.robotconfig;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
 
 /**
  * This is NOT an opmode.
@@ -14,16 +17,13 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * This hardware class assumes the following device names have been configured on the robot:
  * Note:  All names are lower case and some have single spaces between words.
  *
- * Motor channel:  Left  drive motor:        "leftmotor1"
- * Motor channel:  Left  drive motor:        "leftmotor2"
- * Motor channel:  Right drive motor:        "rightmotor1"
- * Motor channel:  Right drive motor:        "rightmotor2"
  */
 public class HardwareArmMotors
 {
     /* Public OpMode members. */
     public DcMotor  flicker   = null;
     public DcMotor  sweeper   = null;
+    public DcMotor  lifter   = null;
 
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
@@ -42,18 +42,22 @@ public class HardwareArmMotors
         // Define and Initialize Motors
         flicker   = hwMap.dcMotor.get("flicker");
         sweeper   = hwMap.dcMotor.get("sweeper");
+        lifter   = hwMap.dcMotor.get("lifter");
 
-        flicker.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        sweeper.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
+        flicker.setDirection(DcMotor.Direction.REVERSE);
+        sweeper.setDirection(DcMotor.Direction.REVERSE);
+        lifter.setDirection(DcMotor.Direction.REVERSE);
 
         // Set all motors to zero power
         flicker.setPower(0);
         sweeper.setPower(0);
+        lifter.setPower(0);
 
         // Set all motors to run without encoders.
         // May want to use RUN_USING_ENCODERS if encoders are installed.
         flicker.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         sweeper.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        lifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
     }
 
@@ -77,5 +81,6 @@ public class HardwareArmMotors
         // Reset the cycle clock for the next pass.
         period.reset();
     }
+
 }
 

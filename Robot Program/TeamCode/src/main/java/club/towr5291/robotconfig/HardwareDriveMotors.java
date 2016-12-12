@@ -30,8 +30,8 @@ public class HardwareDriveMotors
     public DcMotor  rightMotor2  = null;
 
     /* local OpMode members. */
-    HardwareMap hwMap           =  null;
-    private ElapsedTime period  = new ElapsedTime();
+    HardwareMap hwMap            =  null;
+    private ElapsedTime period   = new ElapsedTime();
 
     /* Constructor */
     public HardwareDriveMotors(){
@@ -48,10 +48,10 @@ public class HardwareDriveMotors
         leftMotor2   = hwMap.dcMotor.get("leftmotor2");
         rightMotor1  = hwMap.dcMotor.get("rightmotor1");
         rightMotor2  = hwMap.dcMotor.get("rightmotor2");
-        leftMotor1.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        leftMotor2.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
-        rightMotor1.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-        rightMotor2.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
+        leftMotor1.setDirection(DcMotor.Direction.REVERSE);
+        leftMotor2.setDirection(DcMotor.Direction.REVERSE);
+        rightMotor1.setDirection(DcMotor.Direction.FORWARD);
+        rightMotor2.setDirection(DcMotor.Direction.FORWARD);
 
         // Set all motors to zero power
         leftMotor1.setPower(0);

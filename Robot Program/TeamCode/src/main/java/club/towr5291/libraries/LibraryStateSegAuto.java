@@ -10,6 +10,8 @@ public class LibraryStateSegAuto {
     private int mStep;                   //step number
     private double mRobotTimeOut;        //how much time is allowed for the step to complete
     private String mRobotCommand;        //Command
+    private boolean mRobotParallel;      //run in parallel with next step
+    private boolean mRobotLastPos;       //run using last known position or current encoder position
     private double mRobotParm1;          //1st Parameter
     private double mRobotParm2;          //2nd Parameter
     private double mRobotParm3;          //3rd Parameter
@@ -20,11 +22,13 @@ public class LibraryStateSegAuto {
     private boolean mRobotStepComplete;  //status of the step
 
     // Constructor
-    public LibraryStateSegAuto(int step, double timeout, String RobotCommand, double RobotParm1, double RobotParm2, double RobotParm3, double RobotParm4, double RobotParm5, double RobotParm6, double robotSpeed, boolean complete)
+    public LibraryStateSegAuto(int step, double timeout, String RobotCommand, boolean RobotParallel, boolean RobotLastPos, double RobotParm1, double RobotParm2, double RobotParm3, double RobotParm4, double RobotParm5, double RobotParm6, double robotSpeed, boolean complete)
     {
         mStep = step;
         mRobotTimeOut = timeout;
         mRobotCommand = RobotCommand;
+        mRobotParallel = RobotParallel;
+        mRobotLastPos = RobotLastPos;
         mRobotParm1 = RobotParm1;
         mRobotParm2 = RobotParm2;
         mRobotParm3 = RobotParm3;
@@ -43,6 +47,16 @@ public class LibraryStateSegAuto {
     public void setmRobotCommand(String mRobotCommand)
     {
         this.mRobotCommand = mRobotCommand;
+    }
+
+    public void setmRobotParallel(boolean mRobotParallel)
+    {
+        this.mRobotParallel = mRobotParallel;
+    }
+
+    public void setmRobotLastPos(boolean mRobotLastPos)
+    {
+        this.mRobotLastPos = mRobotLastPos;
     }
 
     public void setmRobotParm1(double mRobotParm1)
@@ -80,8 +94,7 @@ public class LibraryStateSegAuto {
         this.mRobotSpeed = mRobotSpeed;
     }
 
-    public void setmRobotStepComplete(boolean mRobotStepComplete)
-    {
+    public void setmRobotStepComplete(boolean mRobotStepComplete)     {
         this.mRobotStepComplete = mRobotStepComplete;
     }
 
@@ -93,6 +106,16 @@ public class LibraryStateSegAuto {
     public String getmRobotCommand()
     {
         return mRobotCommand;
+    }
+
+    public boolean getmRobotParallel()
+    {
+        return mRobotParallel;
+    }
+
+    public boolean getmRobotLastPos()
+    {
+        return mRobotLastPos;
     }
 
     public double getmRobotParm1()
