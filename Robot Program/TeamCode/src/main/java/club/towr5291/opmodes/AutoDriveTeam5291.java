@@ -34,6 +34,7 @@ package club.towr5291.opmodes;
 
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -76,6 +77,10 @@ import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -384,6 +389,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         powerTable.put(String.valueOf(12), ".6");
         powerTable.put(String.valueOf(15), ".8");
     }
+
 
 
     //**********************************************************
@@ -825,6 +831,36 @@ public class AutoDriveTeam5291 extends LinearOpMode
         loadSteps(2, "DEL0",   false, false, 0,    0,    0,    0,    0,    0,   0);
     }
 
+    private void readStepsFromFile(String Filename) {
+
+        try {
+            File f = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS + "/Sequences"), Filename);
+            BufferedReader reader = new BufferedReader(new FileReader(f));
+
+            String csvLine;
+            while((csvLine = reader.readLine()) != null) {
+                //check if line is a comment and ignore it
+                if (csvLine.substring(0, 2).equals("//")) {
+
+                } else {
+                    String[] row = csvLine.split(",");
+                    if (debug >= 2)
+                    {
+                        fileLogger.writeEvent("readStepsFromFile", "CSV Value " + row[0].trim() + "," + row[1].trim() + "," + row[2].trim() + "," + row[3].trim() + "," + row[4].trim() + "," + row[5].trim() + "," + row[6].trim() + "," + row[7].trim() + "," + row[8].trim() + "," + row[9].trim() + "," + row[10].trim());
+                        Log.d("readStepsFromFile", "CSV Value " + row[0].trim() + "," + row[1].trim() + "," + row[2].trim() + "," + row[3].trim() + "," + row[4].trim() + "," + row[5].trim() + "," + row[6].trim() + "," + row[7].trim() + "," + row[8].trim() + "," + row[9].trim() + "," + row[10].trim());
+                    }
+                    loadSteps(Integer.parseInt(row[0].trim()),row[1].trim(),Boolean.parseBoolean(row[2].trim()),Boolean.parseBoolean(row[3].trim()),Double.parseDouble(row[4].trim()),Double.parseDouble(row[5].trim()),Double.parseDouble(row[6].trim()),Double.parseDouble(row[7].trim()),Double.parseDouble(row[8].trim()),Double.parseDouble(row[9].trim()),Double.parseDouble(row[10].trim()));
+                }
+            }
+        } catch(IOException ex) {
+            //throw new RuntimeException("Error in reading CSV file:" + ex);
+            if (debug >= 2)
+            {
+                fileLogger.writeEvent("readStepsFromFile", "Error in reading CSV file:" + ex);
+                Log.d("readStepsFromFile", "Error in reading CSV file:" + ex);
+            }
+        }
+    }
 
     private void loadSteps(int timeOut, String command, boolean parallel, boolean lastPos, double parm1, double parm2, double parm3, double parm4, double parm5, double parm6, double power)
     {
@@ -834,7 +870,11 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
     private void insertSteps(int timeOut, String command, boolean parallel, boolean lastPos, double parm1, double parm2, double parm3, double parm4, double parm5, double parm6, double power, int insertlocation)
     {
-        Log.d("insertSteps", "insert location " + insertlocation + " timout " + timeOut + " command " + command + " parallel " + parallel + " lastPos " + lastPos + " parm1 " + parm1 + " parm2 " + parm2 + " parm3 " + parm3 + " parm4 " + parm4 + " parm5 " + parm5 + " parm6 " + parm6 + " power " + power);
+        if (debug >= 2)
+        {
+            fileLogger.writeEvent("insertSteps", "insert location " + insertlocation + " timout " + timeOut + " command " + command + " parallel " + parallel + " lastPos " + lastPos + " parm1 " + parm1 + " parm2 " + parm2 + " parm3 " + parm3 + " parm4 " + parm4 + " parm5 " + parm5 + " parm6 " + parm6 + " power " + power);
+            Log.d("insertSteps", "insert location " + insertlocation + " timout " + timeOut + " command " + command + " parallel " + parallel + " lastPos " + lastPos + " parm1 " + parm1 + " parm2 " + parm2 + " parm3 " + parm3 + " parm4 " + parm4 + " parm5 " + parm5 + " parm6 " + parm6 + " power " + power);
+        }
         HashMap<String,LibraryStateSegAuto> autonomousStepsTemp = new HashMap<String,LibraryStateSegAuto>();
         LibraryStateSegAuto processingStepsTemp;
 
@@ -842,24 +882,40 @@ public class AutoDriveTeam5291 extends LinearOpMode
         for (int loop = insertlocation; loop < loadStep; loop++)
         {
             processingStepsTemp = autonomousSteps.get(String.valueOf(loop));
-            Log.d("insertSteps", "Reading all the next steps " + loop + " timout " + processingStepsTemp.getmRobotTimeOut() + " command " + processingStepsTemp.getmRobotCommand() );
+            if (debug >= 2) {
+                fileLogger.writeEvent("insertSteps", "Reading all the next steps " + loop + " timout " + processingStepsTemp.getmRobotTimeOut() + " command " + processingStepsTemp.getmRobotCommand());
+                Log.d("insertSteps", "Reading all the next steps " + loop + " timout " + processingStepsTemp.getmRobotTimeOut() + " command " + processingStepsTemp.getmRobotCommand());
+            }
             autonomousStepsTemp.put(String.valueOf(loop), autonomousSteps.get(String.valueOf(loop)));
         }
-        Log.d("insertSteps", "All steps loaded to a temp hasmap");
+        if (debug >= 2)
+        {
+            fileLogger.writeEvent("insertSteps", "All steps loaded to a temp hasmap");
+            Log.d("insertSteps", "All steps loaded to a temp hasmap");
+        }
 
         //insert the step we want
         autonomousSteps.put(String.valueOf(insertlocation), new LibraryStateSegAuto (loadStep, timeOut, command, parallel, lastPos, parm1, parm2, parm3, parm4, parm5, parm6, power, false));
-        Log.d("insertSteps", "Inserted New step");
+        if (debug >= 2)
+        {
+            fileLogger.writeEvent("insertSteps", "Inserted New step");
+            Log.d("insertSteps", "Inserted New step");
+        }
 
         //move all the other steps back into the sequence
         for (int loop = insertlocation; loop < loadStep; loop++)
         {
             processingStepsTemp = autonomousStepsTemp.get(String.valueOf(loop));
-            Log.d("insertSteps", "adding these steps back steps " + (loop + 1) + " timout " + processingStepsTemp.getmRobotTimeOut() + " command " + processingStepsTemp.getmRobotCommand() );
+            if (debug >= 2) {
+                fileLogger.writeEvent("insertSteps", "adding these steps back steps " + (loop + 1) + " timout " + processingStepsTemp.getmRobotTimeOut() + " command " + processingStepsTemp.getmRobotCommand());
+                Log.d("insertSteps", "adding these steps back steps " + (loop + 1) + " timout " + processingStepsTemp.getmRobotTimeOut() + " command " + processingStepsTemp.getmRobotCommand());
+            }
             autonomousSteps.put(String.valueOf(loop + 1), autonomousStepsTemp.get(String.valueOf(loop)));
         }
-        Log.d("insertSteps", "Re added all the previous steps");
-
+        if (debug >= 2) {
+            fileLogger.writeEvent("insertSteps", "Re added all the previous steps");
+            Log.d("insertSteps", "Re added all the previous steps");
+        }
         //increment the step counter as we inserted a new step
         loadStep++;
     }
