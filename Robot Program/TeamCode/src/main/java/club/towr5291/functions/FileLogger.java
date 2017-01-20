@@ -45,7 +45,7 @@ public class FileLogger {
     public File getStorageDir(String fileName) {
         // Get the directory for the user's public docs directory.
         File file = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOCUMENTS), fileName);
+                Environment.DIRECTORY_DOCUMENTS + "/Logs"), fileName);
         return file;
     }
 

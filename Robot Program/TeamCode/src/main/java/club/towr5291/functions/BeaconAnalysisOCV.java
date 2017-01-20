@@ -65,8 +65,11 @@ public class BeaconAnalysisOCV {
         //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar((int) (170.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
         //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar((int) (250.0 / 360.0 * 255.0), 255, 255);
 
-        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(80,140,130);
-        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(150,255,255);
+        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(80,60,130);
+        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(130,130,255);
+
+        //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(80,110,130);
+        //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(150,255,255);
 
         //Mat mat1 = new Mat(720, 1280, CvType.CV_8UC4);
         //Mat mat2 = new Mat(720, 1280, CvType.CV_8UC4);
@@ -120,7 +123,7 @@ public class BeaconAnalysisOCV {
 
         //roi = new Rect(0, 0, tmp.width(), tmp.height()/2);
 
-        SaveImage(cropped, "-raw" + count);
+        //SaveImage(cropped, "-raw" + count);
         //Log.d("OPENCV","tmp CV_8UC4 Height " + tmp.height() + " Width " + tmp.width());
         //Log.d("OPENCV","Channels " + tmp.channels());
 
@@ -148,7 +151,7 @@ public class BeaconAnalysisOCV {
         Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
         //Core.inRange(mat2, new Scalar(x, y, 130),  new Scalar(x + 50, y + 50, 255), mat3);
         //Log.d("OPENCV","mat3 Red Height " + mat3.height() + " Width " + mat3.width());
-        SaveImage(mat3, "-red limits" + count);
+        //SaveImage(mat3, "-red limits" + count);
         //SaveImage(mat3, "-red limits" + count + " x " + x + " y " + y);
 
 
@@ -156,7 +159,7 @@ public class BeaconAnalysisOCV {
         Core.addWeighted(mat3, 1.5, mat8, -0.5, 0, mat3);
 
         //Imgproc.blur( mat3, mat3, new Size(3,3) );
-        SaveImage(mat3, "-red limits blurred " + count );
+        //SaveImage(mat3, "-red limits blurred " + count );
         //SaveImage(mat3, "-red limits blurred " + count + " x " + x + " y " + y);
 
 
@@ -213,7 +216,7 @@ public class BeaconAnalysisOCV {
 
                 //SaveImage(mat9, "-red contours " + count + " x " + x + " y " + y );
                 //SaveImage(mat10, "-final RED " + count + " x " + x + " y " + y );
-                SaveImage(mat9, "-red contours " + count );
+                //SaveImage(mat9, "-red contours " + count );
                 //SaveImage(original, "-final RED " + count );
                 mat9.release();
 
@@ -228,10 +231,14 @@ public class BeaconAnalysisOCV {
         int x=0;
         int y = 0;
         //analyse blue
-        Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
-           // Core.inRange(mat2, new Scalar(x, y, 130),  new Scalar(x + 50, y + 50, 255), mat4);
-        //Log.d("OPENCV","mat4 Blue Height " + mat4.height() + " Width " + mat4.width());
-        SaveImage(mat4, "-blue limits" + count + " x " + x + " y " + y );
+
+
+            Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
+           //Core.inRange(mat2, new Scalar(x, y, 130),  new Scalar(x + 50, y + 50, 255), mat4);
+
+
+            //Log.d("OPENCV","mat4 Blue Height " + mat4.height() + " Width " + mat4.width());
+        //SaveImage(mat4, "-blue limits" + count + " x " + x + " y " + y );
 
         //empty out the current mats
         mat7.release();
@@ -286,7 +293,7 @@ public class BeaconAnalysisOCV {
                 Log.d("OPENCV", "Area Blue " + areaBlue);
                 SaveImage(mat9, "-blue contours" + count + " x " + x + " y " + y );
 
-
+                //SaveImage(original, "-final" + count + " x " + x + " y " + y );
             }
         } else {
             noBlue = true;
@@ -298,15 +305,15 @@ public class BeaconAnalysisOCV {
         SaveImage(original, "-final" + count);
 
         //merge the two images together
-        Core.bitwise_or(mat3, mat4, mat5);
-        SaveImage(mat5, "-bitwise red and blue images" + count);
+        //Core.bitwise_or(mat3, mat4, mat5);
+        //SaveImage(mat5, "-bitwise red and blue images" + count);
 
         // convert to bitmap:
         //Bitmap bmDisplay = Bitmap.createBitmap(mat5.cols(), mat5.rows(),Bitmap.Config.ARGB_8888);
         //Utils.matToBitmap(mat5, bmDisplay);
 
         //if both areas are similar, then we have both lights one
-        if (((areaBlue > (areaRed * 0.3)) && (areaBlue < (areaRed * 2))) || ((areaRed > (areaBlue * .3)) && (areaRed < (areaBlue * 2)))) {
+        if (((areaBlue > (areaRed * 0.25)) && (areaBlue < (areaRed * 2.5))) || ((areaRed > (areaBlue * .25)) && (areaRed < (areaBlue * 2.5)))) {
             if ((centroidRed.x) < (centroidBlue.x))
             {
                 Log.d("OPENCV", "RED_BLUE");
