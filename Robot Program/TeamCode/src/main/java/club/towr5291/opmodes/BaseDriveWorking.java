@@ -352,7 +352,7 @@ public class BaseDriveWorking extends OpMode {
 
         //lift the extension for capping the ball
         if (mblnReleaseArm) {
-            mdblLifterPower = gamepad2.left_stick_y;
+            mdblLifterPower = - gamepad2.left_stick_y;
             armDrive.lifter.setPower(mdblLifterPower);
             if (mdblLifterPower != 0)
                 mint5291LEDStatus = LEDState.STATE_LIFT;
