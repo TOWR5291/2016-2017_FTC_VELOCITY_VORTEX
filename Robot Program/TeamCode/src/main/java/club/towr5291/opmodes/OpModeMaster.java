@@ -9,6 +9,17 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 public abstract class OpModeMaster extends LinearOpMode {
 
 
+    private static OpModeMaster instance = null;
+
+    public OpModeMaster()
+    {
+
+
+        super();
+
+        instance = this;
+
+    }
 
 
 }

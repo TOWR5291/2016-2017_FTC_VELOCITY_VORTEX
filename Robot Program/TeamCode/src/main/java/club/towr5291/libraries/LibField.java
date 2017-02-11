@@ -14,8 +14,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 public class LibField
 {
     public enum Alliance {
-        BLUE ("BLUE"),
-        RED ("RED");
+        BLUE ("Blue"),
+        RED ("Red");
 
         private final String value;
 
@@ -30,8 +30,8 @@ public class LibField
 
     public enum StartPos
     {
-        START_LEFT ("LEFT"),
-        START_RIGHT ("RIGHT"),
+        START_LEFT ("Left"),
+        START_RIGHT ("Right"),
         START_TEST  ("Test");
 
         private final String value;

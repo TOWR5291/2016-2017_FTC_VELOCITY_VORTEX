@@ -449,11 +449,11 @@ public class AutoDriveTeam5291 extends LinearOpMode
         loadSteps(3, "GTE45", false, false,   0,    0,    0,    0,    0,    0,    0.47);
         loadSteps(10, "ST1" , false, false, 2500,   0,    0,    0,    0,    0,    0  );
         loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        if (allianceParkPosition.equals("Ramp")) {
+        if (allianceParkPosition.equals("Corner")) {
             loadSteps(4, "RTE128", false, true,  0,   0,   0,    0,   0,   0,   0.55);
             loadSteps(3, "GTE170", false, false, 0,   0,   0,    0,   0,   0,   0.47);
             loadSteps(4, "FWE77", false, true,   1,   170, 0.02, 0,   0,   0,   0.5);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        } else if (allianceParkPosition.equals("Vortex")) {
+        } else if (allianceParkPosition.equals("Centre")) {
             loadSteps(4, "RTE180",false, true,   0,     0,    0,    0,    0,    0,    0.55);
             loadSteps(3, "GTE225", false, false, 0,     0,    0,    0,    0,    0,    0.47);
             loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
@@ -605,11 +605,11 @@ public class AutoDriveTeam5291 extends LinearOpMode
         loadSteps(3, "GTE45", false, false,   0,    0,    0,    0,    0,    0,    0.47);
         loadSteps(10, "ST1" , false, false, 2500,   0,    0,    0,    0,    0,    0  );
         loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        if (allianceParkPosition.equals("Ramp")) {
+        if (allianceParkPosition.equals("Corner")) {
             loadSteps(4, "LTE128", false, true, 0, 0, 0, 0, 0, 0, 0.55);
             loadSteps(3, "GTE278", false, false, 0, 0, 0, 0, 0, 0, 0.47);
             loadSteps(4, "FWE77", false, true, 1, 278, 0.02, 0, 0, 0, 0.5);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        } else if (allianceParkPosition.equals("Vortex")) {
+        } else if (allianceParkPosition.equals("Centre")) {
             loadSteps(4, "RTE180",false, true,   0,     0,    0,    0,    0,    0,    0.55);
             loadSteps(3, "GTE225", false, false, 0,     0,    0,    0,    0,    0,    0.47);
             loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);

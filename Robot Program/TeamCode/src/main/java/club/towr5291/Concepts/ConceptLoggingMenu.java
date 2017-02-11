@@ -173,7 +173,7 @@ public class ConceptLoggingMenu extends OpModeMaster implements FtcMenu.MenuButt
         parkMenu.addChoice(LibField.ParkChoice.CORNER_PARK.toString(), LibField.ParkChoice.CORNER_PARK, delayMenu);
         parkMenu.addChoice(LibField.ParkChoice.DEFEND_PARK.toString(), LibField.ParkChoice.DEFEND_PARK, delayMenu);
 
-       //
+        //
         // Walk the menu tree starting with the strategy menu as the root
         // menu and get user choices.
         //
@@ -204,5 +204,3 @@ public class ConceptLoggingMenu extends OpModeMaster implements FtcMenu.MenuButt
     }
 
 }
-
-
