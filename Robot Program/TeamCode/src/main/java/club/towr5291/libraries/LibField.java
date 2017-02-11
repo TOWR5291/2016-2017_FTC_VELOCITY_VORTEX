@@ -98,6 +98,25 @@ public class LibField
         }
     }
 
+    public enum RobotConfigChoice
+    {
+        TileRunner2x20 ("TileRunner-2x20"),
+        TileRunner2x40 ("TileRunner-2x40"),
+        TileRunner2x60 ("TileRunner-2x60"),
+        TankTread2x40Custom ("5291 Tank Tread-2x40 Custom"),
+        Custom_11231_2016 ("11231 2016 Custom");
+
+        private final String value;
+
+        RobotConfigChoice(String value) {
+            this.value = value;
+        }
+
+        public String toString() {
+            return value;
+        }
+    }
+
     //  X axis parallel to red  alliance wall point toward    blue alliance
     //  Y axis parallel to blue alliance wall point away from red  alliance
 

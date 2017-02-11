@@ -1510,6 +1510,13 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+        if (debug >= 1)
+        {
+            fileLogger.writeEvent(TAG, "Value of Gyro Before Reset " + gyro.getIntegratedZValue());
+            Log.d(TAG, "Value of Gyro Before Reset " + gyro.getIntegratedZValue());
+        }
+
+        gyro.resetZAxisIntegrator();
 
         //the main loop.  this is where the action happens
         while (opModeIsActive())

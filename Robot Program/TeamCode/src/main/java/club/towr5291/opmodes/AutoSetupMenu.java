@@ -161,12 +161,13 @@ public class AutoSetupMenu extends OpModeMaster implements FtcMenu.MenuButtons {
         //
         // Create the menus.
         //
-        FtcChoiceMenu teamMenu      = new FtcChoiceMenu("TEAM:", null, this);
-        FtcChoiceMenu allianceMenu  = new FtcChoiceMenu("ALLIANCE:", teamMenu, this);
-        FtcChoiceMenu startPosMenu  = new FtcChoiceMenu("START:", allianceMenu, this);
-        FtcChoiceMenu parkMenu      = new FtcChoiceMenu("PARK:", startPosMenu, this);
-        FtcChoiceMenu beaconMenu    = new FtcChoiceMenu("BEACONS:", parkMenu, this);
-        FtcValueMenu delayMenu      = new FtcValueMenu("DELAY:", beaconMenu, this, 0.0, 20.0, 1.0, 0.0, "%5.2f");
+        FtcChoiceMenu teamMenu      = new FtcChoiceMenu("Team:", null, this);
+        FtcChoiceMenu allianceMenu  = new FtcChoiceMenu("Alliance:", teamMenu, this);
+        FtcChoiceMenu startPosMenu  = new FtcChoiceMenu("Start:", allianceMenu, this);
+        FtcChoiceMenu parkMenu      = new FtcChoiceMenu("Park:", startPosMenu, this);
+        FtcChoiceMenu beaconMenu    = new FtcChoiceMenu("Beacons:", parkMenu, this);
+        FtcValueMenu delayMenu      = new FtcValueMenu("Delay:", beaconMenu, this, 0.0, 20.0, 1.0, 0.0, "%5.2f");
+        FtcChoiceMenu robotConfigMenu    = new FtcChoiceMenu("Robot:", delayMenu, this);
 
         //
         // remember last saved settings and reorder the menu with last run settings as the defaults
@@ -243,6 +244,39 @@ public class AutoSetupMenu extends OpModeMaster implements FtcMenu.MenuButtons {
             parkMenu.addChoice(LibField.ParkChoice.CORNER_PARK.toString(), LibField.ParkChoice.CORNER_PARK, delayMenu);
         }
 
+        delayMenu.setChildMenu(robotConfigMenu);
+
+        if (robotConfig.equals(LibField.RobotConfigChoice.TileRunner2x60.toString())) {
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x60.toString(), LibField.RobotConfigChoice.TileRunner2x60);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x40.toString(), LibField.RobotConfigChoice.TileRunner2x40);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x20.toString(), LibField.RobotConfigChoice.TileRunner2x20);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.Custom_11231_2016.toString(), LibField.RobotConfigChoice.Custom_11231_2016);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TankTread2x40Custom.toString(), LibField.RobotConfigChoice.TankTread2x40Custom);
+        } else if (robotConfig.equals(LibField.RobotConfigChoice.TileRunner2x40.toString())) {
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x40.toString(), LibField.RobotConfigChoice.TileRunner2x40);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x60.toString(), LibField.RobotConfigChoice.TileRunner2x60);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x20.toString(), LibField.RobotConfigChoice.TileRunner2x20);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.Custom_11231_2016.toString(), LibField.RobotConfigChoice.Custom_11231_2016);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TankTread2x40Custom.toString(), LibField.RobotConfigChoice.TankTread2x40Custom);
+        } else if (robotConfig.equals(LibField.RobotConfigChoice.TileRunner2x20.toString())) {
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x20.toString(), LibField.RobotConfigChoice.TileRunner2x20);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x40.toString(), LibField.RobotConfigChoice.TileRunner2x40);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x60.toString(), LibField.RobotConfigChoice.TileRunner2x60);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.Custom_11231_2016.toString(), LibField.RobotConfigChoice.Custom_11231_2016);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TankTread2x40Custom.toString(), LibField.RobotConfigChoice.TankTread2x40Custom);
+        } else if (robotConfig.equals(LibField.RobotConfigChoice.TankTread2x40Custom.toString())) {
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TankTread2x40Custom.toString(), LibField.RobotConfigChoice.TankTread2x40Custom);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x60.toString(), LibField.RobotConfigChoice.TileRunner2x60);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x40.toString(), LibField.RobotConfigChoice.TileRunner2x40);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x20.toString(), LibField.RobotConfigChoice.TileRunner2x20);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.Custom_11231_2016.toString(), LibField.RobotConfigChoice.Custom_11231_2016);
+        }else if (robotConfig.equals(LibField.RobotConfigChoice.Custom_11231_2016.toString())) {
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.Custom_11231_2016.toString(), LibField.RobotConfigChoice.Custom_11231_2016);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TankTread2x40Custom.toString(), LibField.RobotConfigChoice.TankTread2x40Custom);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x60.toString(), LibField.RobotConfigChoice.TileRunner2x60);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x40.toString(), LibField.RobotConfigChoice.TileRunner2x40);
+            robotConfigMenu.addChoice(LibField.RobotConfigChoice.TileRunner2x20.toString(), LibField.RobotConfigChoice.TileRunner2x20);
+        }
         //
         // Walk the menu tree starting with the strategy menu as the root
         // menu and get user choices.
@@ -257,6 +291,7 @@ public class AutoSetupMenu extends OpModeMaster implements FtcMenu.MenuButtons {
         allianceParkPosition = parkMenu.getChoiceText(parkMenu.getCurrentChoice());
         allianceColor = allianceMenu.getChoiceText(allianceMenu.getCurrentChoice());
         teamNumber = teamMenu.getChoiceText(teamMenu.getCurrentChoice());
+        robotConfig = robotConfigMenu.getChoiceText(robotConfigMenu.getCurrentChoice());
         delay = (int)delayMenu.getCurrentValue();
 
         //write the options to sharedpreferences
@@ -279,20 +314,21 @@ public class AutoSetupMenu extends OpModeMaster implements FtcMenu.MenuButtons {
         robotConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", null);
 
         int lnum = 1;
-        dashboard.displayPrintf(lnum++, "TEAM:     " + teamNumber);
-        dashboard.displayPrintf(lnum++, "ALLIANCE: " + allianceColor);
-        dashboard.displayPrintf(lnum++, "START:    " + allianceStartPosition);
-        dashboard.displayPrintf(lnum++, "PARK:     " + allianceParkPosition);
-        dashboard.displayPrintf(lnum++, "PUSH:     " + numBeacons);
-        dashboard.displayPrintf(lnum++, "DELAY:    " + String.valueOf(delay));
+        dashboard.displayPrintf(lnum++, "Team:     " + teamNumber);
+        dashboard.displayPrintf(lnum++, "Alliance: " + allianceColor);
+        dashboard.displayPrintf(lnum++, "Start:    " + allianceStartPosition);
+        dashboard.displayPrintf(lnum++, "Park:     " + allianceParkPosition);
+        dashboard.displayPrintf(lnum++, "Beacons:  " + numBeacons);
+        dashboard.displayPrintf(lnum++, "Delay:    " + String.valueOf(delay));
+        dashboard.displayPrintf(lnum++, "Robot:    " + robotConfig);
 
-        fileLogger.writeEvent("AutonConfig", "TEAM     " + teamNumber);
-        fileLogger.writeEvent("AutonConfig", "ALLIANCE " + allianceColor);
-        fileLogger.writeEvent("AutonConfig", "START    " + allianceStartPosition);
-        fileLogger.writeEvent("AutonConfig", "PARK     " + allianceParkPosition);
-        fileLogger.writeEvent("AutonConfig", "PUSH     " + numBeacons);
-        fileLogger.writeEvent("AutonConfig", "DELAY    " + String.valueOf(delay));
-
+        fileLogger.writeEvent("AutonConfig", "Team     " + teamNumber);
+        fileLogger.writeEvent("AutonConfig", "Alliance " + allianceColor);
+        fileLogger.writeEvent("AutonConfig", "Start    " + allianceStartPosition);
+        fileLogger.writeEvent("AutonConfig", "Park     " + allianceParkPosition);
+        fileLogger.writeEvent("AutonConfig", "Beacons  " + numBeacons);
+        fileLogger.writeEvent("AutonConfig", "Delay    " + String.valueOf(delay));
+        fileLogger.writeEvent("AutonConfig", "Robot    " + robotConfig);
 
     }
 
