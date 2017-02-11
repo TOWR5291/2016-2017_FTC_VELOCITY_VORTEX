@@ -7,15 +7,17 @@ package club.towr5291.Concepts;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.exception.RobotCoreException;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import club.towr5291.functions.FileLogger;
 import club.towr5291.libraries.LibraryAdafruitIMU;
+import club.towr5291.robotconfig.HardwareDriveMotors;
 
 /**
  * Created by Owner on 8/31/2015.
  */
-public class ConceptAdafruitIMUAndrew extends OpMode {
+public class ConceptAdafruitIMUAndrewTest extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     private FileLogger fileLogger;
@@ -24,10 +26,14 @@ public class ConceptAdafruitIMUAndrew extends OpMode {
     //The following arrays contain both the Euler angles reported by the IMU (indices = 0) AND the
     // Tait-Bryan angles calculated from the 4 components of the quaternion vector (indices = 1)
     volatile double[] rollAngle = new double[2], pitchAngle = new double[2], yawAngle = new double[2];
-
     volatile double[] rollAngle2 = new double[2], pitchAngle2 = new double[2], yawAngle2 = new double[2];
     volatile double[] rollChange = new double[2], pitchChange = new double[2], yawChange = new double[2];
     long systemTime;//Relevant values of System.nanoTime
+
+    private HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use a Pushbot's hardware
+
+    private double mdblLeftPow;
+    private double mdblRightPow;
 
 
     /************************************************************************************************
@@ -62,6 +68,17 @@ public class ConceptAdafruitIMUAndrew extends OpMode {
         //ADDRESS_A IS THE IMU'S OPERATIVE I2C BUS ADDRESS
         //IMU is an appropriate operational mode for FTC competitions. (See the IMU datasheet, Table
         // 3-3, p.20 and Table 3-5, p.21.)
+
+        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+
+        // Set all motors to zero power
+        setDriveMotorPower(0);
+
+
     }
 
     /************************************************************************************************
@@ -95,6 +112,12 @@ public class ConceptAdafruitIMUAndrew extends OpMode {
      */
     @Override
     public void loop() {
+
+        //Base Drive Code to drive the base for testing
+
+        mdblLeftPow =  gamepad1.left_stick_y;
+        mdblRightPow =  gamepad1.right_stick_y;
+
         //Log.i("FtcRobotController", "Loop method starting at: " +
         //      -(systemTime - (systemTime = System.nanoTime())) + " since last loop start.");
 
@@ -162,4 +185,23 @@ public class ConceptAdafruitIMUAndrew extends OpMode {
         yawChange[0] = yawAngle2[0] - yawAngle[0];
         yawChange[1] = yawAngle2[1] - yawAngle[1];
     }
+
+    //set the drive motors power, both left and right
+    private void setDriveMotorPower (double power) {
+        setDriveRightMotorPower(power);
+        setDriveLeftMotorPower(power);
+    }
+
+    //set the right drive motors power
+    private void setDriveRightMotorPower (double power) {
+        robotDrive.rightMotor1.setPower(power);
+        robotDrive.rightMotor2.setPower(power);
+    }
+
+    //set the left motors drive power
+    private void setDriveLeftMotorPower (double power) {
+        robotDrive.leftMotor1.setPower(power);
+        robotDrive.leftMotor2.setPower(power);
+    }
+
 }
