@@ -1,7 +1,9 @@
 package club.towr5291.Concepts;
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.ImageView;
 
@@ -53,10 +55,14 @@ import java.util.List;
 
 import club.towr5291.functions.Constants;
 import club.towr5291.functions.BeaconAnalysisOCV;
+import club.towr5291.functions.BeaconAnalysisOCV2;
 import club.towr5291.functions.BeaconAnalysisOCVAnalyse;
 import club.towr5291.functions.FileLogger;
 import club.towr5291.opmodes.R;
 
+import static club.towr5291.functions.Constants.BeaconColours.BEACON_BLUE_RED;
+import static club.towr5291.functions.Constants.BeaconColours.BEACON_RED_BLUE;
+import static club.towr5291.functions.Constants.BeaconColours.UNKNOWN;
 import static org.opencv.imgproc.Imgproc.contourArea;
 
 
@@ -75,27 +81,31 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
     private String startDate;
     private ElapsedTime runtime = new ElapsedTime();
     private FileLogger fileLogger;
+    public int debug;
 
-    //set up openCV stuff
-
-
-    private Point redpoint = new Point(0,0);
-    private Point bluepoint = new Point(0,0);
-
-    private double contourarea;
-    private double ContourAreaLast;
-    private double redlength;
-    private double bluelength;
-    private double directionOfBeacon;
-    private boolean beaconLeft;
-    private double beaconLeftXPos;
-
-
-    protected ImageView grabbedImage;
-
+    //The autonomous menu settings from the sharepreferences
+    private SharedPreferences sharedPreferences;
+    private String teamNumber;
+    private String allianceColor;
+    private String allianceStartPosition;
+    private String allianceParkPosition;
+    private int delay;
+    private String numBeacons;
+    private String robotConfig;
 
     @Override
     public void runOpMode() throws InterruptedException {
+
+        //load variables
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(hardwareMap.appContext);
+        teamNumber = sharedPreferences.getString("club.towr5291.Autonomous.TeamNumber", "0000");
+        allianceColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "Red");
+        allianceStartPosition = sharedPreferences.getString("club.towr5291.Autonomous.StartPosition", "Left");
+        allianceParkPosition = sharedPreferences.getString("club.towr5291.Autonomous.ParkPosition", "Vortex");
+        delay = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Delay", "0"));
+        numBeacons = sharedPreferences.getString("club.towr5291.Autonomous.Beacons", "One");
+        robotConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "TileRunner-2x40");
+        debug = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Debug", null));
 
         //start the log
         startDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
@@ -104,7 +114,8 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         fileLogger.write("Time,SysMS,Thread,Event,Desc");
         fileLogger.writeEvent("init()","Log Started");
 
-        BeaconAnalysisOCV beaconColour = new BeaconAnalysisOCV();
+        //BeaconAnalysisOCV beaconColour = new BeaconAnalysisOCV();
+        BeaconAnalysisOCV2 beaconColour = new BeaconAnalysisOCV2();
         //BeaconAnalysisOCVAnalyse beaconColour = new BeaconAnalysisOCVAnalyse();
 
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(R.id.cameraMonitorViewId);
@@ -315,54 +326,6 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
          * @see VuforiaTrackableDefaultListener#getRobotLocation()
          */
 
-        //set up openCV stuff
-        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(0,100,150);
-        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar(22,255,255);  //was 30,255,255
-
-        //these work pretty good
-        Scalar RED_LOWER_BOUNDS_HSV = new Scalar ((int) (300.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
-        Scalar RED_UPPER_BOUNDS_HSV = new Scalar ((int) (400.0 / 360.0 * 255.0), 255, 255);
-
-        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar ((int) (300.0 / 360.0 * 255.0), (int) (0.09 * 255.0), (int) (0.500 * 255.0));
-        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar (255, 255, 255);
-
-//        Scalar RED_LOWER_BOUNDS_HSV = new Scalar(0, 160, 160);
-//        Scalar RED_UPPER_BOUNDS_HSV = new Scalar(180,255,255);
-
-        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(240, 229, 127);
-        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar(30,255,255);
-
-        //Scalar RED_LOWER_BOUNDS_HSV = new Scalar(30,100,100);  //get nothing with this set
-        //Scalar RED_UPPER_BOUNDS_HSV = new Scalar(120,100,255);
-
-//        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(150,100,100);
-//        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(270,255,255);
-
-        //get really good blue with this set
-        Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar((int) (170.0 / 360.0 * 255.0), (int) (0.090 * 255.0), (int) (0.500 * 255.0));
-        Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar((int) (270.0 / 360.0 * 255.0), 255, 255);
-
-        //Scalar BLUE_LOWER_BOUNDS_HSV = new Scalar(120, 230, 127);  //Get nothing with this set, got no idea why
-        //Scalar BLUE_UPPER_BOUNDS_HSV = new Scalar(192, 255, 255);
-
-
-        Mat mat1 = new Mat(720,1280, CvType.CV_8UC4);
-        Mat mat2 = new Mat(720,1280, CvType.CV_8UC4);
-        Mat mat3 = new Mat(720,1280, CvType.CV_8UC4);
-        Mat mat4 = new Mat(720,1280, CvType.CV_8UC4);
-        Mat mat5 = new Mat(720,1280, CvType.CV_8UC4);
-        Mat mat6 = new Mat(720,1280, CvType.CV_8UC4);
-        Mat mat7 = new Mat(720,1280, CvType.CV_8UC4);
-        Mat mat8 = new Mat(720,1280, CvType.CV_8UC4);
-        Mat mat9 = new Mat(720,1280, CvType.CV_8UC4);
-
-
-
-        Mat houghlines = new Mat();
-        Mat lines = new Mat();
-        Mat mHierarchy = new Mat();
-
-        //MatOfPoint2f approxCurve = new MatOfPoint2f();
         waitForStart();
 
         //Mat tmp = new Mat();
@@ -398,76 +361,12 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
             Mat tmp = new Mat(rgb.getWidth(), rgb.getHeight(), CvType.CV_8UC4);
             Utils.bitmapToMat(bm, tmp);
 
-            Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop);
+            //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop);
 
+            Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV2(tmp, loop, debug);
             Log.d("OPENCV","Returned " + Colour);
-/*
-            SaveImage(tmp, "-raw");
-            fileLogger.writeEvent("process()","Saved original file ");
-            Log.d("OPENCV","tmp CV_8UC4 Height " + tmp.height() + " Width " + tmp.width());
-            Log.d("OPENCV","Channels " + tmp.channels());
 
-            tmp.convertTo(mat1, CvType.CV_8UC4);
-            SaveImage(mat1, "-convertcv_8uc4");
-            Log.d("OPENCV","mat1 CV_8UC4 Height " + mat1.height() + " Width " + mat1.width());
-            fileLogger.writeEvent("process()","converted to cv_8uc3");
-            Log.d("OPENCV","mat1 convertcv_8uc4 Channels " + mat1.channels());
-
-            Imgproc.cvtColor(mat1, mat2, Imgproc.COLOR_RGB2HSV_FULL);
-            //mat2.convertTo(mat2, CvType.CV_8UC4);
-            SaveImage(mat2, "-COLOR_RGB2HSV_FULL");
-            Log.d("OPENCV","mat2 COLOR_RGB2HSV Height " + mat2.height() + " Width " + mat2.width());
-            Log.d("OPENCV","mat2 Channels " + mat2.channels());
-
-            Imgproc.cvtColor(tmp, mat6, Imgproc.COLOR_RGB2YCrCb);
-            SaveImage(mat6, "-COLOR_RGB2YCrCb");
-            Log.d("OPENCV","mat6 COLOR_RGB2HSV Height " + mat6.height() + " Width " + mat6.width());
-            Log.d("OPENCV","mat6 Channels " + mat6.channels());
-
-            Core.inRange(mat2, RED_LOWER_BOUNDS_HSV, RED_UPPER_BOUNDS_HSV, mat3);
-            Log.d("OPENCV","mat2 Channels " + mat2.channels() + " empty " + mat2.empty());
-            Log.d("OPENCV","mat3 Channels " + mat3.channels() + " empty " + mat3.empty());
-            Log.d("OPENCV","mat3 COLOR_RGB2HSV Height " + mat3.height() + " Width " + mat3.width());
-            //Core.inRange(mat2, new Scalar(0,100,150), new Scalar(22,255,255), mat3);
-            fileLogger.writeEvent("process()","Set Red window Limits: ");
-
-
-            SaveImage(mat3, "-red limits");
-
-            Imgproc.dilate(mat3, mat7, new Mat());
-            Imgproc.dilate(mat7, mat8, new Mat()); //fill in holes
-            Imgproc.Canny(mat8, mat9, 20, 100);
-            Imgproc.findContours(mat9, contoursRed, mHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-            Imgproc.drawContours(mat9, contoursRed, -1, new Scalar(255,255,255), 4);
-
-
-            Point centroid = massCenterMatOfPoint2f(contoursRed.get(0));
-            Log.d("OPENCV","Centroid " + centroid);
-            Imgproc.circle(mat9, centroid, 50, new Scalar(255, 255, 255), 5);
-            Imgproc.putText(mat9,"RED",centroid, 3, 0.5, new Scalar(255, 255, 255), 1);
-            MatOfPoint line = contoursRed.get(0);
-            double area = contourArea(contoursRed.get(0));
-            Log.d("OPENCV","Area " + area);
-            SaveImage(mat9, "-red contours");
-
-            Core.inRange(mat2, BLUE_LOWER_BOUNDS_HSV, BLUE_UPPER_BOUNDS_HSV, mat4);
-            fileLogger.writeEvent("process()","Set Blue window Limits: ");
-            Log.d("OPENCV","mat4 COLOR_RGB2HSV Height " + mat4.height() + " Width " + mat4.width());
-            SaveImage(mat4, "-blue limits");
-
-            //Log.d("OPENCV","mat1 Channels " + mat1.channels() + " Height " + mat1.height() + " Width " + mat1.width());
-            //Log.d("OPENCV","mat2 Channels " + mat2.channels() + " Height " + mat2.height() + " Width " + mat2.width());
-
-            Log.d("OPENCV","mat5 Channels " + mat5.channels() + " Height " + mat5.height() + " Width " + mat5.width());
-            Core.bitwise_or(mat3, mat4, mat5);
-            SaveImage(mat5, "-bitwise red and blue images");
-
-            // convert to bitmap:
-            Bitmap bmDisplay = Bitmap.createBitmap(mat5.cols(), mat5.rows(),Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(mat5, bmDisplay);
-            */
             frame.close();
-
 
             for (VuforiaTrackable beac : velocityVortex) {
 
@@ -532,6 +431,20 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
             } else {
                 telemetry.addData("Pos   ", "Unknown");
             }
+
+            switch (Colour) {
+                case BEACON_BLUE_RED:
+                    telemetry.addData("Beacon ", "Blue Red");
+                    break;
+                case BEACON_RED_BLUE:
+                    telemetry.addData("Beacon ", "Red Blue");
+                    break;
+                case UNKNOWN:
+                    telemetry.addData("Beacon ", "Unknow");
+                    break;
+            }
+
+
             telemetry.update();
             loop++;
         }
@@ -554,63 +467,4 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         return transformationMatrix.formatAsTransform();
     }
 
-    public void SaveImage (Mat mat, String info) {
-        Mat mIntermediateMat = new Mat();
-        Mat mIntermediateMat2 = new Mat();
-
-        mat.convertTo(mIntermediateMat2, CvType.CV_8UC4);
-        if (mIntermediateMat2.channels() > 2)
-            Imgproc.cvtColor(mIntermediateMat2, mIntermediateMat, Imgproc.COLOR_RGBA2BGR, 3);
-        else
-            mIntermediateMat = mIntermediateMat2;
-
-
-        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        String filename = "ian" + info + ".png";
-        File file = new File(path, filename);
-
-        Boolean bool = null;
-        filename = file.toString();
-        bool = Imgcodecs.imwrite(filename, mIntermediateMat);
-
-        if (bool == true)
-            Log.d("filesave", "SUCCESS writing image to external storage");
-        else
-            Log.d("filesave", "Fail writing image to external storage");
-    }
-
-    public Mat loadImageFromFile(String fileName) {
-
-        Mat rgbLoadedImage = null;
-
-        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        File file = new File(path, fileName);
-
-        // this should be in BGR format according to the
-        // documentation.
-        Mat image = Imgcodecs.imread(file.getAbsolutePath());
-
-        if (image.width() > 0) {
-
-            rgbLoadedImage = new Mat(image.size(), image.type());
-            Imgproc.cvtColor(image, rgbLoadedImage, Imgproc.COLOR_RGB2HSV_FULL);
-
-            Log.d("OpenCVLoadImage", "loadedImage: " + "chans: " + image.channels() + ", (" + image.width() + ", " + image.height() + ")");
-
-            image.release();
-            image = null;
-        }
-
-        return rgbLoadedImage;
-
-    }
-
-    private Point massCenterMatOfPoint2f(MatOfPoint map)
-    {
-        Moments moments = Imgproc.moments(map, true);
-        Point centroid = new Point();
-        centroid.x = moments.get_m10() / moments.get_m00();
-        centroid.y = moments.get_m01() / moments.get_m00();
-        return centroid;
-    }
 }

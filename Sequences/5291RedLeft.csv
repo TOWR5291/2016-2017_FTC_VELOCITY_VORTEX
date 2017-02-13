@@ -1,0 +1,31 @@
+//testing starting at a 45 degree angle from wall
+4, EYE,   false, false,  2,     0,    0,    0,    0,    0,    0.55
+//Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
+4, FWE34, false, true,   1,  225,  0.04,    0,    0,    0,    0.55  
+//Right Turn with Radius of 18 inches
+4, RRE45, false, true,   18,    0,    0,    0,    0,    0,    0.55  
+//SF1  is move forward slowly until line is found then stop
+4, SF1  , false, false,  19,    0,    0,    0,    0,    0,    0.3   
+3, LTE85, false, false,   0,    0,    0,    0,    0,    0,    0.47
+3, GTE170,false, false,   0,    0,    0,    0,    0,    0,    0.47
+4, ST1 ,  false, false, 2500,   0,    0,    0,    0,    0,    0 
+3, GTE180,false, false,   0,    0,    0,    0,    0,    0,    0.47
+5,  BCL,  false, false,   0,    0,    0,    0,    0,    0,    0
+10, ATB,  false, false,   0,    0,    0,    0,    0,    0,    0
+4, EYE,   false, false,   2,    0,    0,    0,    0,    0,    0.55
+3, RTE85, false, false,   0,    0,    0,    0,    0,    0,    0.47
+3, GTE270,false, false,   0,    0,    0,    0,    0,    0,    0.47
+//Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
+6, FWE43, false, true,    1,   270,  0.04,  0,    0,    0,    0.55  
+//SF1  is move forward slowly until line is found then stop
+4, SF1  , false, false,  12,    0,    0,    0,    0,    0,    0.3   
+3, LTE85, false, false,   0,    0,    0,    0,    0,    0,    0.47
+3, GTE180,false, false,   0,    0,    0,    0,    0,    0,    0.47
+5,  BCL,  false, false,   0,    0,    0,    0,    0,    0,    0
+10, ATB,  false, false,   0,    0,    0,    0,    0,    0,    0
+3, LTE130, false, true,   0,    0,    0,    0,    0,    0,    0.47
+4, EYE,   false, false,  2,     0,    0,    0,    0,    0,    0.55
+//Forward using gyro to track at bearing 48 degrees, 0.04 gain on error
+6, FWE58, false, false,   1,   50,  0.02,   0,    0,    0,    0.55  
+//leave this delay of 0 in there, inserting a step doesn't work if inserting when at the last step
+2, DEL0,   false, false, 0,    0,    0,    0,    0,    0,    0

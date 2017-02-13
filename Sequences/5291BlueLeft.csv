@@ -1,0 +1,26 @@
+//Move Eye
+4, EYE,   false, false,  2,     0,    0,    0,    0,    0,    0.55
+//Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
+4, FWE22, false, true,   1,  225,  0.04,    0,    0,    0,    0.55  
+//Move Eye
+4, EYE,   false, false,  1,     0,    0,    0,    0,    0,    0.55
+4, LTE180,false, true,   0,     0,    0,    0,    0,    0,    0.55
+4, EYE,   false, false,  3,     0,    0,    0,    0,    0,    0.55
+3, GTE45, false, false,   0,    0,    0,    0,    0,    0,    0.47
+10, ST1 , false, false, 2500,   0,    0,    0,    0,    0,    0  
+4, EYE,   false, false,  2,     0,    0,    0,    0,    0,    0.55
+Ramp
+4, LTE128, false, true, 0, 0, 0, 0, 0, 0, 0.55
+3, GTE278, false, false, 0, 0, 0, 0, 0, 0, 0.47
+//Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
+4, FWE77, false, true, 1, 278, 0.02, 0, 0, 0, 0.5  
+*Ramp
+Vortex
+4, RTE180,false, true,   0,     0,    0,    0,    0,    0,    0.55
+3, GTE225, false, false, 0,     0,    0,    0,    0,    0,    0.47
+4, EYE,   false, false,  2,     0,    0,    0,    0,    0,    0.55
+//Forward using gyro to track at bearing 225 degrees, 0.04 gain on error        }
+4, FWE40, false, true,   0,     0,    0,    0,    0,    0,    0.55  
+*Vortex
+//leave this delay of 0 in there, inserting a step doesn't work if inserting when at the last step
+2, DEL0,  false, false, 0,    0,    0,    0,    0,    0,    0
