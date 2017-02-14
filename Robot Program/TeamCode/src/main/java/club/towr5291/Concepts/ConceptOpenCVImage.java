@@ -5,6 +5,7 @@ import android.os.Environment;
 import android.util.Log;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -37,7 +38,8 @@ import static org.opencv.imgproc.Imgproc.resize;
  * Created by ianhaden on 4/10/2016.
  */
 
-@Autonomous(name="OpenCV Images", group="5291Test")
+@Autonomous(name="OpenCV Images", group="5291Concept")
+@Disabled
 public class ConceptOpenCVImage extends LinearOpMode{
 
     //set up the variables for the logger

@@ -54,7 +54,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <string name="pref_view_logs">View Logs</string>
   <string name="pref_sound_on_off_title">Sound</string>
 
-  <!-- Toast messages -->
+  <!-- Toast messages -->  
   <string name="toastWifiConfigurationComplete">Configuration Complete</string>
   <string name="toastRestartingRobot">Restarting Robot</string>
   <string name="toastConfigureRobotBeforeProgrammingMode">You must Configure Robot before starting Programming Mode.</string>
@@ -64,10 +64,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <string name="configure_autonomous_menu_item">Configure Autonomous</string>
   <string-array name="alliance_color_options">
     <item>Test</item>
-    <item>Red</item>
-    <item>Blue</item>
+      <item>Red</item>
+      <item>Blue</item>
   </string-array>
-  <string-array name="alliance_position_options">
+  <string-array name="alliance_start_position_options">
     <item>Test</item>
     <item>Left</item>
     <item>Right</item>
@@ -107,6 +107,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <item>TileRunner-2x60</item>
     <item>5291 Tank Tread-2x40 Custom</item>
     <item>11231 2016 Custom</item>
+  </string-array>
+  <string-array name="alliance_park_position_options">
+    <item>Ramp</item>
+    <item>Vortex</item>
+    <item>Test</item>
   </string-array>
   <string-array name="team_number_options">
     <item>0000</item>

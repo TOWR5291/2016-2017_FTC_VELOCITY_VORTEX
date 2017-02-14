@@ -103,6 +103,8 @@ public class FileLogger {
     }
 
     public synchronized void writeEvent(String event, String desc) {
+//        Log.d(event, desc);
+
         if (isOpen)
             this.write(this.elapsedTime.toString()+","+System.currentTimeMillis()+","+Thread.currentThread().getId()+","+event+","+desc);
     }

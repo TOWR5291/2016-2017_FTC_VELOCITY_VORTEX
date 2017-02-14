@@ -1,5 +1,6 @@
 package club.towr5291.opmodes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -15,6 +16,7 @@ import club.towr5291.robotconfig.HardwareDriveMotors;
  * Created by Andrew Haselton on 10/15/2016 at 9:53 AM.
  */
 @TeleOp(name = "Base Drive Flicker", group = "5291 Test")
+@Disabled
 public class BaseDriveFlicker extends OpMode{
 
     HardwareArmMotors attachments   = new HardwareArmMotors();   // Use base drive hardware configuration

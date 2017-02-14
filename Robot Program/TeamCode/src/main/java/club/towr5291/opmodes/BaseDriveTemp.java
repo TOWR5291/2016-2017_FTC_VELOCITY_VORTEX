@@ -2,6 +2,7 @@ package club.towr5291.opmodes;
 
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -24,7 +25,8 @@ import club.towr5291.robotconfig.HardwareSensors;
 /**
  * Created by Andrew Haselton on 10/15/2016 at 9:53 AM.
  */
-@TeleOp(name = "Base Drive Temp", group = "pi")
+@TeleOp(name = "Base Drive Temp", group = "Andrew")
+@Disabled
 public class BaseDriveTemp extends OpMode{
 
     HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use base drive hardware configuration

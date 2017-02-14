@@ -14,6 +14,7 @@ Support is available by emailing support@modernroboticsinc.com.
 
 package club.towr5291.Concepts;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.I2cAddr;
@@ -22,7 +23,8 @@ import com.qualcomm.robotcore.hardware.I2cDeviceSynch;
 import com.qualcomm.robotcore.hardware.I2cDeviceSynchImpl;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name = "Range Linear", group = "MRI")
+@TeleOp(name = "Range Linear", group = "5291Concept")
+@Disabled
 public class ConceptMRIRangeSensorLinear extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();

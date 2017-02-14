@@ -1,6 +1,7 @@
 package club.towr5291.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -8,7 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 /**
  * Created by Local Shark on 9/24/2016.
  */
-@Autonomous(name="Launch Auton", group="Hi")
+@Autonomous(name="Launch Auton", group="Michael")
+@Disabled
 public class LaunchingProgramMichaelAuton extends OpMode {
 
     DcMotor launch1;
