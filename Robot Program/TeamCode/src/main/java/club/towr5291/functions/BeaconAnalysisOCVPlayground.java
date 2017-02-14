@@ -1,8 +1,6 @@
 package club.towr5291.functions;
 
-import android.content.SharedPreferences;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.qualcomm.ftccommon.DbgLog;
@@ -12,9 +10,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
@@ -36,13 +32,11 @@ import java.util.List;
 
 import club.towr5291.libraries.LibraryOCVHSVFilter;
 
-import static org.opencv.imgproc.Imgproc.contourArea;
-
 /**
  * Created by LZTDD0 on 11/7/2016.
  */
 
-public class BeaconAnalysisOCV2 {
+public class BeaconAnalysisOCVPlayground {
 
     private final static double MIN_COLOR_ZONE_AREA = 0.2;// fraction of total image area
 
@@ -52,6 +46,7 @@ public class BeaconAnalysisOCV2 {
     private Mat zonedImg;
     private Mat tmpHsvImg;
     private Mat tmp1Img;
+    private Mat tmp2Img;
     private Mat maskImg;
     private Mat showImg = new Mat();
     private Mat cvImage;
@@ -105,14 +100,14 @@ public class BeaconAnalysisOCV2 {
     private int loadHSVCrapindex = 0;
     private double imageTimeStamp;
 
-    public BeaconAnalysisOCV2() {
+    public BeaconAnalysisOCVPlayground() {
 
 
     }
 
-    public Constants.BeaconColours beaconAnalysisOCV2(Mat img, int count, int debuglevel) {
+    public Constants.BeaconColours BeaconAnalysisOCVPlayground(Mat img, int count, int debuglevel) {
 
-        if ((count >= 1) && (debug >= 10))
+        if ((count >= 1))
             return beaconColourResult;
         
         //clear out old information
@@ -164,7 +159,18 @@ public class BeaconAnalysisOCV2 {
 
         imageCounter = count;
 
-        //img = loadImageFromFile("test2.png");
+
+        //image from Lake Orion School
+        //img = loadImageFromFile("test1.png");
+
+        //image from FORC
+        img = loadImageFromFile("test2.png");
+
+        //image from outside in sun
+        //img = loadImageFromFile("test3.png");
+
+        //image from home
+        //img = loadImageFromFile("test4.png");
 
         if (debug >= 1)
             SaveImage(img, imageTimeStamp + "-01 initial image " + imageCounter );
@@ -231,11 +237,11 @@ public class BeaconAnalysisOCV2 {
             SaveImage(colorDiff, imageTimeStamp + "-09 threshold " + imageCounter );
 
         findLum();
-        findBlue();
-        findRed();
-        findBeaconBox();
-        findButtons();
-        createBeaconMask();
+        //findBlue();
+        //findRed();
+        //findBeaconBox();
+        //findButtons();
+        //createBeaconMask();
 
         finalImg = draw();
         if (debug >= 1)
@@ -290,9 +296,32 @@ public class BeaconAnalysisOCV2 {
         Imgproc.GaussianBlur( lum, tmp1Img, new Size(25,25), 25);
         if (debug >= 9)
             SaveImage(tmp1Img, imageTimeStamp + "-14 findLum GaussianBlur " + imageCounter );
-        Imgproc.threshold( tmp1Img, white, 255 - lumAvg, 255, Imgproc.THRESH_BINARY );
+
+
+        //trying to find luminance 20% below, do a subtract to remove any bright areas
+        //then subtract
+        //then find luminance 20% above
+        tmp2Img = new Mat();
+        Imgproc.threshold( tmp1Img, white, 255 - (lumAvg * .8), 255, Imgproc.THRESH_BINARY );
+        SaveImage(white, imageTimeStamp + "-14.1 findLum threshold reduced luminance" + imageCounter );
+        Imgproc.threshold( tmp1Img, tmp2Img, 255 - (lumAvg * 1.2), 255, Imgproc.THRESH_BINARY );
+
+
+        Core.bitwise_and(tmp2Img, white, white);
+        SaveImage(tmp2Img, imageTimeStamp + "-14.2 findLum bitand " + imageCounter );
+
+        //Imgproc.threshold( tmp1Img, white, 255 - lumAvg, 255, Imgproc.THRESH_BINARY );
+
+        //for (double x = 1; x <= 1.21; x = x + 0.05)
+        //{
+        //    Imgproc.threshold( tmp2Img, white, 255 - (lumAvg * x), 255, Imgproc.THRESH_BINARY );
+        //    if (debug >= 9)
+        //        SaveImage(white, imageTimeStamp + "-15 findLum threshold x " + x + " , " + imageCounter );
+        //}
+
         if (debug >= 9)
             SaveImage(white, imageTimeStamp + "-15 findLum threshold " + imageCounter );
+
         //+ or Imgproc.THRESH_OTSU
         white.copyTo(tmp1Img);
         Imgproc.erode( tmp1Img, white, Imgproc.getGaussianKernel( 5, 2 ) );

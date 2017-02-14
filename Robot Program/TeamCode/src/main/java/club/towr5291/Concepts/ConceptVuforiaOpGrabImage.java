@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import club.towr5291.functions.BeaconAnalysisOCVPlayground;
 import club.towr5291.functions.Constants;
 import club.towr5291.functions.BeaconAnalysisOCV;
 import club.towr5291.functions.BeaconAnalysisOCV2;
@@ -115,8 +116,9 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         fileLogger.writeEvent("init()","Log Started");
 
         //BeaconAnalysisOCV beaconColour = new BeaconAnalysisOCV();
-        BeaconAnalysisOCV2 beaconColour = new BeaconAnalysisOCV2();
+        //BeaconAnalysisOCV2 beaconColour = new BeaconAnalysisOCV2();
         //BeaconAnalysisOCVAnalyse beaconColour = new BeaconAnalysisOCVAnalyse();
+        BeaconAnalysisOCVPlayground beaconColour = new BeaconAnalysisOCVPlayground();
 
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(R.id.cameraMonitorViewId);
         parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
@@ -363,7 +365,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
 
             //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop);
 
-            Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV2(tmp, loop, debug);
+            Constants.BeaconColours Colour = beaconColour.BeaconAnalysisOCVPlayground(tmp, loop, debug);
             Log.d("OPENCV","Returned " + Colour);
 
             frame.close();
