@@ -58,26 +58,30 @@ public class BeaconAnalysisOCVPlayground {
     private Mat original;
     private Mat crap1;
     private Mat crap2;
+    private Mat btnTmpImg;
 
-    private List<Mat>        hsv_channels = new ArrayList<>();
-    private List<Mat>        rgb_channels = new ArrayList<>();
-    private List<MatOfPoint> red_blobs    = new ArrayList<>();
-    private List<MatOfPoint> blue_blobs   = new ArrayList<>();
-    private List<MatOfPoint> white_blobs  = new ArrayList<>();
-    private List<MatOfPoint> black_blobs  = new ArrayList<>();
+    private List<Mat>        hsv_channels    = new ArrayList<>();
+    private List<Mat>        rgb_channels    = new ArrayList<>();
+    private List<MatOfPoint> red_blobs       = new ArrayList<>();
+    private List<MatOfPoint> blue_blobs      = new ArrayList<>();
+    private List<MatOfPoint> white_blobs     = new ArrayList<>();
+    private List<MatOfPoint> black_blobs     = new ArrayList<>();
 
-    private ArrayList<Rect> red_matches   = new ArrayList<>();
-    private ArrayList<Rect> blue_matches  = new ArrayList<>();
-    private ArrayList<Rect> white_matches = new ArrayList<>();
-    private List<Rect> buttons            = new ArrayList<>();
-    private ArrayList<Point> centroidRed  = new ArrayList<>();
-    private ArrayList<Point> centroidBlue = new ArrayList<>();
-    private ArrayList<Point> centroidWhite = new ArrayList<>();
+    private ArrayList<Rect>  red_matches     = new ArrayList<>();
+    private ArrayList<Rect>  blue_matches    = new ArrayList<>();
+    private ArrayList<Rect>  white_matches   = new ArrayList<>();
+    private List<Rect>       buttons         = new ArrayList<>();
+    private ArrayList<Point> centroidButtons = new ArrayList<>();
+    private ArrayList<Point> centroidRed     = new ArrayList<>();
+    private ArrayList<Point> centroidBlue    = new ArrayList<>();
+    private ArrayList<Point> centroidWhite   = new ArrayList<>();
 
     private Rect red_box;
     private Rect blue_box;
     private Rect white_box;
     private Rect beacon_box;
+
+    private double lumAvg = 0;
 
     private Constants.BeaconColours beaconColourResult;
 
@@ -107,7 +111,7 @@ public class BeaconAnalysisOCVPlayground {
 
     public Constants.BeaconColours BeaconAnalysisOCVPlayground(Mat img, int count, int debuglevel) {
 
-        if ((count >= 1))
+        if ((count >= 1) && (debug >= 9))
             return beaconColourResult;
         
         //clear out old information
@@ -116,6 +120,7 @@ public class BeaconAnalysisOCVPlayground {
         hsvImg = new Mat();
         crap1 = new Mat();
         crap2 = new Mat();
+        btnTmpImg = new Mat();
 
         hsv_channels.clear();
         rgb_channels.clear();
@@ -159,12 +164,11 @@ public class BeaconAnalysisOCVPlayground {
 
         imageCounter = count;
 
-
         //image from Lake Orion School
         //img = loadImageFromFile("test1.png");
 
         //image from FORC
-        img = loadImageFromFile("test2.png");
+        //img = loadImageFromFile("test2.png");
 
         //image from outside in sun
         //img = loadImageFromFile("test3.png");
@@ -172,13 +176,30 @@ public class BeaconAnalysisOCVPlayground {
         //image from home
         //img = loadImageFromFile("test4.png");
 
-        if (debug >= 1)
+        if (debug >= 2)
             SaveImage(img, imageTimeStamp + "-01 initial image " + imageCounter );
 
+        Rect roi = new Rect(0, 0, 0, 0);
+
         //crop the image to half the height, bottom half is just the wall as camera is mounted 12 inches
-        beaconMaskImg = new Mat(360,1280,CvType.CV_8UC4);
-        //image is 1280x720
-        Rect roi = new Rect(0, 0, 1280, 360);
+        //beaconMaskImg = new Mat(360,1280,CvType.CV_8UC4);
+        //if (debug >= 9) {
+            //takes 2.5 seconds to process at this size
+            //image is 1280 x720
+            //roi = new Rect(0, 0, 1280, 360);
+        //} else
+        {
+            //see if reducing image size make its faster
+            //takes 600ms to process at this size
+            Size size = new Size(0, 0);
+            if (img.height() == 360) {
+                size = new Size(640, 180);//the dst image size,e.g.100x100
+            } else {
+                size = new Size(640, 360);//the dst image size,e.g.100x100
+            }
+            Imgproc.resize(img, img, size);
+            roi = new Rect(0, 0, 640, 180);
+        }
         Mat cropped = new Mat(img, roi);
         original = cropped.clone();
 
@@ -236,15 +257,20 @@ public class BeaconAnalysisOCVPlayground {
         if (debug >= 9)
             SaveImage(colorDiff, imageTimeStamp + "-09 threshold " + imageCounter );
 
+        if (debug >= 1) fileLogger.writeEvent(TAG, "findLum()");
         findLum();
-        //findBlue();
-        //findRed();
-        //findBeaconBox();
-        //findButtons();
+        if (debug >= 1) fileLogger.writeEvent(TAG, "findBlue()");
+        findBlue();
+        if (debug >= 1) fileLogger.writeEvent(TAG, "findRed()");
+        findRed();
+        if (debug >= 1) fileLogger.writeEvent(TAG, "findBeaconBox()");
+        findBeaconBox();
+        if (debug >= 1) fileLogger.writeEvent(TAG, "findButtons()");
+        findButtons(1);
         //createBeaconMask();
-
+        if (debug >= 1) fileLogger.writeEvent(TAG, "draw()");
         finalImg = draw();
-        if (debug >= 1)
+        if (debug >= 2)
             SaveImage(finalImg, imageTimeStamp + "-99 final " + imageCounter );
         calcPosition();
 
@@ -274,7 +300,7 @@ public class BeaconAnalysisOCVPlayground {
         if (debug >= 9)
             SaveImage(lum, imageTimeStamp + "-11 findLum lum " + imageCounter );
 
-        double lumAvg = Core.mean( lum ).val[0];
+        lumAvg = Core.mean( lum ).val[0];
 
         if(tmp1Img == null)
             tmp1Img = sat.clone();
@@ -297,31 +323,11 @@ public class BeaconAnalysisOCVPlayground {
         if (debug >= 9)
             SaveImage(tmp1Img, imageTimeStamp + "-14 findLum GaussianBlur " + imageCounter );
 
+        tmp1Img.copyTo(btnTmpImg);
 
-        //trying to find luminance 20% below, do a subtract to remove any bright areas
-        //then subtract
-        //then find luminance 20% above
-        tmp2Img = new Mat();
-        Imgproc.threshold( tmp1Img, white, 255 - (lumAvg * .8), 255, Imgproc.THRESH_BINARY );
-        SaveImage(white, imageTimeStamp + "-14.1 findLum threshold reduced luminance" + imageCounter );
-        Imgproc.threshold( tmp1Img, tmp2Img, 255 - (lumAvg * 1.2), 255, Imgproc.THRESH_BINARY );
-
-
-        Core.bitwise_and(tmp2Img, white, white);
-        SaveImage(tmp2Img, imageTimeStamp + "-14.2 findLum bitand " + imageCounter );
-
-        //Imgproc.threshold( tmp1Img, white, 255 - lumAvg, 255, Imgproc.THRESH_BINARY );
-
-        //for (double x = 1; x <= 1.21; x = x + 0.05)
-        //{
-        //    Imgproc.threshold( tmp2Img, white, 255 - (lumAvg * x), 255, Imgproc.THRESH_BINARY );
-        //    if (debug >= 9)
-        //        SaveImage(white, imageTimeStamp + "-15 findLum threshold x " + x + " , " + imageCounter );
-        //}
-
+        Imgproc.threshold( tmp1Img, white, 255 - lumAvg, 255, Imgproc.THRESH_BINARY );
         if (debug >= 9)
             SaveImage(white, imageTimeStamp + "-15 findLum threshold " + imageCounter );
-
         //+ or Imgproc.THRESH_OTSU
         white.copyTo(tmp1Img);
         Imgproc.erode( tmp1Img, white, Imgproc.getGaussianKernel( 5, 2 ) );
@@ -384,6 +390,12 @@ public class BeaconAnalysisOCVPlayground {
 
         //get known rubbish areas from hashmap and process
 
+
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Start Crap Filter");
+        }
+        // this process is 350ms
         for (int x = 0; x < loadHSVCrapindex; x++) {
             if (x == 0) {
                 if (HSVCrapFilters.containsKey(String.valueOf(x))) {
@@ -397,6 +409,10 @@ public class BeaconAnalysisOCVPlayground {
                     Core.bitwise_or(crap1, crap2, crap1);
                 }
             }
+        }
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Finish Crap Filter");
         }
         Imgproc.dilate(crap1, crap1, new Mat());
         Imgproc.dilate(crap1, crap1, new Mat());
@@ -425,7 +441,11 @@ public class BeaconAnalysisOCVPlayground {
 //            if (debug >= 9)
 //                SaveImage(blue2, imageTimeStamp + "-22 findBlue inRange2 " + imageCounter);
 //            Core.bitwise_or(blue_areas, blue2, blue_areas);
-
+            if (debug >= 3)
+            {
+                fileLogger.writeEvent(TAG, "Start Blue Filter");
+            }
+            // this process is 300ms
             for (int x = 0; x < loadHSVBlueindex; x++) {
                 if (x == 0) {
                     if (HSVBlueFilters.containsKey(String.valueOf(x))) {
@@ -439,6 +459,10 @@ public class BeaconAnalysisOCVPlayground {
                         Core.bitwise_or(blue_areas, blue1, blue_areas);
                     }
                 }
+            }
+            if (debug >= 3)
+            {
+                fileLogger.writeEvent(TAG, "Finish Blue Filter");
             }
 
             if (debug >= 9)
@@ -503,7 +527,11 @@ public class BeaconAnalysisOCVPlayground {
 //        if (debug >= 9)
 //            SaveImage(red_areas, imageTimeStamp + "-28 findRed bitwise_or " + imageCounter );
 
-
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Start Red Filter");
+        }
+        // this process is 200ms
         for (int x = 0; x < loadHSVRedindex; x++) {
             if (x == 0) {
                 if (HSVRedFilters.containsKey(String.valueOf(x))) {
@@ -517,6 +545,10 @@ public class BeaconAnalysisOCVPlayground {
                     Core.bitwise_or(red_areas, red1, red_areas);
                 }
             }
+        }
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Finish Red Filter");
         }
 
         //filter out the known crap
@@ -662,24 +694,54 @@ public class BeaconAnalysisOCVPlayground {
             SaveImage(beaconMaskImg, imageTimeStamp + "-50 BeaconMask");
     }
 
-    private void findButtons()
+    private void findButtons(int depth)
     {
         buttons.clear();
         black_blobs.clear();
 
-        Core.split( zonedImg, hsv_channels );
+        //Core.split( zonedImg, hsv_channels );
 
-        Mat d_value = hsv_channels.get( 2 );
-        d_value.copyTo(tmp1Img);
+        //Mat d_value = hsv_channels.get( 2 );
+        //d_value.copyTo(tmp1Img);
+        Mat d_value = new Mat();
 
-        Imgproc.threshold( tmp1Img, d_value, 40, 255, Imgproc.THRESH_BINARY_INV ); // + Imgproc.THRESH_OTSU );
+        //Imgproc.threshold( tmp1Img, d_value, 40, 255, Imgproc.THRESH_BINARY_INV ); // + Imgproc.THRESH_OTSU );
+        double multiplier = 1;
+        switch (depth) {
+            case 9: multiplier = 0.7;
+                break;
+            case 8: multiplier = 0.77;
+                break;
+            case 7: multiplier = 0.83;
+                break;
+            case 6: multiplier = 0.92;
+                break;
+            case 5: multiplier = 1;
+                break;
+            case 4: multiplier = 1.08;
+                break;
+            case 3: multiplier = 1.17;
+                break;
+            case 2: multiplier = 1.23;
+                break;
+            case 1: multiplier = 1.30;
+                break;
+
+        }
+
         if (debug >= 9)
-            SaveImage(d_value, imageTimeStamp + "-32 findButtons threshold " + imageCounter );
+            SaveImage(btnTmpImg, imageTimeStamp + "-32.0 findButtons tmp1Img " + imageCounter );
+
+        Imgproc.threshold( btnTmpImg, d_value, 255 - (lumAvg * multiplier), 255, Imgproc.THRESH_BINARY ); // + Imgproc.THRESH_OTSU );
+
+        if (debug >= 9)
+            SaveImage(d_value, imageTimeStamp + "-32.1 findButtons threshold depth " + depth + ", value " + (lumAvg * multiplier) + ","  + imageCounter );
 
         Mat hchy = new Mat();
         List<MatOfPoint> contours = new ArrayList<>();
 
-        Imgproc.findContours(d_value, contours, hchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        //Imgproc.findContours(d_value, contours, hchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(d_value, contours, hchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
         // Find max contour area
         Rect bounded_box;
@@ -689,6 +751,12 @@ public class BeaconAnalysisOCVPlayground {
         while (each.hasNext()) {
             MatOfPoint wrapper = each.next();
             bounded_box = Imgproc.boundingRect(wrapper);
+
+            if (debug >= 9) {
+                //draw the bounded box on the temp image to see output?
+                Imgproc.rectangle( d_value, bounded_box.tl(), bounded_box.br(), new Scalar(200,200,200), 3 );
+            }
+
             // Reasonably sized
             if (bounded_box.width > minWidth &&
                     bounded_box.width < maxWidth &&
@@ -701,7 +769,45 @@ public class BeaconAnalysisOCVPlayground {
                 black_blobs.add( wrapper );
                 buttons.add( bounded_box );
 
+                Point center = massCenterMatOfPoint2f(wrapper);
+                int numberCenteroidButtons = centroidButtons.size();
+                Point bc = new Point();
+                boolean addPoint = true;
+                if (centroidButtons.size() > 0) {
+                    for (int x = 0; x < numberCenteroidButtons; x++) {
+                    //for (Point bc : centroidButtons) {
+                        bc = centroidButtons.get(x);
+                        if (((bc.x - 5) < center.x) && ((bc.x + 5) > center.x) && (((bc.y - 5) < center.y) && ((bc.y + 5) > center.y))) {
+                            //point already exists don't add it
+                            addPoint = false;
+                        }
+                        Imgproc.circle(d_value, bc, 15, new Scalar(200, 200, 200), 3);
+                    }
+                }
+                if (addPoint) {
+                    centroidButtons.add(center);
+                    if (debug >= 2)
+                    {
+                        fileLogger.writeEvent(TAG, "Adding Button = " + center );
+                        Log.d(TAG, "Adding Button = " + center );
+                    }
+                    Imgproc.circle(d_value, center, 15, new Scalar(200, 200, 200), 3);
+                }
             }
+
+            if (debug >= 9) {
+                SaveImage(d_value, imageTimeStamp + "-32.5 draw bounding box " + depth  + ","  + imageCounter );
+            }
+        }
+        if (debug >= 2)
+        {
+            fileLogger.writeEvent(TAG, "depth = " + depth + ", Buttons = " + buttons.size());
+            Log.d(TAG, "depth = " + depth + ", Buttons = " + buttons.size());
+        }
+        if (( buttons.size() == 2 ) || (depth == 9)) {
+            return;
+        } else {
+            findButtons(depth + 1);
         }
     }
 
@@ -709,8 +815,9 @@ public class BeaconAnalysisOCVPlayground {
 
         out = new Mat();
 
-        if (out == null)
-            out = original.clone();
+        //if (out == null)
+        //    out = original.clone();
+        original.copyTo(out);
 
         //Imgproc.cvtColor( showImg, out, Imgproc.COLOR_HSV2RGB, 4 );
 
@@ -784,7 +891,17 @@ public class BeaconAnalysisOCVPlayground {
         centroidRedPosition = centroidRed.get(0);
 
         if (( red_box.width < 5 || red_box.height < 5 ) || ( blue_box.width < 5 || blue_box.height < 5 )) {
+            beaconColourResult = Constants.BeaconColours.UNKNOWN;
+            return;
+        } else if ( centroidBluePosition.x  < centroidRedPosition.x ) {
+            beaconColourResult = Constants.BeaconColours.BEACON_BLUE_RED;
+            return;
+        } else if ( centroidRedPosition.x < centroidBluePosition.x ) {
+            beaconColourResult = Constants.BeaconColours.BEACON_RED_BLUE;
+            return;
+        }
 
+        if (( red_box.width < 5 || red_box.height < 5 ) || ( blue_box.width < 5 || blue_box.height < 5 )) {
             beaconColourResult = Constants.BeaconColours.UNKNOWN;
             return;
         } else if (( beac_ctr > centroidBluePosition.x ) && ( beac_ctr < centroidRedPosition.x )) {

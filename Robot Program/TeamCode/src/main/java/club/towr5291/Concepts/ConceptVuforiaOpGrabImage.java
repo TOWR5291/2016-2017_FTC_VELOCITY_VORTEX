@@ -364,7 +364,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
             Utils.bitmapToMat(bm, tmp);
 
             //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop);
-
+            //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV2(tmp, loop, debug);
             Constants.BeaconColours Colour = beaconColour.BeaconAnalysisOCVPlayground(tmp, loop, debug);
             Log.d("OPENCV","Returned " + Colour);
 
@@ -442,7 +442,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
                     telemetry.addData("Beacon ", "Red Blue");
                     break;
                 case UNKNOWN:
-                    telemetry.addData("Beacon ", "Unknow");
+                    telemetry.addData("Beacon ", "Unknown");
                     break;
             }
 
