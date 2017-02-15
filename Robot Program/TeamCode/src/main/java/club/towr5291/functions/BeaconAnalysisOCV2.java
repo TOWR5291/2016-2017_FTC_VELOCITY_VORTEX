@@ -685,21 +685,21 @@ public class BeaconAnalysisOCV2 {
         switch (depth) {
             case 9: multiplier = 0.7;
                 break;
-            case 8: multiplier = 0.77;
+            case 8: multiplier = 1.30;
                 break;
-            case 7: multiplier = 0.83;
+            case 7: multiplier = 0.77;
                 break;
-            case 6: multiplier = 0.92;
+            case 6: multiplier = 1.23;
                 break;
-            case 5: multiplier = 1;
+            case 5: multiplier = 0.83;
                 break;
-            case 4: multiplier = 1.08;
+            case 4: multiplier = 1.17;
                 break;
-            case 3: multiplier = 1.17;
+            case 3: multiplier = 0.92;
                 break;
-            case 2: multiplier = 1.23;
+            case 2: multiplier = 1.08;
                 break;
-            case 1: multiplier = 1.30;
+            case 1: multiplier = 1;
                 break;
 
         }
