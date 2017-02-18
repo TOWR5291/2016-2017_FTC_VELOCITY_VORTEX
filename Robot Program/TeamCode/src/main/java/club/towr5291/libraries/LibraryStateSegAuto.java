@@ -19,10 +19,9 @@ public class LibraryStateSegAuto {
     private double mRobotParm5;          //5rd Parameter
     private double mRobotParm6;          //6th Parameter
     private double mRobotSpeed;          //what angle to move in
-    private boolean mRobotStepComplete;  //status of the step
 
     // Constructor
-    public LibraryStateSegAuto(int step, double timeout, String RobotCommand, boolean RobotParallel, boolean RobotLastPos, double RobotParm1, double RobotParm2, double RobotParm3, double RobotParm4, double RobotParm5, double RobotParm6, double robotSpeed, boolean complete)
+    public LibraryStateSegAuto(int step, double timeout, String RobotCommand, boolean RobotParallel, boolean RobotLastPos, double RobotParm1, double RobotParm2, double RobotParm3, double RobotParm4, double RobotParm5, double RobotParm6, double robotSpeed)
     {
         mStep = step;
         mRobotTimeOut = timeout;
@@ -36,7 +35,6 @@ public class LibraryStateSegAuto {
         mRobotParm5 = RobotParm5;
         mRobotParm6 = RobotParm6;
         mRobotSpeed = robotSpeed;
-        mRobotStepComplete = complete;
     }
 
     public void setmRobotTimeOut(double mRobotTimeOut)
@@ -94,10 +92,6 @@ public class LibraryStateSegAuto {
         this.mRobotSpeed = mRobotSpeed;
     }
 
-    public void setmRobotStepComplete(boolean mRobotStepComplete)     {
-        this.mRobotStepComplete = mRobotStepComplete;
-    }
-
     public double getmRobotTimeOut()
     {
         return mRobotTimeOut;
@@ -153,8 +147,4 @@ public class LibraryStateSegAuto {
         return mRobotSpeed;
     }
 
-    public boolean getmRobotStepComplete()
-    {
-        return mRobotStepComplete;
-    }
 }

@@ -365,7 +365,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
 
             //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop);
             //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV2(tmp, loop, debug);
-            Constants.BeaconColours Colour = beaconColour.BeaconAnalysisOCVPlayground(tmp, loop, debug);
+            Constants.BeaconColours Colour = beaconColour.BeaconAnalysisOCVPlayground(debug, tmp, loop);
             Log.d("OPENCV","Returned " + Colour);
 
             frame.close();

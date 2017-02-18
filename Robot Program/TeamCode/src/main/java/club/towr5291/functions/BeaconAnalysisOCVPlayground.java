@@ -109,7 +109,7 @@ public class BeaconAnalysisOCVPlayground {
 
     }
 
-    public Constants.BeaconColours BeaconAnalysisOCVPlayground(Mat img, int count, int debuglevel) {
+    public Constants.BeaconColours BeaconAnalysisOCVPlayground(int debuglevel, Mat img, int count) {
 
         if ((count >= 1) && (debug >= 9))
             return beaconColourResult;
