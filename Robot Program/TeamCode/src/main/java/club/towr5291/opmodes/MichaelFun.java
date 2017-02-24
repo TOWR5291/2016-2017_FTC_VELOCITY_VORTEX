@@ -1,5 +1,6 @@
 package club.towr5291.opmodes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -8,7 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 /**
  * Created by Local Shark on 9/24/2016.
  */
-@TeleOp(name="Fun", group="Hi")
+@TeleOp(name="Fun", group="Michael")
+@Disabled
 public class MichaelFun extends OpMode {
 
     DcMotor leftDriveFront;

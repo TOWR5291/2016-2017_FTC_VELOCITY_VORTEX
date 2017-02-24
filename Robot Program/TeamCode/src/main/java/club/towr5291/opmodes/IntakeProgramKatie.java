@@ -1,5 +1,6 @@
 package club.towr5291.opmodes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -8,7 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 /**
  * Created by Local Shark on 9/24/2016.
  */
-@TeleOp(name="Intake", group="Hi")
+@TeleOp(name="Intake", group="Katie")
+@Disabled
 public class IntakeProgramKatie extends OpMode {
 
     DcMotor intake1;

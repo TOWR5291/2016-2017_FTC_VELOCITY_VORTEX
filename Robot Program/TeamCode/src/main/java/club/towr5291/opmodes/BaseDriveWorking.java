@@ -150,7 +150,7 @@ public class BaseDriveWorking extends OpMode {
 
 
         // Set all motors to zero power
-        setDriveMotorPower(0);
+        robotDrive.setDriveMotorPower(0);
 
         armDrive.sweeper.setPower(0);
         armDrive.flicker.setPower(0);
@@ -190,116 +190,16 @@ public class BaseDriveWorking extends OpMode {
 
     }
 
+    /*
+ * Code to run ONCE when the driver hits PLAY
+ */
+    @Override
+    public void start() {
+        mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_UP;
+    }
+
     @Override
     public void loop() {
-
-        if (gamepad1.left_bumper)
-        {
-            mdblRightPow =  gamepad1.left_stick_y;
-            mdblLeftPow =  gamepad1.right_stick_y;
-            robotDrive.leftMotor1.setDirection(DcMotor.Direction.REVERSE);
-            robotDrive.leftMotor2.setDirection(DcMotor.Direction.REVERSE);
-            robotDrive.rightMotor1.setDirection(DcMotor.Direction.FORWARD);
-            robotDrive.rightMotor2.setDirection(DcMotor.Direction.FORWARD);
-            mblnReverse = true;
-            mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_DOWN;
-        }
-        else
-        {
-            mdblLeftPow =  gamepad1.left_stick_y;
-            mdblRightPow =  gamepad1.right_stick_y;
-            robotDrive.leftMotor1.setDirection(DcMotor.Direction.FORWARD);
-            robotDrive.leftMotor2.setDirection(DcMotor.Direction.FORWARD);
-            robotDrive.rightMotor1.setDirection(DcMotor.Direction.REVERSE);
-            robotDrive.rightMotor2.setDirection(DcMotor.Direction.REVERSE);
-            mblnReverse = false;
-        }
-        if(gamepad1.y) {
-            mdblLeftPow =  gamepad1.left_stick_y;
-            mdblRightPow =  gamepad1.right_stick_y;
-            robotDrive.leftMotor1.setDirection(DcMotor.Direction.FORWARD);
-            robotDrive.leftMotor2.setDirection(DcMotor.Direction.FORWARD);
-            robotDrive.rightMotor1.setDirection(DcMotor.Direction.REVERSE);
-            robotDrive.rightMotor2.setDirection(DcMotor.Direction.REVERSE);
-            mblnReverse = false;
-        }
-        if(!mblnReverse) {
-            mdblLeftPow =  gamepad1.left_stick_y;
-            mdblRightPow =  gamepad1.right_stick_y;
-            robotDrive.leftMotor1.setDirection(DcMotor.Direction.FORWARD);
-            robotDrive.leftMotor2.setDirection(DcMotor.Direction.FORWARD);
-            robotDrive.rightMotor1.setDirection(DcMotor.Direction.REVERSE);
-            robotDrive.rightMotor2.setDirection(DcMotor.Direction.REVERSE);
-            mblnReverse = false;
-        }
-
-        //driver controls - All gamepad1
-        if (gamepad1.right_trigger > 0 ) {
-            if (!blnRightTriggerPressed) {
-                if (mdblMax >= 1) {
-                    mblnSlowDown = true;
-                    mdblMax = 0.25;
-                    mint5291PUSHERStatus = SERVOPusherState.STATE_DROWSY;
-                } else {
-                    mdblMax = 1;
-                    mblnSlowDown = false;
-                    mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_UP;
-                }
-            }
-            blnRightTriggerPressed = true;
-        }
-        else
-        {
-            blnRightTriggerPressed = false;
-        }
-
-
-        if(gamepad1.a) {
-            mblnSlowDown = true;
-            mdblMax = 0.25;
-            mdblLeftPow = gamepad1.left_stick_y;
-            mdblRightPow = mdblLeftPow;
-        }
-
-        if (mdblLeftPow < 0) {
-            leftNegative = true;
-        } else {
-            leftNegative = false;
-        }
-        if (mdblRightPow < 0) {
-            rightNegative = true;
-        } else {
-            rightNegative = false;
-        }
-
-
-        if (mdblLeftPow >= mdblMax && !leftNegative)
-        {
-            mdblLeftPow = mdblMax;
-        }
-        else if (mdblLeftPow <= -mdblMax && leftNegative)
-        {
-            mdblLeftPow = -mdblMax;
-        }
-
-        if (mdblRightPow >= mdblMax && !rightNegative)
-        {
-            mdblRightPow = mdblMax;
-        }
-        else if (mdblRightPow <= -mdblMax && rightNegative)
-        {
-            mdblRightPow = -mdblMax;
-        }
-
-        setDriveRightMotorPower(mdblRightPow);
-        setDriveLeftMotorPower(mdblLeftPow);
-
-        telemetry.addData("Left Speed Raw", -gamepad1.left_stick_y);
-        telemetry.addData("Right Speed Raw", -gamepad1.right_stick_y);
-        telemetry.addData("Left Speed", -mdblLeftPow);
-        telemetry.addData("Right Speed", -mdblRightPow);
-        telemetry.addData("Reverse", mblnReverse);
-        telemetry.addData("Slowdown", mblnSlowDown);
 
         //arms controls, - all gamepad 2
         if (gamepad2.right_trigger > 0) {
@@ -352,15 +252,131 @@ public class BaseDriveWorking extends OpMode {
 
         //lift the extension for capping the ball
         if (mblnReleaseArm) {
-            mdblLifterPower = gamepad2.left_stick_y;
+            mdblLifterPower = -gamepad2.left_stick_y;
             armDrive.lifter.setPower(mdblLifterPower);
             if (mdblLifterPower != 0)
                 mint5291LEDStatus = LEDState.STATE_LIFT;
 
         }
 
+        //driver controls - All gamepad1
+        if (gamepad1.left_bumper)
+        {
+            mdblRightPow =  gamepad1.left_stick_y;
+            mdblLeftPow =  gamepad1.right_stick_y;
+            robotDrive.leftMotor1.setDirection(DcMotor.Direction.REVERSE);
+            robotDrive.leftMotor2.setDirection(DcMotor.Direction.REVERSE);
+            robotDrive.rightMotor1.setDirection(DcMotor.Direction.FORWARD);
+            robotDrive.rightMotor2.setDirection(DcMotor.Direction.FORWARD);
+            mblnReverse = true;
+            mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_DOWN;
+        }
+        else
+        {
+            mdblLeftPow =  gamepad1.left_stick_y;
+            mdblRightPow =  gamepad1.right_stick_y;
+            robotDrive.leftMotor1.setDirection(DcMotor.Direction.FORWARD);
+            robotDrive.leftMotor2.setDirection(DcMotor.Direction.FORWARD);
+            robotDrive.rightMotor1.setDirection(DcMotor.Direction.REVERSE);
+            robotDrive.rightMotor2.setDirection(DcMotor.Direction.REVERSE);
+            mblnReverse = false;
+        }
+        if(gamepad1.y) {
+            mdblLeftPow =  gamepad1.left_stick_y;
+            mdblRightPow =  gamepad1.right_stick_y;
+            robotDrive.leftMotor1.setDirection(DcMotor.Direction.FORWARD);
+            robotDrive.leftMotor2.setDirection(DcMotor.Direction.FORWARD);
+            robotDrive.rightMotor1.setDirection(DcMotor.Direction.REVERSE);
+            robotDrive.rightMotor2.setDirection(DcMotor.Direction.REVERSE);
+            mblnReverse = false;
+        }
+        if(!mblnReverse) {
+            mdblLeftPow =  gamepad1.left_stick_y;
+            mdblRightPow =  gamepad1.right_stick_y;
+            robotDrive.leftMotor1.setDirection(DcMotor.Direction.FORWARD);
+            robotDrive.leftMotor2.setDirection(DcMotor.Direction.FORWARD);
+            robotDrive.rightMotor1.setDirection(DcMotor.Direction.REVERSE);
+            robotDrive.rightMotor2.setDirection(DcMotor.Direction.REVERSE);
+            mblnReverse = false;
+        }
+
+        //slow robot down to enable better control when capping the ball
+        if (gamepad1.right_trigger > 0 ) {
+            if (!blnRightTriggerPressed) {
+                if (mdblMax >= 1) {
+                    mblnSlowDown = true;
+                    mdblMax = 0.25;
+                    mint5291PUSHERStatus = SERVOPusherState.STATE_DROWSY;
+                } else {
+                    mdblMax = 1;
+                    mblnSlowDown = false;
+                    mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_UP;
+                }
+            }
+            blnRightTriggerPressed = true;
+        }
+        else
+        {
+            blnRightTriggerPressed = false;
+        }
+
+        //disable steering
+        if(gamepad1.a) {
+            mblnSlowDown = true;
+            mdblMax = 0.25;
+            mdblLeftPow = gamepad1.left_stick_y;
+            mdblRightPow = mdblLeftPow;
+        }
+
+        if (mdblLeftPow < 0) {
+            leftNegative = true;
+        } else {
+            leftNegative = false;
+        }
+        if (mdblRightPow < 0) {
+            rightNegative = true;
+        } else {
+            rightNegative = false;
+        }
+
+        if (mdblLeftPow >= mdblMax && !leftNegative)
+        {
+            mdblLeftPow = mdblMax;
+        }
+        else if (mdblLeftPow <= -mdblMax && leftNegative)
+        {
+            mdblLeftPow = -mdblMax;
+        }
+
+        if (mdblRightPow >= mdblMax && !rightNegative)
+        {
+            mdblRightPow = mdblMax;
+        }
+        else if (mdblRightPow <= -mdblMax && rightNegative)
+        {
+            mdblRightPow = -mdblMax;
+        }
+
+        //Send the Pushers down
+        if(gamepad1.b) {
+            mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_DOWN;
+        }
+
+
+        robotDrive.setDriveRightMotorPower(mdblRightPow);
+        robotDrive.setDriveLeftMotorPower(mdblLeftPow);
+
+
+
+
+        telemetry.addData("Left Speed Raw", -gamepad1.left_stick_y);
+        telemetry.addData("Right Speed Raw", -gamepad1.right_stick_y);
+        telemetry.addData("Left Speed", -mdblLeftPow);
+        telemetry.addData("Right Speed", -mdblRightPow);
+        telemetry.addData("Reverse", mblnReverse);
+        telemetry.addData("Slowdown", mblnSlowDown);
         telemetry.addData("Sweeper", mblnIntakeOn);
-        telemetry.addData("Sweeper Flip", mblnIntakeFlip);
+        telemetry.addData("Sweeper Rev", mblnIntakeFlip);
         telemetry.addData("Flicker", mblnLaunch);
 
         //LED STUFF
@@ -440,7 +456,6 @@ public class BaseDriveWorking extends OpMode {
             case STATE_FINISHED:      //Solid Green
                 LedState(LedOn, LedOff, LedOff, LedOn, LedOff, LedOff);
                 break;
-
         }
 
 
@@ -517,27 +532,7 @@ public class BaseDriveWorking extends OpMode {
 
         }
 
-
     }
-
-    //set the drive motors power, both left and right
-    private void setDriveMotorPower (double power) {
-        setDriveRightMotorPower(power);
-        setDriveLeftMotorPower(power);
-    }
-
-    //set the right drive motors power
-    private void setDriveRightMotorPower (double power) {
-        robotDrive.rightMotor1.setPower(power);
-        robotDrive.rightMotor2.setPower(power);
-    }
-
-    //set the left motors drive power
-    private void setDriveLeftMotorPower (double power) {
-        robotDrive.leftMotor1.setPower(power);
-        robotDrive.leftMotor2.setPower(power);
-    }
-
 
     public boolean moveServo (Servo Servo, double Position, double RangeMin, double RangeMax ) {
         boolean OKToMove = true;
@@ -552,7 +547,6 @@ public class BaseDriveWorking extends OpMode {
         return true;
     }
 
-
     private void LedState (boolean g1, boolean r1, boolean b1, boolean g2, boolean r2, boolean b2) {
         dim.setDigitalChannelState(GREEN1_LED_CHANNEL, g1);   //turn LED ON
         dim.setDigitalChannelState(RED1_LED_CHANNEL, r1);
@@ -560,7 +554,6 @@ public class BaseDriveWorking extends OpMode {
         dim.setDigitalChannelState(GREEN2_LED_CHANNEL, g2);   //turn LED ON
         dim.setDigitalChannelState(RED2_LED_CHANNEL, r2);
         dim.setDigitalChannelState(BLUE2_LED_CHANNEL, b2);
-
     }
 
 }

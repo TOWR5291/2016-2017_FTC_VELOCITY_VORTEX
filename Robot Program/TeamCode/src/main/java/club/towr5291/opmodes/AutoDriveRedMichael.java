@@ -1,6 +1,7 @@
 package club.towr5291.opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -19,7 +20,7 @@ import club.towr5291.robotconfig.HardwareSensors;
  */
 
 @Autonomous(name="Pushbot: Auto Drive Red", group="5291Test")
-//@Disabled
+@Disabled
 public class AutoDriveRedMichael extends OpMode {
     /* Declare OpMode members. */
     HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use base drive hardware configuration

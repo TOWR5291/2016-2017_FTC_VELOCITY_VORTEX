@@ -25,8 +25,9 @@ public class AutonomousConfiguration extends Activity implements Spinner.OnItemS
     SharedPreferences.Editor editor;
     Spinner teamNumber;
     Spinner allianceColor;
-    Spinner alliancePosition;
+    Spinner allianceStartPosition;
     Spinner allianceBeacons;
+    Spinner allianceParkPosition;
     Spinner robotConfig;
     Spinner delay;
 
@@ -44,7 +45,8 @@ public class AutonomousConfiguration extends Activity implements Spinner.OnItemS
 
         String savedTeamNumber = sharedPreferences.getString("club.towr5291.Autonomous.TeamNumber","0000");
         String savedColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "Test");
-        String savedPosition = sharedPreferences.getString("club.towr5291.Autonomous.Position", "Test");
+        String savedStartPosition = sharedPreferences.getString("club.towr5291.Autonomous.StartPosition", "Test");
+        String savedParkPosition = sharedPreferences.getString("club.towr5291.Autonomous.ParkPosition", "Test");
         String savedBeacons = sharedPreferences.getString("club.towr5291.Autonomous.Beacons", "Zero");
         String savedConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "Test");
         String savedDelay = sharedPreferences.getString("club.towr5291.Autonomous.Delay", "00");
@@ -59,10 +61,14 @@ public class AutonomousConfiguration extends Activity implements Spinner.OnItemS
         //allianceColor.setSelection(savedColor.equals("Red") ? 0 : 1, true);
         allianceColor.setSelection(((ArrayAdapter)allianceColor.getAdapter()).getPosition(savedColor));
 
-        alliancePosition = (Spinner) findViewById(R.id.spinnerPosition);
-        alliancePosition.setOnItemSelectedListener(this);
-        //alliancePosition.setSelection(savedPosition.equals("Left") ? 0 : 1, true);
-        alliancePosition.setSelection(((ArrayAdapter)alliancePosition.getAdapter()).getPosition(savedPosition));
+        allianceStartPosition = (Spinner) findViewById(R.id.spinnerStartPosition);
+        allianceStartPosition.setOnItemSelectedListener(this);
+        //allianceStartPosition.setSelection(savedPosition.equals("Left") ? 0 : 1, true);
+        allianceStartPosition.setSelection(((ArrayAdapter)allianceStartPosition.getAdapter()).getPosition(savedStartPosition));
+
+        allianceParkPosition = (Spinner) findViewById(R.id.spinnerParkPosition);
+        allianceParkPosition.setOnItemSelectedListener(this);
+        allianceParkPosition.setSelection(((ArrayAdapter)allianceParkPosition.getAdapter()).getPosition(savedParkPosition));
 
         allianceBeacons = (Spinner) findViewById(R.id.spinnerBeacons);
         allianceBeacons.setOnItemSelectedListener(this);
@@ -73,7 +79,6 @@ public class AutonomousConfiguration extends Activity implements Spinner.OnItemS
         robotConfig.setOnItemSelectedListener(this);
         //robotConfig.setSelection(savedConfig.equals("TileRunner-2x40") ? 0 : 1, true);
         robotConfig.setSelection(((ArrayAdapter)robotConfig.getAdapter()).getPosition(savedConfig));
-
 
         delay = (Spinner) findViewById(R.id.spinnerAllianceDelay);
         delay.setOnItemSelectedListener(this);
@@ -93,7 +98,8 @@ public class AutonomousConfiguration extends Activity implements Spinner.OnItemS
     private void storeValues() {
         editor.putString("club.towr5291.Autonomous.TeamNumber", teamNumber.getSelectedItem().toString());
         editor.putString("club.towr5291.Autonomous.Color", allianceColor.getSelectedItem().toString());
-        editor.putString("club.towr5291.Autonomous.Position", alliancePosition.getSelectedItem().toString());
+        editor.putString("club.towr5291.Autonomous.StartPosition", allianceStartPosition.getSelectedItem().toString());
+        editor.putString("club.towr5291.Autonomous.ParkPosition", allianceParkPosition.getSelectedItem().toString());
         editor.putString("club.towr5291.Autonomous.Beacons", allianceBeacons.getSelectedItem().toString());
         editor.putString("club.towr5291.Autonomous.Delay", delay.getSelectedItem().toString());
         editor.putString("club.towr5291.Autonomous.RobotConfig", robotConfig.getSelectedItem().toString());

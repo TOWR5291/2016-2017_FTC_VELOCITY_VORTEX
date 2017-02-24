@@ -13,4 +13,5 @@ apply from: '../build.common.gradle'
 
 dependencies {
     compile project(':openCVLibrary310')
+    compile project(':Ftc3543Lib')
 }

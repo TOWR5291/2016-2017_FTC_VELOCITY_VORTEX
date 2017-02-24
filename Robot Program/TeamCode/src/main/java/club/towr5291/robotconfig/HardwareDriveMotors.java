@@ -88,5 +88,24 @@ public class HardwareDriveMotors
         // Reset the cycle clock for the next pass.
         period.reset();
     }
+
+    //set the drive motors power, both left and right
+    public void setDriveMotorPower (double power) {
+        setDriveRightMotorPower(power);
+        setDriveLeftMotorPower(power);
+    }
+
+    //set the right drive motors power
+    public void setDriveRightMotorPower (double power) {
+        rightMotor1.setPower(power);
+        rightMotor2.setPower(power);
+    }
+
+    //set the left motors drive power
+    public void setDriveLeftMotorPower (double power) {
+        leftMotor1.setPower(power);
+        leftMotor2.setPower(power);
+    }
+
 }
 
