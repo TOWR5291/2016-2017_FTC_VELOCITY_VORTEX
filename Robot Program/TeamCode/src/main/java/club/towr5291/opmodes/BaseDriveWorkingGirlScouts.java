@@ -3,11 +3,9 @@ package club.towr5291.opmodes;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DeviceInterfaceModule;
 import com.qualcomm.robotcore.hardware.DigitalChannelController;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -21,9 +19,9 @@ import club.towr5291.robotconfig.HardwareDriveMotors;
 /**
  * Created by kids on 11/4/2016 at 7:54 PM.
  */
-@TeleOp(name = "Base Drive", group = "5291")
+@TeleOp(name = "Base Drive Limit(Girl Scouts)", group = "5291")
 //@Disabled
-public class BaseDriveWorking extends OpMode {
+public class BaseDriveWorkingGirlScouts extends OpMode {
 
     // Declare OpMode members.
     private HardwareDriveMotors robotDrive   = new HardwareDriveMotors();   // Use a Pushbot's hardware
@@ -96,8 +94,7 @@ public class BaseDriveWorking extends OpMode {
         STATE_SHOOTING,
         STATE_FORKS,
         STATE_LIFT,
-        STATE_FINISHED,
-        STATE_CELEBRATION
+        STATE_FINISHED
     }
 
     private LEDState mint5291LEDStatus;                                                   // Flash the LED based on the status
@@ -238,27 +235,27 @@ public class BaseDriveWorking extends OpMode {
             armDrive.flicker.setPower(0);
         }
 
-        if (gamepad2.a)
-        {
-            mblnReleaseArm = true;
-            moveServo(servoLifterRight, 180, SERVOLIFTRIGHT_MIN_RANGE, SERVOLIFTRIGHT_MAX_RANGE);
-            moveServo(servoLifterLeft, 180, SERVOLIFTLEFT_MIN_RANGE, SERVOLIFTLEFT_MAX_RANGE);
-            mint5291LEDStatus = LEDState.STATE_FORKS;
-        }
-        else
-        {
-            moveServo(servoLifterRight, 135, SERVOLIFTRIGHT_MIN_RANGE, SERVOLIFTRIGHT_MAX_RANGE);
-            moveServo(servoLifterLeft, 135, SERVOLIFTLEFT_MIN_RANGE, SERVOLIFTLEFT_MAX_RANGE);
-        }
+//        if (gamepad2.a)
+//        {
+//            mblnReleaseArm = true;
+//            moveServo(servoLifterRight, 180, SERVOLIFTRIGHT_MIN_RANGE, SERVOLIFTRIGHT_MAX_RANGE);
+//            moveServo(servoLifterLeft, 180, SERVOLIFTLEFT_MIN_RANGE, SERVOLIFTLEFT_MAX_RANGE);
+//            mint5291LEDStatus = LEDState.STATE_FORKS;
+//        }
+//        else
+//        {
+//            moveServo(servoLifterRight, 135, SERVOLIFTRIGHT_MIN_RANGE, SERVOLIFTRIGHT_MAX_RANGE);
+//            moveServo(servoLifterLeft, 135, SERVOLIFTLEFT_MIN_RANGE, SERVOLIFTLEFT_MAX_RANGE);
+//        }
 
         //lift the extension for capping the ball
-        if (mblnReleaseArm) {
-            mdblLifterPower = -gamepad2.left_stick_y;
-            armDrive.lifter.setPower(mdblLifterPower);
-            if (mdblLifterPower != 0)
-                mint5291LEDStatus = LEDState.STATE_LIFT;
-
-        }
+//        if (mblnReleaseArm) {
+//            mdblLifterPower = -gamepad2.left_stick_y;
+//            armDrive.lifter.setPower(mdblLifterPower);
+//            if (mdblLifterPower != 0)
+//                mint5291LEDStatus = LEDState.STATE_LIFT;
+//
+//        }
 
         //driver controls - All gamepad1
         if (gamepad1.left_bumper)
@@ -456,32 +453,6 @@ public class BaseDriveWorking extends OpMode {
                 break;
             case STATE_FINISHED:      //Solid Green
                 LedState(LedOn, LedOff, LedOff, LedOn, LedOff, LedOff);
-                break;
-            case STATE_CELEBRATION:        //Flash red + blue for after capping
-                if ((!mblnLEDON) && (mStateTime.milliseconds() > (mdblLastOff + 250))) {
-                    mdblLastOn = mStateTime.milliseconds();
-                    mblnLEDON = true;
-                    if (allianceColor.equals("Red"))
-                        LedState(LedOff, LedOn, LedOff, LedOff, LedOn, LedOff);
-                    else if (allianceColor.equals("Blue"))
-                        LedState(LedOff, LedOff, LedOn, LedOff, LedOff, LedOn);
-                    else
-                        LedState(LedOn, LedOn, LedOn, LedOn, LedOn, LedOn);
-                } else  if ((mblnLEDON) && (mStateTime.milliseconds() > (mdblLastOn + 250))) {
-                    mdblLastOff = mStateTime.milliseconds();
-                    mblnLEDON = false;
-                    if (allianceColor.equals("Red"))
-                        LedState(LedOff, LedOn, LedOff, LedOff, LedOn, LedOff);
-                    else if (allianceColor.equals("Blue"))
-                        LedState(LedOff, LedOff, LedOn, LedOff, LedOff, LedOn);
-                    else
-                        LedState(LedOn, LedOn, LedOn, LedOn, LedOn, LedOn);
-                    mintCounts ++;
-                }
-                if (mintCounts >= 500) {
-                    mintCounts = 0;
-                    mint5291LEDStatus = LEDState.STATE_TEAM;
-                }
                 break;
         }
 
