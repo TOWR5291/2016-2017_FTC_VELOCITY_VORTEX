@@ -24,6 +24,7 @@ public class HardwareArmMotors
     public DcMotor  flicker   = null;
     public DcMotor  sweeper   = null;
     public DcMotor  lifter   = null;
+    public DcMotor  lifter2   = null;
 
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
@@ -43,21 +44,25 @@ public class HardwareArmMotors
         flicker   = hwMap.dcMotor.get("flicker");
         sweeper   = hwMap.dcMotor.get("sweeper");
         lifter   = hwMap.dcMotor.get("lifter");
+        lifter2   = hwMap.dcMotor.get("lifter2");
 
         flicker.setDirection(DcMotor.Direction.REVERSE);
         sweeper.setDirection(DcMotor.Direction.REVERSE);
         lifter.setDirection(DcMotor.Direction.REVERSE);
+        lifter2.setDirection(DcMotor.Direction.REVERSE);
 
         // Set all motors to zero power
         flicker.setPower(0);
         sweeper.setPower(0);
         lifter.setPower(0);
+        lifter2.setPower(0);
 
         // Set all motors to run without encoders.
         // May want to use RUN_USING_ENCODERS if encoders are installed.
         flicker.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         sweeper.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        lifter2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
     }
 
@@ -83,4 +88,3 @@ public class HardwareArmMotors
     }
 
 }
-

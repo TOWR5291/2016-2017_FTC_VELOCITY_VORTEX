@@ -210,7 +210,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
     //adafruit IMU
     // The IMU sensor object
     BNO055IMU imu;
-
     // State used for updating telemetry
     Orientation angles;
     Acceleration gravity;
@@ -1237,7 +1236,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 break;
         }
 
-
         // Set up the parameters with which we will use our IMU. Note that integration
         // algorithm here just reports accelerations to the logcat log; it doesn't actually
         // provide positional information.
@@ -1249,12 +1247,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
         parametersAdafruitImu.loggingTag            = "IMU";
         parametersAdafruitImu.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
 
-
-
-
         //don't crash the program if the GRYO is faulty, just bypass it
         try {
-
             // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
             // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
             // and named "imu".
@@ -2001,7 +1995,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
             }
 
             //check timeout vale
-            if ((mStateTime.seconds() > mdblStepTimeout  ) && ((mintCurStStep != stepState.STATE_ERROR) && (mintCurStStep != stepState.STATE_FINISHED)))
+            /*if ((mStateTime.seconds() > mdblStepTimeout  ) && ((mintCurStStep != stepState.STATE_ERROR) && (mintCurStStep != stepState.STATE_FINISHED)))
             {
                 if (debug >= 1)
                 {
@@ -2011,7 +2005,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 //  Transition to a new state.
                 mintCurStStep = stepState.STATE_TIMEOUT;
             }
-
+*/
             //process LED status
             //ERROR - FLASH RED 3 TIMES
             switch (mint5291LEDStatus) {
@@ -2214,7 +2208,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         }
 
         if (!(mintActiveSteps.containsValue(mintCurrentStep)));
-            mintActiveSteps.put(String.valueOf(mintCurrentStep),mintCurrentStep);
+        mintActiveSteps.put(String.valueOf(mintCurrentStep),mintCurrentStep);
 
         loadActiveStep(mintCurrentStep);
 
@@ -2580,10 +2574,10 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     mdblInputLineSensor5 = LineSensor5.getVoltage();    //  Read the input pin
 
                     if ((mdblInputLineSensor1 < mdblWhiteThreshold) ||
-                        (mdblInputLineSensor2 < mdblWhiteThreshold) ||
-                        (mdblInputLineSensor3 < mdblWhiteThreshold) ||
-                        (mdblInputLineSensor4 < mdblWhiteThreshold) ||
-                        (mdblInputLineSensor5 < mdblWhiteThreshold))
+                            (mdblInputLineSensor2 < mdblWhiteThreshold) ||
+                            (mdblInputLineSensor3 < mdblWhiteThreshold) ||
+                            (mdblInputLineSensor4 < mdblWhiteThreshold) ||
+                            (mdblInputLineSensor5 < mdblWhiteThreshold))
                     {
                         //stop the motors we are complete
                         setDriveMotorPower(0);
@@ -2641,6 +2635,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     mintCurStDriveHeading = stepState.STATE_COMPLETE;
                     deleteParallelStep();
                 }
+            }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("runningDriveHeadingStep", "Timeout:- ");
+                    Log.d("runningDriveHeadingStep", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStDriveHeading = stepState.STATE_COMPLETE;
+                deleteParallelStep();
             }
             break;
         }
@@ -2900,6 +2906,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     deleteParallelStep();
                 }
             }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("PivotTurnStep()", "Timeout:- ");
+                    Log.d("PivotTurnStep()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStPivotTurn = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
             break;
         }
     }
@@ -3052,6 +3070,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     mintCurStTankTurn = stepState.STATE_COMPLETE;
                     deleteParallelStep();
                 }
+            }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("TankTurnStep()", "Timeout:- ");
+                    Log.d("TankTurnStep()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStTankTurn = stepState.STATE_COMPLETE;
+                deleteParallelStep();
             }
             break;
         }
@@ -3251,6 +3281,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     deleteParallelStep();
                 }
             }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("RadiusTurnStep()", "Timeout:- ");
+                    Log.d("RadiusTurnStep()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStRadiusTurn = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
             break;
         }
     }
@@ -3330,6 +3372,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     deleteParallelStep();
                 }
             }//end case RUNNING
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("setTurnRobot()", "Timeout:- ");
+                    Log.d("setTurnRobot()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStTankTurnGyroBasic = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
             break;
         }//end SWITCH
     }//end METHOD
@@ -3469,6 +3523,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                         deleteParallelStep();
                     }
                 }
+            } //end Case Running
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("TankTurnGyro()", "Timeout:- ");
+                    Log.d("TankTurnGyro()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStTankTurnGyroHeading = stepState.STATE_COMPLETE;
+                deleteParallelStep();
             }
             break;
         }
@@ -3511,6 +3577,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     Log.d("TankTurnGyroHeadingEnc", "Running, mstrDirection        = " + mstrDirection);
                 }
                 insertSteps(10, newAngleDirectionGyro ((int)mdblGyrozAccumulated, (int)mdblRobotTurnAngle), false, false, 0, 0, 0, 0, 0, 0, mdblStepSpeed, mintCurrentStep + 1);
+                mintCurStGyroTurnEncoder5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("TankTurnGyroHeadingEnc", "Timeout:- ");
+                    Log.d("TankTurnGyroHeadingEnc", "Timeout:- ");
+                }
+                //  Transition to a new state.
                 mintCurStGyroTurnEncoder5291 = stepState.STATE_COMPLETE;
                 deleteParallelStep();
             }
@@ -3632,6 +3710,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     break;
                 }
             }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("mintCurStVuforiaLoc5291", "Timeout:- ");
+                    Log.d("mintCurStVuforiaLoc5291", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStVuforiaLoc5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
             break;
         }
     }
@@ -3711,6 +3801,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 mintCurStVuforiaMove5291 = stepState.STATE_COMPLETE;
                 deleteParallelStep();
             }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("VuforiaMove()", "Timeout:- ");
+                    Log.d("VuforiaMove()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStVuforiaMove5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
             break;
         }
     }
@@ -3761,6 +3863,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 mintCurStVuforiaTurn5291 = stepState.STATE_COMPLETE;
                 deleteParallelStep();
             }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("VuforiaTurn()", "Timeout:- ");
+                    Log.d("VuforiaTurn()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStVuforiaTurn5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
             break;
         }
     }
@@ -3800,6 +3914,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 }
 
                 mint5291LEDStatus = LEDState.STATE_BEACON;
+            }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("BeaconColour()", "Timeout:- ");
+                    Log.d("BeaconColour()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStBeaconColour5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
             }
             break;
         }
@@ -3934,6 +4060,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 mintCurStAttackBeacon5291 = stepState.STATE_COMPLETE;
                 deleteParallelStep();
             }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("AttackBeacon5291()", "Timeout:- ");
+                    Log.d("AttackBeacon5291()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStAttackBeacon5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
             break;
         }
     }
@@ -3960,6 +4098,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     mintCurStDelay = stepState.STATE_COMPLETE;
                     deleteParallelStep();
                 }
+            }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("DelayStep()", "Timeout:- ");
+                    Log.d("DelayStep()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStDelay = stepState.STATE_COMPLETE;
+                deleteParallelStep();
             }
             break;
         }
@@ -4047,10 +4197,10 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 mdblInputLineSensor5 = LineSensor3.getVoltage();    //  Read the input pin
 
                 if ((mdblInputLineSensor1 < mdblWhiteThreshold) ||
-                    (mdblInputLineSensor2 < mdblWhiteThreshold) ||
-                    (mdblInputLineSensor3 < mdblWhiteThreshold) ||
-                    (mdblInputLineSensor4 < mdblWhiteThreshold) ||
-                    (mdblInputLineSensor5 < mdblWhiteThreshold))
+                        (mdblInputLineSensor2 < mdblWhiteThreshold) ||
+                        (mdblInputLineSensor3 < mdblWhiteThreshold) ||
+                        (mdblInputLineSensor4 < mdblWhiteThreshold) ||
+                        (mdblInputLineSensor5 < mdblWhiteThreshold))
                 {
                     blnFoundLine = true;
                 }    //stop the motors we are complete
@@ -4064,6 +4214,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     mintCurStLineFind5291 = stepState.STATE_COMPLETE;
                     deleteParallelStep();
                 }
+            }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("runningDriveHeadingStep", "Timeout:- ");
+                    Log.d("runningDriveHeadingStep", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStLineFind5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
             }
             break;
         }
@@ -4097,6 +4259,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     armDrive.sweeper.setPower(1);
                     armDrive.flicker.setPower(1);
                 }
+            }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("FlickerShooter5291()", "Timeout:- ");
+                    Log.d("FlickerShooter5291()", "Timeout:- ");
+                }
+                //  Transition to a new state.
+                mintCurStShootParticle5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
             }
             break;
         }
@@ -4152,6 +4326,18 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     moveServo(servoBeaconRight, SERVOBEACONRIGHT_HOME, SERVOBEACONRIGHT_MIN_RANGE, SERVOBEACONRIGHT_MAX_RANGE);
                     moveServo(servoBeaconLeft, SERVOBEACONLEFT_HOME + 90, SERVOBEACONLEFT_MIN_RANGE, SERVOBEACONLEFT_MAX_RANGE);
                 }
+                mintCurStEyelids5291 = stepState.STATE_COMPLETE;
+                deleteParallelStep();
+            }
+            //check timeout value
+            if (mStateTime.seconds() > mdblStepTimeout)
+            {
+                if (debug >= 1)
+                {
+                    fileLogger.writeEvent("setEyelids5291()", "Timeout:- ");
+                    Log.d("setEyelids5291()", "Timeout:- ");
+                }
+                //  Transition to a new state.
                 mintCurStEyelids5291 = stepState.STATE_COMPLETE;
                 deleteParallelStep();
             }

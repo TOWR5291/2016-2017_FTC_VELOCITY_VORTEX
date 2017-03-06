@@ -255,6 +255,7 @@ public class BaseDriveWorking extends OpMode {
         if (mblnReleaseArm) {
             mdblLifterPower = -gamepad2.left_stick_y;
             armDrive.lifter.setPower(mdblLifterPower);
+            armDrive.lifter2.setPower(mdblLifterPower);
             if (mdblLifterPower != 0)
                 mint5291LEDStatus = LEDState.STATE_LIFT;
 
@@ -363,12 +364,8 @@ public class BaseDriveWorking extends OpMode {
             mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_DOWN;
         }
 
-
         robotDrive.setDriveRightMotorPower(mdblRightPow);
         robotDrive.setDriveLeftMotorPower(mdblLeftPow);
-
-
-
 
         telemetry.addData("Left Speed Raw", -gamepad1.left_stick_y);
         telemetry.addData("Right Speed Raw", -gamepad1.right_stick_y);
@@ -485,7 +482,6 @@ public class BaseDriveWorking extends OpMode {
                 break;
         }
 
-
         //PUSHER SERVO STUFF
         switch (mint5291PUSHERStatus) {
             case STATE_LEFT_RIGHT_DOWN:
@@ -540,7 +536,6 @@ public class BaseDriveWorking extends OpMode {
                     moveServo(servoBeaconRight, SERVOBEACONRIGHT_HOME + 90, SERVOBEACONRIGHT_MIN_RANGE, SERVOBEACONRIGHT_MAX_RANGE);
                     mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_UP;
                 }
-
                 break;
             case STATE_DROWSY:
                 if ((!mblnPUSHERStatus) && (mStateTime.milliseconds() > (mdblPUSHERTimer + 500))) {
@@ -554,9 +549,7 @@ public class BaseDriveWorking extends OpMode {
                     moveServo(servoBeaconRight, SERVOBEACONRIGHT_HOME, SERVOBEACONRIGHT_MIN_RANGE, SERVOBEACONRIGHT_MAX_RANGE);
                     moveServo(servoBeaconLeft, SERVOBEACONLEFT_HOME, SERVOBEACONLEFT_MIN_RANGE, SERVOBEACONLEFT_MAX_RANGE);
                 }
-
                 break;
-
         }
 
     }
