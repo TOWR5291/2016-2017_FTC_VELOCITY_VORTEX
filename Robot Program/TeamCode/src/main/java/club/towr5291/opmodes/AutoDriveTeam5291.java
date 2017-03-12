@@ -1518,14 +1518,15 @@ public class AutoDriveTeam5291 extends LinearOpMode
                             fileLogger.writeEvent(TAG, "Step Exists TRUE " + mintCurrentStep + " about to get the values from the step");
                             Log.d(TAG, "Step Exists TRUE " + mintCurrentStep + " about to get the values from the step");
                         }
-                        processingSteps = autonomousSteps.get(String.valueOf(mintCurrentStep));
-                        if (debug >= 1)
-                        {
-                            fileLogger.writeEvent(TAG, "Got the values for step " + mintCurrentStep + " about to decode");
-                            Log.d(TAG, "Got the values for step " + mintCurrentStep + " about to decode");
-                        }
+                        //processingSteps = autonomousSteps.get(String.valueOf(mintCurrentStep));
+                        //if (debug >= 1)
+                        //{
+                        //    fileLogger.writeEvent(TAG, "Got the values for step " + mintCurrentStep + " about to decode");
+                        //    Log.d(TAG, "Got the values for step " + mintCurrentStep + " about to decode");
+                        //}
                         //decode the step from hashmap
-                        initStep(processingSteps);
+                        //initStep(processingSteps);
+                        initStep();
                     }
                     else  //if no steps left in hashmap then complete
                     {
@@ -1542,11 +1543,20 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 {
                     loadParallelSteps();
                     for (String stKey : mintActiveStepsCopy.keySet()) {
+                        if (debug >= 1)
+                        {
+                            fileLogger.writeEvent("STATE_RUNNING", "Looping through Parallel steps, found " + stKey);
+                            Log.d("STATE_RUNNING", "Looping through Parallel steps, found " + stKey);
+                        }
                         mintStepNumber = mintActiveStepsCopy.get(stKey);
                         loadActiveStep(mintStepNumber);
+                        if (debug >= 1)
+                        {
+                            fileLogger.writeEvent("STATE_RUNNING", "About to run " + mstrRobotCommand.substring(0, 3));
+                            Log.d("STATE_RUNNING", "About to run " + mstrRobotCommand.substring(0, 3));
+                        }
                         processSteps(mstrRobotCommand.substring(0, 3));
                     }
-
 
                     if ((mintCurStDelay == stepState.STATE_COMPLETE) &&
                             (mintCurStBeaconColour5291 == stepState.STATE_COMPLETE) &&
@@ -1569,6 +1579,9 @@ public class AutoDriveTeam5291 extends LinearOpMode
                         mintCurStStep = stepState.STATE_COMPLETE;
                     }
 
+                    //make sure we load the current step to determine if parallel, if the steps are run out of order and a previous step was parallel
+                    //things get all messed up and a step that isn't parallel can be assumed to be parallel
+                    loadActiveStep(mintCurrentStep);
                     if (mblnParallel) {
                         //mark this step as complete and do next one, the current step should continue to run.  Not all steps are compatible with being run in parallel
                         // like drive steps, turns etc
@@ -2093,8 +2106,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
         LibraryStateSegAuto mStateSegAuto = autonomousSteps.get(String.valueOf(step));
         if (debug >= 1)
         {
-            fileLogger.writeEvent(TAG, "Got the values for step " + mintCurrentStep + " about to decode");
-            Log.d(TAG, "Got the values for step " + mintCurrentStep + " about to decode");
+            fileLogger.writeEvent("loadActiveStep()", "Got the values for step " + step + " about to decode");
+            Log.d("loadActiveStep()", "Got the values for step " + step + " about to decode");
         }
         mdblStepDistance = 0;
         mdblStepTimeout = mStateSegAuto.getmRobotTimeOut();
@@ -2115,8 +2128,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
         mintActiveStepsCopy.clear();
         for (String stKey : mintActiveSteps.keySet()) {
             if (debug >= 2) {
-                fileLogger.writeEvent("loadParallelSteps()", "Active Steps " + stKey );
-                Log.d("loadParallelSteps()", "Active Steps " + stKey );
+                fileLogger.writeEvent("loadParallelSteps()", "Loading Active Parallel Step " + stKey );
+                Log.d("loadParallelSteps()", "Loading Active Parallel Step " + stKey );
             }
             mintActiveStepsCopy.put(stKey, mintActiveSteps.get(stKey));
         }
@@ -2127,8 +2140,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
             int tempStep = mintActiveStepsCopy.get(stKey);
             if (mintStepNumber == tempStep) {
                 if (debug >= 2) {
-                    fileLogger.writeEvent("deleteParallelStep()", "Active Steps " + tempStep );
-                    Log.d("deleteParallelStep()", "Active Steps " + tempStep );
+                    fileLogger.writeEvent("deleteParallelStep()", "Removing Parallel Step " + tempStep );
+                    Log.d("deleteParallelStep()", "Removing Parallel Step " + tempStep );
                 }
 
                 if (mintActiveSteps.containsKey(stKey))
@@ -2199,16 +2212,24 @@ public class AutoDriveTeam5291 extends LinearOpMode
     //--------------------------------------------------------------------------
     //  Initialise the state.
     //--------------------------------------------------------------------------
-    private void initStep (LibraryStateSegAuto mStateSegAuto) {
+    //private void initStep (LibraryStateSegAuto mStateSegAuto) {
+    private void initStep ()
+    {
 
         if (debug >= 3)
         {
-            fileLogger.writeEvent(TAG, "Starting to Decode Step ");
-            Log.d(TAG, "Starting to Decode Step ");
+            fileLogger.writeEvent("initstep()", "Starting to Decode Step " + mintCurrentStep);
+            Log.d("initstep()", "Starting to Decode Step " + mintCurrentStep);
         }
 
-        if (!(mintActiveSteps.containsValue(mintCurrentStep)));
-        mintActiveSteps.put(String.valueOf(mintCurrentStep),mintCurrentStep);
+        if (!(mintActiveSteps.containsValue(mintCurrentStep))) {
+            mintActiveSteps.put(String.valueOf(mintCurrentStep), mintCurrentStep);
+            if (debug >= 3)
+            {
+                fileLogger.writeEvent("initstep()", "Put step into hashmap mintActiveSteps " + mintCurrentStep);
+                Log.d("initstep()", "Put step into hashmap mintActiveSteps " + mintCurrentStep);
+            }
+        }
 
         loadActiveStep(mintCurrentStep);
 
@@ -3576,7 +3597,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     Log.d("TankTurnGyroHeadingEnc", "Running, mdblTurnAbsoluteGyro = " + mdblTurnAbsoluteGyro);
                     Log.d("TankTurnGyroHeadingEnc", "Running, mstrDirection        = " + mstrDirection);
                 }
-                insertSteps(10, newAngleDirectionGyro ((int)mdblGyrozAccumulated, (int)mdblRobotTurnAngle), false, false, 0, 0, 0, 0, 0, 0, mdblStepSpeed, mintCurrentStep + 1);
+                insertSteps(3, newAngleDirectionGyro ((int)mdblGyrozAccumulated, (int)mdblRobotTurnAngle), false, false, 0, 0, 0, 0, 0, 0, mdblStepSpeed, mintCurrentStep + 1);
                 mintCurStGyroTurnEncoder5291 = stepState.STATE_COMPLETE;
                 deleteParallelStep();
             }
@@ -3622,7 +3643,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 if (!localiseRobotPos) {
 
                     //need to rerun this step as we cannot get localisation and need to adjust robot to see if we can see a target
-                    insertSteps(10, "VFL", false, false, 0,    0,    0,    0,    0,    0,  0.5, mintCurrentStep + 1);
+                    insertSteps(3, "VFL", false, false, 0,    0,    0,    0,    0,    0,  0.5, mintCurrentStep + 1);
                     if (debug >= 2) {
                         fileLogger.writeEvent("mintCurStVuforiaLoc5291", "Not Localised, inserting a new step" );
                         Log.d("mintCurStVuforiaLoc5291", "Not Localised, inserting a new step" );
@@ -3637,7 +3658,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     // second we will move forward 2 feet
                     // third - abort
                     //Parameter 1 - stop turning once localisation is achieved
-                    insertSteps(10, "RTE135", false, true, 1,    0,    0,    0,    0,    0,  0.5, mintCurrentStep + 1);
+                    insertSteps(3, "RTE135", false, true, 1,    0,    0,    0,    0,    0,  0.5, mintCurrentStep + 1);
                     mintCurStVuforiaLoc5291 = stepState.STATE_COMPLETE;
                     deleteParallelStep();
                     break;
@@ -3671,11 +3692,11 @@ public class AutoDriveTeam5291 extends LinearOpMode
                         fileLogger.writeEvent("mintCurStVuforiaLoc5291", "Inserting Steps VFL 0 0 0 mintCurrentStep " + mintCurrentStep);
                         Log.d("mintCurStVuforiaLoc5291", "Inserting Steps VFL 0 0 0 mintCurrentStep " + mintCurrentStep);
                     }
-                    insertSteps(10, "VFL", false, false, 0, 0, 0, 0, 0, 0, 0.5, mintCurrentStep + 1);
+                    insertSteps(3, "VFL", false, false, 0, 0, 0, 0, 0, 0, 0.5, mintCurrentStep + 1);
                     //need a delay, as Vuforia is slow to update
                     insertSteps(2, "DEL500", false, false, 0, 0, 0, 0, 0, 0, 0, mintCurrentStep + 1);
                     //load the angle to adjust
-                    insertSteps(10, strCorrectionAngle, false, false, 0, 0, 0, 0, 0, 0, 0.3, mintCurrentStep + 1);
+                    insertSteps(3, strCorrectionAngle, false, false, 0, 0, 0, 0, 0, 0, 0.3, mintCurrentStep + 1);
                     mintCurStVuforiaLoc5291 = stepState.STATE_COMPLETE;
                     deleteParallelStep();
                     break;
@@ -3700,11 +3721,11 @@ public class AutoDriveTeam5291 extends LinearOpMode
                         deleteParallelStep();
                         break;
                     }
-                    insertSteps(10, "VFL", false, false, 0, 0, 0, 0, 0, 0, 0.5, mintCurrentStep + 1);
+                    insertSteps(3, "VFL", false, false, 0, 0, 0, 0, 0, 0, 0.5, mintCurrentStep + 1);
                     //need a delay, as Vuforia is slow to update
                     insertSteps(2, "DEL500", false, false, 0, 0, 0, 0, 0, 0, 0, mintCurrentStep + 1);
                     //load the angle to adjust
-                    insertSteps(10, strCorrectionAngle, false, false, 0, 0, 0, 0, 0, 0, 0.3, mintCurrentStep + 1);
+                    insertSteps(3, strCorrectionAngle, false, false, 0, 0, 0, 0, 0, 0, 0.3, mintCurrentStep + 1);
                     mintCurStVuforiaLoc5291 = stepState.STATE_COMPLETE;
                     deleteParallelStep();
                     break;
@@ -3795,8 +3816,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
                 strCorrectionAngle = newAngleDirection (intLocalisedRobotBearing, requiredMoveAngle);
 
-                insertSteps(10, "FWE"+requiredMoveDistance, false, false, 0, 0, 0, 0, 0, 0, 0.6, mintCurrentStep + 1);
-                insertSteps(10, strCorrectionAngle, false, false, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
+                insertSteps(3, "FWE"+requiredMoveDistance, false, false, 0, 0, 0, 0, 0, 0, 0.6, mintCurrentStep + 1);
+                insertSteps(3, strCorrectionAngle, false, false, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
 
                 mintCurStVuforiaMove5291 = stepState.STATE_COMPLETE;
                 deleteParallelStep();
@@ -3858,7 +3879,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     Log.d("VuforiaTurn()", "Localised, determining angles....Alliancecolour= " + allianceColor + " intLocalisedRobotBearing= " + intLocalisedRobotBearing  + " requiredMoveAngle " + requiredMoveAngle);
                 }
 
-                insertSteps(10, strCorrectionAngle, false, false, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
+                insertSteps(3, strCorrectionAngle, false, false, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
 
                 mintCurStVuforiaTurn5291 = stepState.STATE_COMPLETE;
                 deleteParallelStep();
@@ -4015,9 +4036,9 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     }
 
                     if (!(dblMaxDistance == 0)) {
-                        insertSteps(5, "FWE-12", false, false, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
-                        insertSteps(4, "EYE",   false, false,  9,     0,    0,    0,    0,    0,    0,mintCurrentStep + 1);
-                        insertSteps(5, "FWE" + (dblMaxDistance / 2.54), true, true, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
+                        insertSteps(3, "FWE-12", false, false, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
+                        insertSteps(2, "EYE",   false, false,  9,     0,    0,    0,    0,    0,    0,mintCurrentStep + 1);
+                        insertSteps(3, "FWE" + (dblMaxDistance / 2.54), true, true, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
                     }
                 } else {
                     mint5291LEDStatus = LEDState.STATE_ERROR;
@@ -4033,8 +4054,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
                             readRangeSensors();  // This takes 100ms so use it wisely
                             dblMaxDistance = Math.min(Math.abs(mdblRangeSensor1), Math.abs(mdblRangeSensor2)) + 5;  //get the maxiumum distance from wall
                         }
-                        insertSteps(10, "ATB",  false, false,   0,    0,    0,    0,    0,    0,    0,    mintCurrentStep + 1);
-                        insertSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0,    mintCurrentStep + 1);
+                        insertSteps(3, "ATB",  false, false,   0,    0,    0,    0,    0,    0,    0,    mintCurrentStep + 1);
+                        insertSteps(3,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0,    mintCurrentStep + 1);
                         if (allianceColor.equals("Red"))
                             insertSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
                         else if (allianceColor.equals("Blue"))
@@ -4043,7 +4064,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
                         }
                         else {
-                            insertSteps(5, "FWE-" + (16 - (dblMaxDistance / 2.54)), false, true, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);  //we want to be 18 inches from wall
+                            insertSteps(3, "FWE-" + (16 - (dblMaxDistance / 2.54)), false, true, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);  //we want to be 18 inches from wall
                         }
                     } else {
                         mintStepRetries = 0;  //reset the counter in case another step needs it
@@ -4714,6 +4735,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
     public double getDriveSteer(double error, double PCoeff) {
         return Range.clip(error * PCoeff, -1, 1);
     }
+
 
 
 }

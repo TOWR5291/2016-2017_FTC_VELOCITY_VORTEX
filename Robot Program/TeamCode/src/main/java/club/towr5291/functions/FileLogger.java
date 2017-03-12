@@ -9,6 +9,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
 
 /**
  * Created by T6810SM on 9/9/2015.
@@ -23,6 +26,7 @@ public class FileLogger {
     private ElapsedTime elapsedTime;
     private String filenamePrefix = "";
     private boolean isOpen = false;
+    private int numFilesToSave = 20;
 
     public FileLogger(ElapsedTime elapsedTime) {
         this.elapsedTime = elapsedTime;
@@ -42,10 +46,13 @@ public class FileLogger {
         return false;
     }
 
-    public File getStorageDir(String fileName) {
+    public String getStoragePath() {
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS + "/Logs").toString();
+    }
+
+    public File getStorageFullPath(String fileName) {
         // Get the directory for the user's public docs directory.
-        File file = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOCUMENTS + "/Logs"), fileName);
+        File file = new File(getStoragePath(), fileName);
         return file;
     }
 
@@ -56,7 +63,8 @@ public class FileLogger {
             this.filenamePrefix = ""+tm;
             String fileName = "rlog"+tm+".txt";
             if (isExternalStorageWritable()) {
-                File out = getStorageDir(fileName);
+                deleteOldLogs();
+                File out = getStorageFullPath(fileName);
                 writer = new FileWriter(out.getAbsolutePath(),true);
                 if (out != null) {
                     this.filename = out.toString();
@@ -77,7 +85,7 @@ public class FileLogger {
         String fileName = this.filenamePrefix + filename;
         try {
             if (isExternalStorageWritable()) {
-                File out = getStorageDir(fileName);
+                File out = getStorageFullPath(fileName);
                 FileOutputStream stream = new FileOutputStream(out);
                 bm.compress(Bitmap.CompressFormat.JPEG, 100, stream);
                 stream.flush();
@@ -135,4 +143,36 @@ public class FileLogger {
         }
         index = 0;
     }
+
+    private void deleteOldLogs() {
+        String path = getStoragePath();
+        File directory = new File(path);
+        File[] files = directory.listFiles();
+        //Log.d("Files", "Size: "+ files.length);
+
+        Arrays.sort( files, new Comparator()
+        {
+            public int compare(Object o1, Object o2) {
+
+                if (((File)o1).lastModified() > ((File)o2).lastModified()) {
+                    return -1;
+                } else if (((File)o1).lastModified() < ((File)o2).lastModified()) {
+                    return +1;
+                } else {
+                    return 0;
+                }
+            }
+
+        });
+
+        for (int i = 0; i < files.length; i++) {
+            if (i <= numFilesToSave) {
+                Log.d("Files", "Keeping FileName: " + i + " , " + files[i].getName() + " Modified " + files[i].lastModified());
+            } else {
+                Log.d("Files", "Deleting FileName: " + i + " , " + files[i].getName() + " Modified " + files[i].lastModified());
+                files[i].delete();
+            }
+        }
+    }
+
 }
