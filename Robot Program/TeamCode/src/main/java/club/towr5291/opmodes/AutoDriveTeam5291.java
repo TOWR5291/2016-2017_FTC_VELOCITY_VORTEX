@@ -41,7 +41,6 @@ import android.util.Log;
 import com.qualcomm.hardware.adafruit.BNO055IMU;
 import com.qualcomm.hardware.adafruit.JustLoggingAccelerationIntegrator;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -87,6 +86,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 import club.towr5291.astarpathfinder.A0Star;
 import club.towr5291.astarpathfinder.sixValues;
@@ -130,7 +130,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private static final String TAG = "AutoDriveTeam5291";
 
     //variable for pathvales when processing the A*pathfinder
-    public AStarGetPathVer2 getPathValues = new AStarGetPathVer2();
+    private AStarGetPathVer2 getPathValues = new AStarGetPathVer2();
 
     //The autonomous menu settings from the sharepreferences
     private SharedPreferences sharedPreferences;
@@ -154,8 +154,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
     //set up range sensor variables
     //set up range sensor1
-    byte[] range1Cache; //The read will return an array of bytes. They are stored in this variable
-    I2cAddr RANGE1ADDRESS = new I2cAddr(0x14); //Default I2C address for MR Range (7-bit)
+    private byte[] range1Cache; //The read will return an array of bytes. They are stored in this variable
+    private I2cAddr RANGE1ADDRESS = new I2cAddr(0x14); //Default I2C address for MR Range (7-bit)
     private  static final int RANGE1_REG_START = 0x04; //Register to start reading
     private static final int RANGE1_READ_LENGTH = 2; //Number of byte to read
     private I2cDevice RANGE1;
@@ -163,8 +163,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private double mdblRangeSensor1;
 
     //set up rangesensor 2
-    byte[] range2Cache; //The read will return an array of bytes. They are stored in this variable
-    I2cAddr RANGE2ADDRESS = new I2cAddr(0x18); //Default I2C address for MR Range (7-bit)
+    private byte[] range2Cache; //The read will return an array of bytes. They are stored in this variable
+    private I2cAddr RANGE2ADDRESS = new I2cAddr(0x18); //Default I2C address for MR Range (7-bit)
     private static final int RANGE2_REG_START = 0x04; //Register to start reading
     private static final int RANGE2_READ_LENGTH = 2; //Number of byte to read
     private I2cDevice RANGE2;
@@ -183,36 +183,28 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private double mdblInputLineSensor4;     // Input State
     private double mdblInputLineSensor5;     // Input State
     private double mdblWhiteThreshold = 0.4; //  anything below 1.5 is white, anything above 3 is grey tile
-    AnalogInput LineSensor1;          // Device Object
-    AnalogInput LineSensor2;          // Device Object
-    AnalogInput LineSensor3;          // Device Object
-    AnalogInput LineSensor4;          // Device Object
-    AnalogInput LineSensor5;          // Device Object
+    private AnalogInput LineSensor1;          // Device Object
+    private AnalogInput LineSensor2;          // Device Object
+    private AnalogInput LineSensor3;          // Device Object
+    private AnalogInput LineSensor4;          // Device Object
+    private AnalogInput LineSensor5;          // Device Object
 
     //set up Gyro variables
     private boolean gyroError = false;
     private ModernRoboticsI2cGyro gyro;                 // Hardware Device Object
-    private int mdblGyroXVal, mdblGyroYVal, mdblGyroZVal = 0;        // Gyro rate Values
-    private int mdblGyroHeading = 0;                        // Gyro integrated heading
-    private int mdblGyroAngleZ = 0;
-    private boolean mdblGyroLastResetState = false;
-    private boolean mdblGyroCurResetState  = false;
-    final double GYRO_CORRECTION_MULTIPLIER = 0.9833;
+    private final double GYRO_CORRECTION_MULTIPLIER = 0.9833;
     private double mdblTurnAbsoluteGyro;
     private double mdblGyrozAccumulated;
     private int mintStableCount;
     private String mstrWiggleDir;
     private double mdblPowerBoost;
     private int mintPowerBoostCount;
-    private int mintGyroFromVuforia;
-    private boolean mblnGryoResetVuforia;
 
     //adafruit IMU
     // The IMU sensor object
-    BNO055IMU imu;
+    private BNO055IMU imu;
     // State used for updating telemetry
-    Orientation angles;
-    Acceleration gravity;
+    private boolean useAdafruitIMU = false;
 
     //set up robot variables
     private double     COUNTS_PER_MOTOR_REV;            // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
@@ -252,7 +244,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private stepState mintCurStGyroTurnEncoder5291;                                 // Current State of the Turn function that take the Gyro as an initial heading
     private stepState mintCurStEyelids5291;                                         // Current State of the Eyelids
     private stepState mintCurStTankTurnGyroHeading;                                 // Current State of Tank Turn using Gyro
-    private stepState mintCurStTankTurnGyroBasic;                                   // Current State of Tank Turn using Gyro Basic
     private stepState mintCurStDelay;                                               // Current State of Delay (robot doing nothing)
     //private ArrayList<LibraryStateTrack> mValueSteps    = new ArrayList<>();       // Current State of the Step
     private HashMap<String,Integer> mintActiveSteps = new HashMap<>();
@@ -1360,7 +1351,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
         mintCurStShootParticle5291 = stepState.STATE_COMPLETE;
         mintCurStEyelids5291 = stepState.STATE_COMPLETE;
         mintCurStTankTurnGyroHeading = stepState.STATE_COMPLETE;
-        mintCurStTankTurnGyroBasic = stepState.STATE_COMPLETE;
         mintCurStLineFind5291 = stepState.STATE_COMPLETE;
         mintCurStGyroTurnEncoder5291 = stepState.STATE_COMPLETE;
 
@@ -1483,11 +1473,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
                         localisedRobotBearing = 360 + localisedRobotBearing;
                     }
 
-                    if (!mblnGryoResetVuforia) {
-                        mintGyroFromVuforia = (int) localisedRobotBearing;
-                        mblnGryoResetVuforia = true;
-                    }
-
                     telemetry.addData("Pos X ", localisedRobotX);
                     telemetry.addData("Pos Y ", localisedRobotY);
                     telemetry.addData("Bear  ", localisedRobotBearing);
@@ -1573,7 +1558,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
                             (mintCurStLineFind5291 == stepState.STATE_COMPLETE) &&
                             (mintCurStGyroTurnEncoder5291 == stepState.STATE_COMPLETE) &&
                             (mintCurStTankTurnGyroHeading == stepState.STATE_COMPLETE) &&
-                            (mintCurStTankTurnGyroBasic == stepState.STATE_COMPLETE) &&
                             (mintCurStRadiusTurn == stepState.STATE_COMPLETE))
                     {
                         mintCurStStep = stepState.STATE_COMPLETE;
@@ -1797,13 +1781,11 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     boolean dirChanged;
                     boolean processingAStarSteps = true;
                     int startSegment = 1;
-                    int startStraightSection = 0;
-                    int numberOfMoves = 0;
+                    int numberOfMoves;
                     int key = 0;
                     int lastDirection = 0;
                     int lasti =0;
                     String strAngleChange = "RT00";
-                    boolean endOfAStarSequenceFound = false;
 
                     while (processingAStarSteps)
                     {
@@ -1928,7 +1910,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
                             key++;
                         }
                     }
-                    endOfAStarSequenceFound = false;
                     mintCurStStep = stepState.STATE_ASTAR_INIT;
                 }
                 break;
@@ -2023,13 +2004,17 @@ public class AutoDriveTeam5291 extends LinearOpMode
             //ERROR - FLASH RED 3 TIMES
             switch (mint5291LEDStatus) {
                 case STATE_TEAM:        //FLASH Alliance Colour
-                    if (allianceColor.equals("Red"))
-                        LedState(LedOff, LedOn, LedOff, LedOff, LedOn, LedOff);
-                    else if (allianceColor.equals("Blue"))
-                        LedState(LedOff, LedOff, LedOn, LedOff, LedOff, LedOn);
-                    else
-                        LedState(LedOn, LedOn, LedOn, LedOn, LedOn, LedOn);
-                    break;
+                    switch (allianceColor) {
+                        case "Red":
+                            LedState(LedOff, LedOn, LedOff, LedOff, LedOn, LedOff);
+                            break;
+                        case "Blue":
+                            LedState(LedOff, LedOff, LedOn, LedOff, LedOff, LedOn);
+                            break;
+                        default:
+                            LedState(LedOn, LedOn, LedOn, LedOn, LedOn, LedOn);
+                            break;
+                    }
                 case STATE_ERROR:       //Flash RED 3 times Rapidly
                     if ((!mblnLEDON) && (mStateTime.milliseconds() > (mdblLastOff + 250))) {
                         mdblLastOn = mStateTime.milliseconds();
@@ -2166,9 +2151,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
             case "GTE":  // Special Function, 5291 Move forward until line is found
                 TankTurnGyroHeadingEncoder();
                 break;
-            case "GTB":  // Shoot the Particle balls
-                gyroTurnBasic();
-                break;
             case "LPE":
             case "RPE":
                 PivotTurnStep();
@@ -2245,9 +2227,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 break;
             case "GTH":
                 mintCurStTankTurnGyroHeading = stepState.STATE_INIT;
-                break;
-            case "GTB":
-                mintCurStTankTurnGyroBasic = stepState.STATE_INIT;
                 break;
             case "LTE":
                 mintCurStTankTurn = stepState.STATE_INIT;
@@ -2509,7 +2488,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     Log.d("runningDriveHeadingStep", "mStepRightTarget1:- " + mintStepRightTarget1 + " mStepRightTarget2:- " + mintStepRightTarget2);
                 }
 
-                if (!(robotDrive.leftMotor1.getMode().equals(DcMotor.RunMode.RUN_TO_POSITION)));
+                if (!(robotDrive.leftMotor1.getMode().equals(DcMotor.RunMode.RUN_TO_POSITION)))
                 // set motor controller to mode, Turn On RUN_TO_POSITION
                 {
                     robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -3252,7 +3231,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
             break;
             case STATE_RUNNING:
             {
-
                 intLeft1MotorEncoderPosition = robotDrive.leftMotor1.getCurrentPosition();
                 intLeft2MotorEncoderPosition = robotDrive.leftMotor2.getCurrentPosition();
                 intRight1MotorEncoderPosition = robotDrive.rightMotor1.getCurrentPosition();
@@ -3318,109 +3296,37 @@ public class AutoDriveTeam5291 extends LinearOpMode
         }
     }
 
-    private void gyroTurnBasic()
-    {
-        switch (mintCurStTankTurnGyroBasic){
-            case STATE_INIT:
-            {
-                if (debug >= 3)
-                {
-                    fileLogger.writeEvent("setTurnRobot()","INIT");
-                    Log.d("setTurnRobot()","INIT");
-                }
-                mdblRobotTurnAngle = Double.parseDouble(mstrRobotCommand.substring(3));
-                mintCurStTankTurnGyroBasic = stepState.STATE_RUNNING;
-                mdblTurnAbsoluteGyro = mdblRobotTurnAngle + (gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER); //Target
-            }//end case INIT
-            break;
-            case STATE_RUNNING:
-            {
-                mdblGyrozAccumulated = gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER;  //Set variables to gyro readings
-                if (debug >= 3)
-                {
-                    fileLogger.writeEvent("setTurnRobot()","gyrozAccumulated="+ mdblGyrozAccumulated);
-                    fileLogger.writeEvent("setTurnRobot()","Robot Turn Angle="+ mdblRobotTurnAngle);
-                    fileLogger.writeEvent("setTurnRobot()","Robot Turn Target="+ mdblTurnAbsoluteGyro);
-                    fileLogger.writeEvent("setTurnRobot()","Turn Speed"  + mdblStepSpeed);
-                    Log.d("setTurnRobot()","gyrozAccumulated="+ mdblGyrozAccumulated);
-                    Log.d("setTurnRobot()","Robot Turn Angle="+ mdblRobotTurnAngle);
-                    Log.d("setTurnRobot()","Robot Turn Target="+ mdblTurnAbsoluteGyro);
-                    Log.d("setTurnRobot()","Turn Speed"  + mdblStepSpeed);
-                }
-                if (Math.abs(mdblGyrozAccumulated - mdblTurnAbsoluteGyro) > 4) {  //Continue while the robot direction is further than three degrees from the target
-                    if (debug >= 3)
-                    {
-                        fileLogger.writeEvent("setTurnRobot()","Turning Robot="+ mdblGyrozAccumulated);
-                        fileLogger.writeEvent("setTurnRobot()","Turning Angel="+ mdblTurnAbsoluteGyro);
-                        Log.d("setTurnRobot()","Turning Robot="+ mdblGyrozAccumulated);
-                        Log.d("setTurnRobot()","Turning Angel="+ mdblTurnAbsoluteGyro);
-                    }
-                    if (mdblGyrozAccumulated > mdblTurnAbsoluteGyro) {  //if gyro is positive, we will turn right
-                        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        setDriveLeftMotorPower(mdblStepSpeed);
-                        setDriveRightMotorPower(-mdblStepSpeed);
-                        if (debug >= 3) {
-                            fileLogger.writeEvent("setTurnRobot()","TURN RIGHT gyrozAccumulated > turnAbsolute");
-                            Log.d("setTurnRobot()","TURN RIGHT gyrozAccumulated > turnAbsolute");
-                        }
-                    }
-
-                    if (mdblGyrozAccumulated < mdblTurnAbsoluteGyro) {  //if gyro is positive, we will turn left
-                        robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        setDriveLeftMotorPower(-mdblStepSpeed);
-                        setDriveRightMotorPower(mdblStepSpeed);
-                        if (debug >= 3) {
-                            fileLogger.writeEvent("setTurnRobot()","TURN LEFT gyrozAccumulated < turnAbsolute");
-                            Log.d("setTurnRobot()","TURN LEFT gyrozAccumulated < turnAbsolute");
-                        }
-                    }
-                    //gyrozAccumulated = gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER;;  //Set variables to gyro readings
-                    //telemetry.addData("1. accu", gyrozAccumulated);
-                }else {
-                    if (debug >= 3)
-                    {
-                        fileLogger.writeEvent("setTurnRobot()","TURN COMPLETE");
-                        Log.d("setTurnRobot()","TURN COMPLETE");
-                    }
-                    setDriveMotorPower(0);
-                    mintCurStTankTurnGyroBasic = stepState.STATE_COMPLETE;
-                    deleteParallelStep();
-                }
-            }//end case RUNNING
-            //check timeout value
-            if (mStateTime.seconds() > mdblStepTimeout)
-            {
-                if (debug >= 1)
-                {
-                    fileLogger.writeEvent("setTurnRobot()", "Timeout:- ");
-                    Log.d("setTurnRobot()", "Timeout:- ");
-                }
-                //  Transition to a new state.
-                mintCurStTankTurnGyroBasic = stepState.STATE_COMPLETE;
-                deleteParallelStep();
-            }
-            break;
-        }//end SWITCH
-    }//end METHOD
-
-
     private void TankTurnGyroHeading()
     {
         switch (mintCurStTankTurnGyroHeading){
             case STATE_INIT:
             {
+                double gyroHeading;
+                double adafruitIMUHeading;
+                double currentHeading;
+
+                gyroHeading = gyro.getHeading();
+                adafruitIMUHeading = getAdafruitHeading();
+
+                if (useAdafruitIMU) {
+                    currentHeading = adafruitIMUHeading;
+                } else {
+                    currentHeading = gyroHeading;
+                }
+
                 mdblPowerBoost = 0;
                 mintStableCount = 0;
                 mstrWiggleDir = "";
                 mdblRobotTurnAngle = Double.parseDouble(mstrRobotCommand.substring(3));
-                Log.d(TAG, "mdblRobotTurnAngle " + mdblRobotTurnAngle + " gyro.getHeading() " + gyro.getHeading());
-                mdblTurnAbsoluteGyro = Double.parseDouble(newAngleDirection (gyro.getHeading(), (int)mdblRobotTurnAngle).substring(3));
+                if (debug >= 3) {
+                    fileLogger.writeEvent("TankTurnGyroHeadingEncoder", "USING HEADING FROM IMU=" + useAdafruitIMU);
+                    Log.d("TankTurnGyroHeadingEnc", "USING HEADING FROM IMU=" + useAdafruitIMU);
+                    fileLogger.writeEvent("TankTurnGyro()", "mdblRobotTurnAngle " + mdblRobotTurnAngle + " gyro.getHeading() " + gyroHeading);
+                    Log.d("TankTurnGyro()", "mdblRobotTurnAngle " + mdblRobotTurnAngle + " gyro.getHeading() " + gyroHeading);
+                    fileLogger.writeEvent("TankTurnGyro()", "mdblRobotTurnAngle " + mdblRobotTurnAngle + " adafruitIMUHeading " + adafruitIMUHeading);
+                    Log.d("TankTurnGyro()", "mdblRobotTurnAngle " + mdblRobotTurnAngle + " gadafruitIMUHeading " + adafruitIMUHeading);
+                }
+                mdblTurnAbsoluteGyro = Double.parseDouble(newAngleDirection ((int)currentHeading, (int)mdblRobotTurnAngle).substring(3));
                 robotDrive.leftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -3430,19 +3336,34 @@ public class AutoDriveTeam5291 extends LinearOpMode
             }
             break;
             case STATE_RUNNING: {
-                //mdblGyrozAccumulated = Math.abs(gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER);  //Set variables to gyro readings
+                double gyroHeading;
+                double adafruitIMUHeading;
+                double currentHeading;
 
-                mdblGyrozAccumulated = gyro.getHeading();
+                gyroHeading = gyro.getHeading();
+                adafruitIMUHeading = getAdafruitHeading();
+
+                if (useAdafruitIMU) {
+                    currentHeading = adafruitIMUHeading;
+                } else {
+                    currentHeading = gyroHeading;
+                }
+
+                mdblGyrozAccumulated = currentHeading;
                 mdblGyrozAccumulated = teamAngleAdjust(mdblGyrozAccumulated);//Set variables to gyro readings
                 mdblTurnAbsoluteGyro = Double.parseDouble(newAngleDirectionGyro ((int)mdblGyrozAccumulated, (int)mdblRobotTurnAngle).substring(3));
                 String mstrDirection = (newAngleDirectionGyro ((int)mdblGyrozAccumulated, (int)mdblRobotTurnAngle).substring(0, 3));
                 if (debug >= 3) {
+                    fileLogger.writeEvent("TankTurnGyroHeadingEncoder", "USING HEADING FROM IMU=" + useAdafruitIMU);
+                    Log.d("TankTurnGyroHeadingEnc", "USING HEADING FROM IMU=" + useAdafruitIMU);
                     fileLogger.writeEvent("TankTurnGyro()", "Running, mdblGyrozAccumulated = " + mdblGyrozAccumulated);
                     fileLogger.writeEvent("TankTurnGyro()", "Running, mdblTurnAbsoluteGyro = " + mdblTurnAbsoluteGyro);
                     fileLogger.writeEvent("TankTurnGyro()", "Running, mstrDirection        = " + mstrDirection);
+                    fileLogger.writeEvent("TankTurnGyro()", "Running, adafruitIMUHeading   = " + adafruitIMUHeading);
                     Log.d("TankTurnGyro()", "Running, mdblGyrozAccumulated = " + mdblGyrozAccumulated);
                     Log.d("TankTurnGyro()", "Running, mdblTurnAbsoluteGyro = " + mdblTurnAbsoluteGyro);
                     Log.d("TankTurnGyro()", "Running, mstrDirection        = " + mstrDirection);
+                    Log.d("TankTurnGyro()", "Running, adafruitIMUHeading   = " + adafruitIMUHeading);
                 }
 
                 if (Math.abs(mdblTurnAbsoluteGyro) > 21) {  //Continue while the robot direction is further than three degrees from the target
@@ -3563,6 +3484,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
     private void TankTurnGyroHeadingEncoder()
     {
+
         switch (mintCurStGyroTurnEncoder5291){
             case STATE_INIT:
             {
@@ -3583,19 +3505,34 @@ public class AutoDriveTeam5291 extends LinearOpMode
             }
             break;
             case STATE_RUNNING: {
-                //mdblGyrozAccumulated = Math.abs(gyro.getIntegratedZValue() * GYRO_CORRECTION_MULTIPLIER);  //Set variables to gyro readings
+                double gyroHeading;
+                double adafruitIMUHeading;
+                double currentHeading;
 
-                mdblGyrozAccumulated = gyro.getHeading();
+                gyroHeading = gyro.getHeading();
+                adafruitIMUHeading = getAdafruitHeading();
+
+                if (useAdafruitIMU) {
+                    currentHeading = adafruitIMUHeading;
+                } else {
+                    currentHeading = gyroHeading;
+                }
+
+                mdblGyrozAccumulated = currentHeading;
                 mdblGyrozAccumulated = teamAngleAdjust(mdblGyrozAccumulated);//Set variables to gyro readings
                 mdblTurnAbsoluteGyro = Double.parseDouble(newAngleDirectionGyro ((int)mdblGyrozAccumulated, (int)mdblRobotTurnAngle).substring(3));
                 String mstrDirection = (newAngleDirectionGyro ((int)mdblGyrozAccumulated, (int)mdblRobotTurnAngle).substring(0, 3));
                 if (debug >= 3) {
+                    fileLogger.writeEvent("TankTurnGyroHeadingEncoder", "USING HEADING FROM IMU=" + useAdafruitIMU);
+                    Log.d("TankTurnGyroHeadingEnc", "USING HEADING FROM IMU=" + useAdafruitIMU);
                     fileLogger.writeEvent("TankTurnGyroHeadingEncoder", "Running, mdblGyrozAccumulated = " + mdblGyrozAccumulated);
                     fileLogger.writeEvent("TankTurnGyroHeadingEncoder", "Running, mdblTurnAbsoluteGyro = " + mdblTurnAbsoluteGyro);
                     fileLogger.writeEvent("TankTurnGyroHeadingEncoder", "Running, mstrDirection        = " + mstrDirection);
+                    fileLogger.writeEvent("TankTurnGyroHeadingEncoder", "Running, adafruitIMUHeading   = " + adafruitIMUHeading);
                     Log.d("TankTurnGyroHeadingEnc", "Running, mdblGyrozAccumulated = " + mdblGyrozAccumulated);
                     Log.d("TankTurnGyroHeadingEnc", "Running, mdblTurnAbsoluteGyro = " + mdblTurnAbsoluteGyro);
                     Log.d("TankTurnGyroHeadingEnc", "Running, mstrDirection        = " + mstrDirection);
+                    Log.d("TankTurnGyroHeadingEnc", "Running, adafruitIMUHeading   = " + adafruitIMUHeading);
                 }
                 insertSteps(3, newAngleDirectionGyro ((int)mdblGyrozAccumulated, (int)mdblRobotTurnAngle), false, false, 0, 0, 0, 0, 0, 0, mdblStepSpeed, mintCurrentStep + 1);
                 mintCurStGyroTurnEncoder5291 = stepState.STATE_COMPLETE;
@@ -3633,7 +3570,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
             break;
             case STATE_RUNNING:
             {
-                String strCorrectionAngle = "";
+                String strCorrectionAngle;
                 if (debug >= 2) {
                     fileLogger.writeEvent("mintCurStVuforiaLoc5291", "Running" );
                     fileLogger.writeEvent("mintCurStVuforiaLoc5291", "localiseRobotPos " + localiseRobotPos );
@@ -3763,7 +3700,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
             break;
             case STATE_RUNNING:
             {
-                String strCorrectionAngle = "";
+                String strCorrectionAngle;
                 if (debug >= 2) {
                     fileLogger.writeEvent("VuforiaMove()", "Running" );
                     fileLogger.writeEvent("VuforiaMove()", "localiseRobotPos " + localiseRobotPos );
@@ -3840,7 +3777,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
     private void VuforiaTurn ()
     {
-        String strCorrectionAngle = "";
+        String strCorrectionAngle;
 
         switch (mintCurStVuforiaTurn5291) {
             case STATE_INIT: {
@@ -4060,10 +3997,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                             insertSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
                         else if (allianceColor.equals("Blue"))
                             insertSteps(3, "GTE270",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
-                        if ((16 - (dblMaxDistance / 2.54)) < 0) {
-
-                        }
-                        else {
+                        if ((16 - (dblMaxDistance / 2.54)) >= 0) {
                             insertSteps(3, "FWE-" + (16 - (dblMaxDistance / 2.54)), false, true, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);  //we want to be 18 inches from wall
                         }
                     } else {
@@ -4161,7 +4095,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 robotDrive.leftMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 robotDrive.rightMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
                 mblnDisableVisionProcessing = true;  //disable vision processing
 
                 //this is the maximum distance the robot will move before aborting looking for the line
@@ -4173,7 +4106,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     Log.d("runningDriveHeadingStep", "mdblStepDistance   :- " + mdblStepDistance);
                 }
                 // Determine new target position
-
                 mintStartPositionLeft1 = robotDrive.leftMotor1.getCurrentPosition();
                 mintStartPositionLeft2 = robotDrive.leftMotor2.getCurrentPosition();
                 mintStartPositionRight1 = robotDrive.rightMotor1.getCurrentPosition();
@@ -4191,15 +4123,12 @@ public class AutoDriveTeam5291 extends LinearOpMode
                     Log.d("runningDriveHeadingStep", "mStepLeftTarget1 :- " + mintStepLeftTarget1 +  " mStepLeftTarget2 :- " + mintStepLeftTarget2);
                     Log.d("runningDriveHeadingStep", "mStepRightTarget1:- " + mintStepRightTarget1 + " mStepRightTarget2:- " + mintStepRightTarget2);
                 }
-
                 mintCurStLineFind5291 = stepState.STATE_RUNNING;
-
                 setDriveMotorPower(Math.abs(mdblStepSpeed));
             }
             break;
             case STATE_RUNNING:
             {
-
                 intLeft1MotorEncoderPosition = robotDrive.leftMotor1.getCurrentPosition();
                 intLeft2MotorEncoderPosition = robotDrive.leftMotor2.getCurrentPosition();
                 intRight1MotorEncoderPosition = robotDrive.rightMotor1.getCurrentPosition();
@@ -4367,14 +4296,12 @@ public class AutoDriveTeam5291 extends LinearOpMode
     }
 
     private void LedState (boolean g1, boolean r1, boolean b1, boolean g2, boolean r2, boolean b2) {
-
         dim.setDigitalChannelState(GREEN1_LED_CHANNEL, g1);   //turn LED ON
         dim.setDigitalChannelState(RED1_LED_CHANNEL, r1);
         dim.setDigitalChannelState(BLUE1_LED_CHANNEL, b1);
         dim.setDigitalChannelState(GREEN2_LED_CHANNEL, g2);   //turn LED ON
         dim.setDigitalChannelState(RED2_LED_CHANNEL, r2);
         dim.setDigitalChannelState(BLUE2_LED_CHANNEL, b2);
-
     }
 
     private String getAngle(int angle1, int angle2)
@@ -4663,12 +4590,12 @@ public class AutoDriveTeam5291 extends LinearOpMode
             return pParam * Math.log(qParam * (rParam + opticalReading));
     }
 
-    int cmUltrasonic(int rawUS)
+    private int cmUltrasonic(int rawUS)
     {
         return rawUS;
     }
 
-    double cmOptical(int rawOptical)
+    private double cmOptical(int rawOptical)
     {
         return cmFromOptical(rawOptical);
     }
@@ -4680,7 +4607,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         return unit.fromUnit(DistanceUnit.CM, cm);
     }
 
-    public void readRangeSensors()
+    private void readRangeSensors()
     {
         //adds 100ms to scan time, try use this as little as possible
         range1Cache = RANGE1Reader.read(RANGE1_REG_START, RANGE1_READ_LENGTH);
@@ -4699,20 +4626,43 @@ public class AutoDriveTeam5291 extends LinearOpMode
      * @return  error angle: Degrees in the range +/- 180. Centered on the robot's frame of reference
      *          +ve error means the robot should turn LEFT (CCW) to reduce error.
      */
-    public double getDriveError(double targetAngle) {
+    private double getDriveError(double targetAngle) {
 
         double robotError;
+        double robotErrorIMU;
+        double robotErrorGyro;
+        double gyroHeading;
+        double adafruitIMUHeading;
+
+        gyroHeading = gyro.getHeading() * GYRO_CORRECTION_MULTIPLIER;
+        adafruitIMUHeading = getAdafruitHeading();
 
         if (debug >= 2) {
             fileLogger.writeEvent("getDriveError()", "targetAngle " + targetAngle);
             Log.d("getDriveError()", "targetAngle " + targetAngle);
+            fileLogger.writeEvent("getDriveError()", "Gyro Reading " + gyroHeading);
+            Log.d("getDriveError()", "Gyro Reading " + gyroHeading);
+            fileLogger.writeEvent("getDriveError()", "Adafruit IMU Reading " + adafruitIMUHeading);
+            Log.d("getDriveError()", "Adafruit IMU Reading " + adafruitIMUHeading);
         }
 
         // calculate error in -179 to +180 range  (
-        robotError = targetAngle - teamAngleAdjust(gyro.getHeading());
+        robotErrorGyro = targetAngle - teamAngleAdjust(gyroHeading);
+        robotErrorIMU = targetAngle - teamAngleAdjust(adafruitIMUHeading);
+
+        if (useAdafruitIMU) {
+            robotError = robotErrorIMU;
+        } else {
+            robotError = robotErrorGyro;
+        }
+
         if (debug >= 3) {
-            fileLogger.writeEvent("getDriveError()", "robotError1 " + robotError + ", gyro.getHeading() " + gyro.getHeading() + " teamAngleAdjust(gyro.getHeading() "  + teamAngleAdjust(gyro.getHeading()));
-            Log.d("getDriveError()", "robotError1 " + robotError);
+            fileLogger.writeEvent("getDriveError()", "USING HEADING FROM IMU=" + useAdafruitIMU);
+            Log.d("getDriveError()", "USING HEADING FROM IMU=" + useAdafruitIMU);
+            fileLogger.writeEvent("getDriveError()", "robotErrorGyro " + robotErrorGyro + ", gyro.getHeading() " + gyroHeading + " teamAngleAdjust(gyro.getHeading()) "  + teamAngleAdjust(gyroHeading));
+            Log.d("getDriveError()", "robotError " + robotErrorGyro + ", gyro.getHeading() " + gyroHeading + " teamAngleAdjust(gyro.getHeading()) "  + teamAngleAdjust(gyroHeading));
+            fileLogger.writeEvent("getDriveError()", "robotErrorIMU " + robotError + ", getAdafruitHeading() " + adafruitIMUHeading + " teamAngleAdjust(adafruitIMUHeading) "  + teamAngleAdjust(adafruitIMUHeading));
+            Log.d("getDriveError()", "robotError " + robotErrorIMU + ", getAdafruitHeading() " + adafruitIMUHeading + " teamAngleAdjust(adafruitIMUHeading) "  + teamAngleAdjust(adafruitIMUHeading));
         }
         if (robotError > 180)
             robotError -= 360;
@@ -4732,10 +4682,19 @@ public class AutoDriveTeam5291 extends LinearOpMode
      * @param PCoeff  Proportional Gain Coefficient
      * @return
      */
-    public double getDriveSteer(double error, double PCoeff) {
+    private double getDriveSteer(double error, double PCoeff) {
         return Range.clip(error * PCoeff, -1, 1);
     }
 
+    private Double getAdafruitHeading ()
+    {
+        Orientation angles;
 
+        angles = imu.getAngularOrientation().toAxesReference(AxesReference.INTRINSIC).toAxesOrder(AxesOrder.ZYX);
+        return formatAngle(angles.angleUnit, angles.firstAngle);
+    }
 
+    private Double formatAngle(AngleUnit angleUnit, double angle) {
+        return AngleUnit.DEGREES.fromUnit(angleUnit, angle);
+    }
 }

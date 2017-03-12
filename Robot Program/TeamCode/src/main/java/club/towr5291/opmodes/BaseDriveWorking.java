@@ -36,12 +36,15 @@ public class BaseDriveWorking extends OpMode {
     private boolean rightNegative;
     private double mdblMax;
     private boolean mblnReverse = false;
+    private boolean mblnSlowDownNoSteering = false;
     private boolean mblnSlowDown = false;
     private boolean mblnSlowDownReleased = true;
     private boolean mblnIntakeOn = true;
     private boolean mblnIntakeFlip = false;
     private boolean mblnLaunch = false;
     private boolean blnRightTriggerPressed = false;
+    private boolean blnGamePadA;
+    private boolean blnGamePadAPressed;
 
     private boolean mblnReleaseArm = false;
 
@@ -319,15 +322,30 @@ public class BaseDriveWorking extends OpMode {
         }
         else
         {
+            //used to prevent multi button detections (debouncing)
             blnRightTriggerPressed = false;
         }
 
         //disable steering
         if(gamepad1.a) {
+            if (!blnGamePadAPressed) {
+                blnGamePadA = !blnGamePadA;
+            }
+            blnGamePadAPressed = true;
+        } else {
+            //used to prevent multi button detections (debouncing)
+            blnGamePadAPressed = false;
+        }
+
+        if (blnGamePadA)
+        {
             mblnSlowDown = true;
             mdblMax = 0.25;
             mdblLeftPow = gamepad1.left_stick_y;
             mdblRightPow = mdblLeftPow;
+        } else {
+            mblnSlowDown = false;
+            mdblMax = 1;
         }
 
         if (mdblLeftPow < 0) {
