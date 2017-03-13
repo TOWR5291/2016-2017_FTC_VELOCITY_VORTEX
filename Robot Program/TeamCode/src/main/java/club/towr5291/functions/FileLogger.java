@@ -26,7 +26,7 @@ public class FileLogger {
     private ElapsedTime elapsedTime;
     private String filenamePrefix = "";
     private boolean isOpen = false;
-    private int numFilesToSave = 20;
+    private int numFilesToSave = 50;
 
     public FileLogger(ElapsedTime elapsedTime) {
         this.elapsedTime = elapsedTime;

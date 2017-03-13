@@ -52,8 +52,6 @@ public class AutoSetupMenu extends OpModeMaster implements FtcMenu.MenuButtons {
     private String numBeacons;
     private String robotConfig;
 
-
-
     private static AutoSetupMenu instance = null;
 
     public AutoSetupMenu()

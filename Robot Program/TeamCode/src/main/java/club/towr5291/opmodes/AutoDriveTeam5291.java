@@ -71,6 +71,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
@@ -204,7 +206,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
     // The IMU sensor object
     private BNO055IMU imu;
     // State used for updating telemetry
-    private boolean useAdafruitIMU = false;
+    private boolean useAdafruitIMU = true;
 
     //set up robot variables
     private double     COUNTS_PER_MOTOR_REV;            // eg: TETRIX = 1440 pulses, NeveRest 20 = 560 pulses, NeveRest 40 =  1120, NeveRest 60 = 1680 pulses
@@ -218,7 +220,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private double     REVERSE_DIRECTION;               // determines which directin the robot runs when FW is positive or negative when commanded to move a direction
 
     //vuforia localisation variables
-    OpenGLMatrix lastLocation = null;
+    private OpenGLMatrix lastLocation = null;
     private double localisedRobotX;
     private double localisedRobotY;
     private double localisedRobotBearing;
@@ -276,9 +278,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
         STATE_FINISHED
     }
 
-    private boolean readyToCapture = false;
-
     //variable for the state engine, declared here so they are accessible throughout the entire opmode with having to pass them through each function
+    private boolean mblnReadyToCapture = false;              //Ready to get the camera for capturing images
     private int mintStartPositionLeft1;                      //Left Motor 1  - start position of the robot in inches, starts from 0 to the end
     private int mintStartPositionLeft2;                      //Left Motor 2  - start position of the robot in inches, starts from 0 to the end
     private int mintStartPositionRight1;                     //Right Motor 1 - start position of the robot in inches, starts from 0 to the end
@@ -300,11 +301,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private double mdblStepTurnR;                            //used when decoding the step, this will indicate if the robot is turning right
     private double mdblRobotTurnAngle;                       //used to determine angle the robot will turn
     private double mdblStepDistance;                         //used when decoding the step, this will indicate how far the robot is to move in inches
-    //private double mdblArcLengthRadiusTurn;                  //used to calculate the arc length when doing a radius turn
-    private double mdblArcLengthRadiusTurnInner;             //used to calculate the arc length when doing a radius turn
-    private double mdblArcLengthRadiusTurnOuter;             //used to calculate the arc length when doing a radius turn
-    private double mdblSpeedOuter;                           //used to calculate the speed of the outer wheels during the turn
-    private double mdblSpeedInner;                           //used to calculate the speed of the inner wheels during the turn
     private boolean mblnParallel;                            //used to determine if next step will run in parallel - at same time
     private boolean mblnRobotLastPos;                        //used to determine if next step will run from end of last step or from encoder position
     private int mintLastEncoderDestinationLeft1;             //used to store the encoder destination from current Step
@@ -315,8 +311,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private int mintStepDelay;                               //used when decoding the step, this will indicate how long the delay is on ms.
     private boolean mblnDisableVisionProcessing = false;     //used when moving to disable vision to allow faster speed reading encoders.
     private int mintStepRetries = 0;                         //used to count retries on a step
-    private boolean mblnBaseStepComplete = false;
-    private boolean mblnArmStepComplete = true;
     private ElapsedTime mStateTime = new ElapsedTime();     // Time into current state, used for the timeout
     private int mintStepNumber;
 
@@ -327,7 +321,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
     //OpenCV Stuff
     //private BeaconAnalysisOCV beaconColour = new BeaconAnalysisOCV();
     private BeaconAnalysisOCV2 beaconColour = new BeaconAnalysisOCV2();
-    private Mat tmp = new Mat();
     private int mintCaptureLoop = 0;
     private int mintNumberColourTries = 0;
     private Constants.BeaconColours mColour;
@@ -337,17 +330,17 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
     //servos
     // the servos are on the servo controller
-    final static double SERVOLIFTRIGHT_MIN_RANGE  = 0;
-    final static double SERVOLIFTRIGHT_MAX_RANGE  = 1.0;
-    final static double SERVOLIFTLEFT_MIN_RANGE  = 0;
-    final static double SERVOLIFTLEFT_MAX_RANGE  = 1.0;
+    private final static double SERVOLIFTRIGHT_MIN_RANGE  = 0;
+    private final static double SERVOLIFTRIGHT_MAX_RANGE  = 1.0;
+    private final static double SERVOLIFTLEFT_MIN_RANGE  = 0;
+    private final static double SERVOLIFTLEFT_MAX_RANGE  = 1.0;
 
-    final static double SERVOBEACONRIGHT_MIN_RANGE  = 0;
-    final static double SERVOBEACONRIGHT_MAX_RANGE  = 1.0;
-    final static double SERVOBEACONLEFT_MIN_RANGE  = 0;
-    final static double SERVOBEACONLEFT_MAX_RANGE  = 1.0;
-    final static int SERVOBEACONLEFT_HOME = 7;
-    final static int SERVOBEACONRIGHT_HOME = 4;
+    private final static double SERVOBEACONRIGHT_MIN_RANGE  = 0;
+    private final static double SERVOBEACONRIGHT_MAX_RANGE  = 1.0;
+    private final static double SERVOBEACONLEFT_MIN_RANGE  = 0;
+    private final static double SERVOBEACONLEFT_MAX_RANGE  = 1.0;
+    private final static int SERVOBEACONLEFT_HOME = 7;
+    private final static int SERVOBEACONRIGHT_HOME = 4;
 
     private Servo servoLifterRight;
     private Servo servoLifterLeft;
@@ -355,22 +348,19 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private Servo servoBeaconRight;
 
     //LED Strips
-    DeviceInterfaceModule dim;                  // Device Object
-    final int GREEN1_LED_CHANNEL = 0;
-    final int RED1_LED_CHANNEL = 1;
-    final int BLUE1_LED_CHANNEL = 2;
-    final int GREEN2_LED_CHANNEL = 3;
-    final int RED2_LED_CHANNEL = 4;
-    final int BLUE2_LED_CHANNEL = 5;
-    final boolean LedOn = false;
-    final boolean LedOff = true;
+    private DeviceInterfaceModule dim;                  // Device Object
+    private final int GREEN1_LED_CHANNEL = 0;
+    private final int RED1_LED_CHANNEL = 1;
+    private final int BLUE1_LED_CHANNEL = 2;
+    private final int GREEN2_LED_CHANNEL = 3;
+    private final int RED2_LED_CHANNEL = 4;
+    private final int BLUE2_LED_CHANNEL = 5;
 
     private double mdblLastOn;
     private double mdblLastOff;
     private boolean mblnLEDON;
     private int mintCounts = 0;
-
-
+    
     //each robot speeds up and slows down at different rates
     //helps reduce over runs and
     //table for the tilerunner from AndyMark.  These values are for the twin 20 motors which makes the robot fast
@@ -399,19 +389,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         powerTable.put(String.valueOf(12), ".6");
         powerTable.put(String.valueOf(15), ".8");
     }
-
-
-
-    //**********************************************************
-    //   _____ ___   ___  __
-    //  | ____|__ \ / _ \/_ |
-    //  | |__    ) | (_) || |
-    //  |___ \  / / \__, || |
-    //     _) |/ /_   / / | |
-    //  |____/|____| /_/  |_|
-    //
-    //  the code below is for team 5291 autonomous
-    //**********************************************************
+    
     private void loadStaticSteps5291 ()
     {
         //           time, comm,  paral, lastp  parm, parm, parm, parm, parm, parm, powe
@@ -423,273 +401,9 @@ public class AutoDriveTeam5291 extends LinearOpMode
         loadSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0);
         loadSteps(10, "ATB",  false, false,   0,    0,    0,    0,    0,    0,    0);
     }
-
-    private void loadStaticStepsRedRight5291 ()
-    {
-        // Valid Commands Angle
-        // DEL = Delay in Microseconds
-        // RTE = Right Turn Angle - Encoder
-        // LTE = Left Turn Angle - Encoder
-        // LPE = Left Pivot Angle - Encoder
-        // RPE = Left Pivot Angle - Encoder
-        // LRE = Left turn with radius - Encoder
-        // RRE = Right turn with radius - Encoder
-        // FWE = Drive Forward Distance - Encoder
-        // REV = Drive Backward Distance - Encoder
-        // ASE = AutoStar From Current Pos to X,Y - Encoder
-        // FNC = Special Function
-        // VFL = Vuforia Localise
-        // VME = Vuforia Move - Encoder
-        // VTE = Vuforia Turn - Encoder
-        // ATB = Attack the Beacon
-        // STB = Shoot The Ball
-        // BCL = Get the beacon Colour
-        // Red Beacon 1 = (32, 36), (-1016, 914)
-        // Red Beacon 2 = (32, 84), (-1016, -305)
-        // Blue Beacon 1 = (36,32), (-914, 1016) <270
-        // Blue Beacon 2 = (84,32), (305, 1016) <270
-        //           time, comm,  paral, lastp  parm, parm, parm, parm, parm, parm, powe
-        //           out   and                   1     2     3     4     5     6     r
-        //            s                                                              %
-        loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(4, "FWE22", false, true,   1,  225,  0.04,    0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        loadSteps(4, "EYE",   false, false,  1,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(4, "RTE180",false, true,   0,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(4, "EYE",   false, false,  3,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(3, "GTE45", false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(10, "ST1" , false, false, 2500,   0,    0,    0,    0,    0,    0  );
-        loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        if (allianceParkPosition.equals("Corner")) {
-            loadSteps(4, "RTE128", false, true,  0,   0,   0,    0,   0,   0,   0.55);
-            loadSteps(3, "GTE170", false, false, 0,   0,   0,    0,   0,   0,   0.47);
-            loadSteps(4, "FWE77", false, true,   1,   170, 0.02, 0,   0,   0,   0.5);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        } else if (allianceParkPosition.equals("Centre")) {
-            loadSteps(4, "RTE180",false, true,   0,     0,    0,    0,    0,    0,    0.55);
-            loadSteps(3, "GTE225", false, false, 0,     0,    0,    0,    0,    0,    0.47);
-            loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-            loadSteps(4, "FWE40", false, true,   0,     0,    0,    0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error        }
-        }
-        //loadSteps(30, "AS",  false, false,  0,    0,    0,   12,   24,  270,  0.5);
-        //loadSteps(10, "VM",  false, false,  0,    0,    0,  -1016, -305,  180,   0.6);
-
-        //leave this delay of 0 in there, inserting a step doesn't work if inserting when at the last step
-        loadSteps(2, "DEL0", false, false, 0,    0,    0,    0,    0,    0,    0);
-    }
-
-    private void loadStaticStepsRedLeft5291 ()
-    {
-        // Valid Commands Angle
-        // DEL = Delay in Microseconds
-        // RTE = Right Turn Angle - Encoder
-        // LTE = Left Turn Angle - Encoder
-        // LPE = Left Pivot Angle - Encoder
-        // RPE = Left Pivot Angle - Encoder
-        // LRE = Left turn with radius - Encoder
-        // RRE = Right turn with radius - Encoder
-        // FWE = Drive Forward Distance - Encoder (Parm 1 and 4, 1 = Gyro, 2 = Line Detect Stop, 3 = Range Sensor, Parm2 3 5 6 are parms for the Gyro, Range and Line Detect Stop)
-        // REV = Drive Backward Distance - Encoder
-        // ASE = AutoStar From Current Pos to X,Y - Encoder
-        // FNC = Special Function
-        // VFL = Vuforia Localise
-        // VME = Vuforia Move - Encoder
-        // VTE = Vuforia Turn - Encoder  Parm 1 is the desired heading
-        // ATB = Attack the Beacon
-        // STB = Shoot The Ball
-        // BCL = Get the beacon Colour
-        // Red Beacon 1 = (32, 36), (-1016, 914)
-        // Red Beacon 2 = (32, 84), (-1016, -305)
-        // Blue Beacon 1 = (36,32), (-914, 1016) <270
-        // Blue Beacon 2 = (84,32), (305, 1016) <270
-        //           time, comm,  paral, lastp  parm, parm, parm, parm, parm, parm, powe
-        //           out   and                   1     2     3     4     5     6     r
-        //            s                                                              %
-
-        //testing starting at a 45 degree angle from wall
-        loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(4, "FWE34", false, true,   1,  225,  0.04,    0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        loadSteps(4, "RRE45", false, true,   18,    0,    0,    0,    0,    0,    0.55);  //Right Turn with Radius of 18 inches
-        loadSteps(4, "SF1  ", false, false,  19,    0,    0,    0,    0,    0,    0.3);   //SF1  is move forward slowly until line is found then stop
-        loadSteps(3, "LTE85", false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(3, "GTE170",false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(4, "ST1" ,  false, false, 2500,   0,    0,    0,    0,    0,    0 );
-        loadSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "ATB",  false, false,   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(4, "EYE",   false, false,   2,    0,    0,    0,    0,    0,    0.55);
-        loadSteps(3, "RTE85", false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(3, "GTE270",false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(6, "FWE43", false, true,    1,   270,  0.04,  0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        loadSteps(4, "SF1  ", false, false,  12,    0,    0,    0,    0,    0,    0.3);   //SF1  is move forward slowly until line is found then stop
-        loadSteps(3, "LTE85", false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "ATB",  false, false,   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(3, "LTE130", false, true,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(6, "FWE58", false, false,   1,   50,  0.02,   0,    0,    0,    0.55);  //Forward using gyro to track at bearing 48 degrees, 0.04 gain on error
-
-        //testing starting back to the ball
-        //loadSteps(4, "FWE6",  false, true,   1,   90,  0.04,   0,    0,    0,    0.55);
-        //loadSteps(4, "LRE45", false, true,   18,    0,    0,    0,    0,    0,    0.55);
-        //loadSteps(7, "FWE50", false, true ,   1,  135,  0.03,   0,    0,    0,    0.50);
-        //loadSteps(7, "RTE45", false, true,    0,    0,    0,    0,    0,    0,    0.5);
-        //loadSteps(7, "FWE6", false, false ,   1,   90,  0.04,   1,    0,    0,    0.45);
-//        loadSteps(15, "FWE-5", false, false , 1,   90,  0.04,   1,    0,    0,    0.4);
-        //loadSteps(3, "LTE90", false, false,   0,    0,    0,    0,    0,    0,    0.5);
-
-        /*
-        loadSteps(15, "FWE-14", false, false,  0,    0,    0,    0,    0,    0,    0.6);
-        loadSteps(10, "ST1",    false, false,  2500, 0,    0,    0,    0,    0,    0  );
-        //loadSteps(10, "LTE40", false, false, 0,    0,    0,    0,    0,    0,    0.6);
-        loadSteps(5, "GTH245",  false, false,  3,    0,    0,    0,    0,    0,    0.3);
-        loadSteps(10, "FWE-37", false, false,  0,    0,    0,    0,    0,    0,    0.6);
-//        loadSteps(10, "RTE135", false, false, 0,    0,    0,    0,    0,    0,    0.7);
-        loadSteps(6, "GTH0",    false, false,  3,    0,    0,    0,    0,    0,    0.3);
-        loadSteps(2, "DEL500",  false, false,  0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "VME",    false, false,  0,    0,    0,  -1150, -325,  0,   0.5);
-        //loadSteps(5, "GTH0",  false, false, 0,    0,    0,    0,    0,    0,    0.3);
-        //loadSteps(10, "FWE3",  false, false, 0,    0,    0,    0,    0,    0,    0.6);
-        //loadSteps(6, "GTH0",  false, false, 3,    0,    0,    0,    0,    0,    0.3);
-        loadSteps(6, "GTH0",    false, false, 2,    0,    0,    0,    0,    0,    0.3);
-        loadSteps(2, "DEL500",  false, false, 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10,  "BCL",   false, false, 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10,  "ATB",   false, false, 0,    0,    0,    0,    0,    0,    0);
-        loadSteps(5, "GTH225",  false, false, 3,    0,    0,    0,    0,    0,    0.3);
-        loadSteps(10, "FWE18",  false, false, 0,    0,    0,    0,    0,    0,    0.6);
-        loadSteps(5, "GTH125",  false, false, 3,    0,    0,    0,    0,    0,    0.3);
-        loadSteps(10, "FWE26",  false, false, 0,    0,    0,    0,    0,    0,    0.6);
-*/
-
-//        loadSteps(10, "GTH90",  false, false, 0,    0,    0,    0,    0,    0,    0.3);
-//        loadSteps(15, "FWE45",  false, false, 0,    0,    0,    0,    0,    0,    0.5);
-//        loadSteps(10, "LTE88",  false, false, 0,    0,    0,    0,    0,    0,    0.3);
-//        loadSteps(2, "DEL500",  false, false, 0,    0,    0,    0,    0,    0,    0);
-//        loadSteps(10, "VME",    false, false, 0,    0,    0,  -1150, 914,   0,   0.6);
-//        loadSteps(10, "LTE25",  false, false, 0,    0,    0,    0,    0,    0,    0.6);
-//        loadSteps(2, "DEL500",  false, false, 0,    0,    0,    0,    0,    0,    0);
-//        loadSteps(10, "VTE",    false, false, 0,    0,    0,    0,    0,    0,   0.7);
-//        loadSteps(2, "DEL500",  false, false, 0,    0,    0,    0,    0,    0,    0);
-//        loadSteps(10, "VTE",    false, false, 0,    0,    0,    0,    0,    0,   0.7);
-//        loadSteps(10, "BCL",    false, false, 0,    0,    0,    0,    0,    0,    0);
-//        loadSteps(10, "ATB",    false, false, 0,    0,    0,    0,    0,    0,    0);
-//        loadSteps(10, "LTE140", false, false, 0,    0,    0,    0,    0,    0,    0);
-//        loadSteps(15, "FWE60",  false, false, 0,    0,    0,    0,    0,    0,    0.6);
-
-        //leave this delay of 0 in there, inserting a step doesn't work if inserting when at the last step
-        loadSteps(2, "DEL0", false, false,  0,    0,    0,    0,    0,    0,    0);
-    }
-
-    private void loadStaticStepsBlueLeft5291 ()
-    {
-        // Valid Commands Angle
-        // DEL = Delay in Microseconds
-        // RTE = Right Turn Angle - Encoder
-        // LTE = Left Turn Angle - Encoder
-        // LPE = Left Pivot Angle - Encoder
-        // RPE = Left Pivot Angle - Encoder
-        // LRE = Left turn with radius - Encoder
-        // RRE = Right turn with radius - Encoder
-        // FWE = Drive Forward Distance - Encoder
-        // REV = Drive Backward Distance - Encoder
-        // ASE = AutoStar From Current Pos to X,Y - Encoder
-        // FNC = Special Function
-        // VFL = Vuforia Localise
-        // VME = Vuforia Move - Encoder
-        // VTE = Vuforia Turn - Encoder
-        // ATB = Attack the Beacon
-        // STB = Shoot The Ball
-        // BCL = Get the beacon Colour
-        // Red Beacon 1 = (32, 36), (-1016, 914)
-        // Red Beacon 2 = (32, 84), (-1016, -305)
-        // Blue Beacon 1 = (36,32), (-914, 1016) <270
-        // Blue Beacon 2 = (84,32), (305, 1016) <270
-        //           time, comm,  paral, lastp  parm, parm, parm, parm, parm, parm, powe
-        //           out   and                   1     2     3     4     5     6     r
-        //            s                                                              %
-
-        loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(4, "FWE22", false, true,   1,  225,  0.04,    0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        loadSteps(4, "EYE",   false, false,  1,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(4, "LTE180",false, true,   0,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(4, "EYE",   false, false,  3,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(3, "GTE45", false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(10, "ST1" , false, false, 2500,   0,    0,    0,    0,    0,    0  );
-        loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        if (allianceParkPosition.equals("Corner")) {
-            loadSteps(4, "LTE128", false, true, 0, 0, 0, 0, 0, 0, 0.55);
-            loadSteps(3, "GTE278", false, false, 0, 0, 0, 0, 0, 0, 0.47);
-            loadSteps(4, "FWE77", false, true, 1, 278, 0.02, 0, 0, 0, 0.5);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        } else if (allianceParkPosition.equals("Centre")) {
-            loadSteps(4, "RTE180",false, true,   0,     0,    0,    0,    0,    0,    0.55);
-            loadSteps(3, "GTE225", false, false, 0,     0,    0,    0,    0,    0,    0.47);
-            loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-            loadSteps(4, "FWE40", false, true,   0,     0,    0,    0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error        }
-        }
-
-        //leave this delay of 0 in there, inserting a step doesn't work if inserting when at the last step
-        loadSteps(2, "DEL0",  false, false, 0,    0,    0,    0,    0,    0,    0);
-    }
-
-    private void loadStaticStepsBlueRight5291 ()
-    {
-        // Valid Commands Angle
-        // DEL = Delay in Microseconds
-        // RTE = Right Turn Angle - Encoder
-        // LTE = Left Turn Angle - Encoder
-        // LPE = Left Pivot Angle - Encoder
-        // RPE = Left Pivot Angle - Encoder
-        // LRE = Left turn with radius - Encoder
-        // RRE = Right turn with radius - Encoder
-        // FWE = Drive Forward Distance - Encoder
-        // REV = Drive Backward Distance - Encoder
-        // ASE = AutoStar From Current Pos to X,Y - Encoder
-        // FNC = Special Function
-        // VFL = Vuforia Localise
-        // VME = Vuforia Move - Encoder
-        // VTE = Vuforia Turn - Encoder
-        // ATB = Attack the Beacon
-        // STB = Shoot The Ball
-        // BCL = Get the beacon Colour
-        // Red Beacon 1 = (32, 36), (-1016, 914)
-        // Red Beacon 2 = (32, 84), (-1016, -305)
-        // Blue Beacon 1 = (36,32), (-914, 1016) <270
-        // Blue Beacon 2 = (84,32), (305, 1016) <270
-        //           time, comm,  paral, lastp  parm, parm, parm, parm, parm, parm, powe
-        //           out   and                   1     2     3     4     5     6     r
-        //            s                                                              %
-
-
-        //testing starting at a 45 degree angle from wall
-        loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(4, "FWE34", false, true,   1,  225,  0.04,    0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        loadSteps(4, "LRE45", false, true,   18,    0,    0,    0,    0,    0,    0.55);  //Right Turn with Radius of 18 inches
-        loadSteps(4, "SF1  ", false, false,  24,    0,    0,    0,    0,    0,    0.3);   //SF1  is move forward slowly until line is found then stop
-        loadSteps(3, "RTE85", false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(3, "GTE270",false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(4, "ST1" ,  false, false, 2500,   0,    0,    0,    0,    0,    0 );
-        loadSteps(3, "GTE270",false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "ATB",  false, false,   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(4, "EYE",   false, false,   2,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(3, "LTE90", false, true,    0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(6, "FWE46", false, true,   1,   180,  0.02,   0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-        loadSteps(4, "SF1  ", false, false,  19,    0,    0,    0,    0,    0,    0.3);   //SF1  is move forward slowly until line is found then stop
-        loadSteps(3, "RTE85", false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(3, "GTE270",false, false,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(10, "ATB",  false, false,   0,    0,    0,    0,    0,    0,    0);
-        loadSteps(3, "RTE130",false, true,   0,    0,    0,    0,    0,    0,    0.47);
-        loadSteps(4, "EYE",   false, false,  2,     0,    0,    0,    0,    0,    0.55);
-        loadSteps(6, "FWE58", false, false,   1,   40,  0.02,   0,    0,    0,    0.55);  //Forward using gyro to track at bearing 225 degrees, 0.04 gain on error
-
-        //testing starting back to the ball
-
-        //leave this delay of 0 in there, inserting a step doesn't work if inserting when at the last step
-        loadSteps(2, "DEL0",   false, false, 0,    0,    0,    0,    0,    0,    0);
-    }
-
+    
     private void readStepsFromFile(String Filename) {
+
         boolean blnIfActive = false;
         boolean blnIfStart = false;
 
@@ -700,36 +414,33 @@ public class AutoDriveTeam5291 extends LinearOpMode
             String csvLine;
             while((csvLine = reader.readLine()) != null) {
                 //check if line is a comment and ignore it
-                if ((csvLine.substring(0, 2).equals("//")) || (csvLine.substring(0, 2).equals("\""))) {
-
-                } else if (csvLine.substring(0, 5).equals("START")) {
-                    blnIfActive = true;
-                    if (csvLine.substring(7).equals(allianceParkPosition)) {
-                        blnIfStart = true;
-                    }
-                } else if (csvLine.substring(0, 3).equals("END")) {
-                    blnIfActive = false;
-                    blnIfStart = false;
-
-                } else {
-                    if ((blnIfActive && blnIfStart) || (!blnIfActive && !blnIfStart)) {
-                        String[] row = csvLine.split(",");
-
-                        if (debug >= 2) {
-                            fileLogger.writeEvent("readStepsFromFile", "CSV Value " + row[0].trim() + "," + row[1].trim() + "," + row[2].trim() + "," + row[3].trim() + "," + row[4].trim() + "," + row[5].trim() + "," + row[6].trim() + "," + row[7].trim() + "," + row[8].trim() + "," + row[9].trim() + "," + row[10].trim());
-                            Log.d("readStepsFromFile", "CSV Value " + row[0].trim() + "," + row[1].trim() + "," + row[2].trim() + "," + row[3].trim() + "," + row[4].trim() + "," + row[5].trim() + "," + row[6].trim() + "," + row[7].trim() + "," + row[8].trim() + "," + row[9].trim() + "," + row[10].trim());
+                if (!((csvLine.substring(0, 2).equals("//")) || (csvLine.substring(0, 2).equals("\"")))) {
+                    String[] row = csvLine.split(",");
+                    if (row[0].length() > 6) {
+                        if (row[0].substring(0, 5).equalsIgnoreCase("START")) {
+                            blnIfStart = true;
+                            if (row[0].substring(6).equalsIgnoreCase(allianceParkPosition)) {
+                                blnIfActive = true;
+                            }
+                        } else if (row[0].substring(0, 3).equals("END")) {
+                            Log.d("readStepsFromFile", "Found END IF");
+                            blnIfActive = false;
+                            blnIfStart = false;
                         }
-                        loadSteps(Integer.parseInt(row[0].trim()), row[1].trim(), Boolean.parseBoolean(row[2].trim()), Boolean.parseBoolean(row[3].trim()), Double.parseDouble(row[4].trim()), Double.parseDouble(row[5].trim()), Double.parseDouble(row[6].trim()), Double.parseDouble(row[7].trim()), Double.parseDouble(row[8].trim()), Double.parseDouble(row[9].trim()), Double.parseDouble(row[10].trim()));
+                    } else {
+                        if ((blnIfActive && blnIfStart) || (!blnIfActive && !blnIfStart)) {
+                            loadSteps(Integer.parseInt(row[0].trim()), row[1].trim(), Boolean.parseBoolean(row[2].trim()), Boolean.parseBoolean(row[3].trim()), Double.parseDouble(row[4].trim()), Double.parseDouble(row[5].trim()), Double.parseDouble(row[6].trim()), Double.parseDouble(row[7].trim()), Double.parseDouble(row[8].trim()), Double.parseDouble(row[9].trim()), Double.parseDouble(row[10].trim()));
+                        }
                     }
                 }
             }
         } catch(IOException ex) {
             //throw new RuntimeException("Error in reading CSV file:" + ex);
-            if (debug >= 2)
+            if (debug >= 1)
             {
                 fileLogger.writeEvent("readStepsFromFile", "Error in reading CSV file:" + ex);
-                Log.d("readStepsFromFile", "Error in reading CSV file:" + ex);
             }
+            Log.d("readStepsFromFile", "Error in reading CSV file:" + ex);
         }
     }
 
@@ -796,6 +507,20 @@ public class AutoDriveTeam5291 extends LinearOpMode
     @Override
     public void runOpMode() throws InterruptedException
     {
+        final boolean LedOn = false;
+        final boolean LedOff = true;
+
+        //load menu settings and setup robot and debug level
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(hardwareMap.appContext);
+        teamNumber = sharedPreferences.getString("club.towr5291.Autonomous.TeamNumber", "0000");
+        allianceColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "Red");
+        allianceStartPosition = sharedPreferences.getString("club.towr5291.Autonomous.StartPosition", "Left");
+        allianceParkPosition = sharedPreferences.getString("club.towr5291.Autonomous.ParkPosition", "Vortex");
+        delay = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Delay", "0"));
+        numBeacons = sharedPreferences.getString("club.towr5291.Autonomous.Beacons", "One");
+        robotConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "TileRunner-2x40");
+        debug = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Debug", "1"));
+
         telemetry.addData("Init1     ",  "Starting!");
         telemetry.update();
         //
@@ -812,14 +537,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         LedState(LedOn, LedOn, LedOn, LedOn, LedOn, LedOn);
 
         //load variables
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(hardwareMap.appContext);
-        teamNumber = sharedPreferences.getString("club.towr5291.Autonomous.TeamNumber", "0000");
-        allianceColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "Red");
-        allianceStartPosition = sharedPreferences.getString("club.towr5291.Autonomous.StartPosition", "Left");
-        allianceParkPosition = sharedPreferences.getString("club.towr5291.Autonomous.ParkPosition", "Vortex");
-        delay = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Delay", "0"));
-        numBeacons = sharedPreferences.getString("club.towr5291.Autonomous.Beacons", "One");
-        robotConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "TileRunner-2x40");
+
         LibraryStateSegAuto processingSteps = new LibraryStateSegAuto(0,0,"",false,false,0,0,0,0,0,0,0);
         sixValues[] pathValues = new sixValues[1000];
         A0Star a0Star = new A0Star();
@@ -1131,7 +849,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
         telemetry.update();
 
         //need to load initial step of a delay based on user input
-        loadSteps(delay + 2, "DEL" + (delay * 1000), false, false, 0,    0,    0,    0,    0,    0,  0);
+        loadSteps(delay + 1, "DEL" + (delay * 1000), false, false, 0,    0,    0,    0,    0,    0,  0);
 
         //load the sequence based on alliance colour and team
         switch (teamNumber) {
@@ -1398,6 +1116,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
             Log.d(TAG, "Value of Gyro Before Reset " + gyro.getIntegratedZValue());
         }
 
+        imu.startAccelerationIntegration(new Position(), new Velocity(), 1000);
         gyro.resetZAxisIntegrator();
 
         //the main loop.  this is where the action happens
@@ -1406,7 +1125,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
             if (!mblnDisableVisionProcessing) {
                 //start capturing frames for analysis
-                if (readyToCapture) {
+                if (mblnReadyToCapture) {
                     mintCaptureLoop ++;
 
                     VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().take(); //takes the frame at the head of the queue
@@ -2327,7 +2046,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
         }
 
         // Reset the state time, and then change to next state.
-        mblnBaseStepComplete = false;
         mStateTime.reset();
 
         mdblStepTimeout = mStateSegAuto.getmRobotTimeOut();
@@ -2625,7 +2343,6 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 {
                     // Stop all motion;
                     setDriveMotorPower(0);
-                    mblnBaseStepComplete = true;
                     if (debug >= 2)
                     {
                         fileLogger.writeEvent("runningDriveHeadingStep", "Complete         ");
@@ -3098,6 +2815,10 @@ public class AutoDriveTeam5291 extends LinearOpMode
         int intLeft2MotorEncoderPosition;
         int intRight1MotorEncoderPosition;
         int intRight2MotorEncoderPosition;
+        double dblArcLengthRadiusTurnInner;             //used to calculate the arc length when doing a radius turn
+        double rdblArcLengthRadiusTurnOuter;             //used to calculate the arc length when doing a radius turn
+        double rdblSpeedOuter;                           //used to calculate the speed of the outer wheels during the turn
+        double rdblSpeedInner;                           //used to calculate the speed of the inner wheels during the turn
 
         switch (mintCurStRadiusTurn) {
             case STATE_INIT: {
@@ -3118,27 +2839,27 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
                 //calculate the distance to travel based on the angle we are turning
                 // length = radius x angle (in radians)
-                mdblArcLengthRadiusTurnOuter = ((Double.parseDouble(mstrRobotCommand.substring(3)) / 180) *  Math.PI) * mdblRobotParm1;
-                mdblArcLengthRadiusTurnInner = ((Double.parseDouble(mstrRobotCommand.substring(3)) / 180) *  Math.PI) * (mdblRobotParm1 - (ROBOT_TRACK));
-                //mdblArcLengthRadiusTurnOuter = ((Double.parseDouble(mstrRobotCommand.substring(3)) / 180) *  Math.PI) * (mdblRobotParm1 + (0.5 * ROBOT_TRACK));
+                rdblArcLengthRadiusTurnOuter = ((Double.parseDouble(mstrRobotCommand.substring(3)) / 180) *  Math.PI) * mdblRobotParm1;
+                dblArcLengthRadiusTurnInner = ((Double.parseDouble(mstrRobotCommand.substring(3)) / 180) *  Math.PI) * (mdblRobotParm1 - (ROBOT_TRACK));
+                //rdblArcLengthRadiusTurnOuter = ((Double.parseDouble(mstrRobotCommand.substring(3)) / 180) *  Math.PI) * (mdblRobotParm1 + (0.5 * ROBOT_TRACK));
 
-                mdblSpeedOuter =  mdblStepSpeed;
+                rdblSpeedOuter =  mdblStepSpeed;
 
-                if (mdblSpeedOuter >= 0.58) {
-                    mdblSpeedOuter = 0.58;  //This is the maximum speed, anything above 0.6 is the same as a speed of 1 for drive to position
+                if (rdblSpeedOuter >= 0.58) {
+                    rdblSpeedOuter = 0.58;  //This is the maximum speed, anything above 0.6 is the same as a speed of 1 for drive to position
                 }
-                mdblSpeedInner = mdblArcLengthRadiusTurnInner / mdblArcLengthRadiusTurnOuter * mdblSpeedOuter * 0.96;
+                rdblSpeedInner = dblArcLengthRadiusTurnInner / rdblArcLengthRadiusTurnOuter * rdblSpeedOuter * 0.96;
 
                 if (debug >= 3)
                 {
-                    fileLogger.writeEvent("RadiusTurnStep()","mdblArcLengthRadiusTurnInner " + mdblArcLengthRadiusTurnInner );
-                    fileLogger.writeEvent("RadiusTurnStep()","mdblArcLengthRadiusTurnOuter " + mdblArcLengthRadiusTurnOuter );
-                    fileLogger.writeEvent("RadiusTurnStep()","mdblSpeedOuter " + mdblSpeedOuter );
-                    fileLogger.writeEvent("RadiusTurnStep()","mdblSpeedInner " + mdblSpeedInner );
-                    Log.d("RadiusTurnStep", "mdblArcLengthRadiusTurnInner " + mdblArcLengthRadiusTurnInner );
-                    Log.d("RadiusTurnStep", "mdblArcLengthRadiusTurnOuter " + mdblArcLengthRadiusTurnOuter );
-                    Log.d("RadiusTurnStep", "mdblSpeedOuter " + mdblSpeedOuter );
-                    Log.d("RadiusTurnStep", "mdblSpeedInner " + mdblSpeedInner );
+                    fileLogger.writeEvent("RadiusTurnStep()","dblArcLengthRadiusTurnInner " + dblArcLengthRadiusTurnInner );
+                    fileLogger.writeEvent("RadiusTurnStep()","rdblArcLengthRadiusTurnOuter " + rdblArcLengthRadiusTurnOuter );
+                    fileLogger.writeEvent("RadiusTurnStep()","rdblSpeedOuter " + rdblSpeedOuter );
+                    fileLogger.writeEvent("RadiusTurnStep()","rdblSpeedInner " + rdblSpeedInner );
+                    Log.d("RadiusTurnStep", "dblArcLengthRadiusTurnInner " + dblArcLengthRadiusTurnInner );
+                    Log.d("RadiusTurnStep", "rdblArcLengthRadiusTurnOuter " + rdblArcLengthRadiusTurnOuter );
+                    Log.d("RadiusTurnStep", "rdblSpeedOuter " + rdblSpeedOuter );
+                    Log.d("RadiusTurnStep", "rdblSpeedInner " + rdblSpeedInner );
                 }
 
                 // Get Current Encoder positions
@@ -3158,10 +2879,10 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 // Determine new target position
                 switch (mstrRobotCommand.substring(0, 3)) {
                     case "LRE":
-                        mintStepLeftTarget1 = mintStartPositionLeft1 + (int)(mdblArcLengthRadiusTurnInner * COUNTS_PER_INCH);
-                        mintStepLeftTarget2 = mintStartPositionLeft2 + (int)(mdblArcLengthRadiusTurnInner * COUNTS_PER_INCH);
-                        mintStepRightTarget1 = mintStartPositionRight1 + (int)(mdblArcLengthRadiusTurnOuter * COUNTS_PER_INCH);
-                        mintStepRightTarget2 = mintStartPositionRight2 + (int)(mdblArcLengthRadiusTurnOuter * COUNTS_PER_INCH);
+                        mintStepLeftTarget1 = mintStartPositionLeft1 + (int)(dblArcLengthRadiusTurnInner * COUNTS_PER_INCH);
+                        mintStepLeftTarget2 = mintStartPositionLeft2 + (int)(dblArcLengthRadiusTurnInner * COUNTS_PER_INCH);
+                        mintStepRightTarget1 = mintStartPositionRight1 + (int)(rdblArcLengthRadiusTurnOuter * COUNTS_PER_INCH);
+                        mintStepRightTarget2 = mintStartPositionRight2 + (int)(rdblArcLengthRadiusTurnOuter * COUNTS_PER_INCH);
 
                         //store the encoder positions so next step can calculate destination
                         mintLastEncoderDestinationLeft1 = mintStepLeftTarget1;
@@ -3182,14 +2903,14 @@ public class AutoDriveTeam5291 extends LinearOpMode
                         robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                         // set power on motor controller to start moving
-                        setDriveLeftMotorPower(mdblSpeedInner);  //left side is inner when turning left
-                        setDriveRightMotorPower(mdblSpeedOuter);  //right side is outer when turning left
+                        setDriveLeftMotorPower(rdblSpeedInner);  //left side is inner when turning left
+                        setDriveRightMotorPower(rdblSpeedOuter);  //right side is outer when turning left
                         break;
                     case "RRE":
-                        mintStepLeftTarget1 = mintStartPositionLeft1 + (int)(mdblArcLengthRadiusTurnOuter * COUNTS_PER_INCH);
-                        mintStepLeftTarget2 = mintStartPositionLeft2 + (int)(mdblArcLengthRadiusTurnOuter * COUNTS_PER_INCH);
-                        mintStepRightTarget1 = mintStartPositionRight1 + (int)(mdblArcLengthRadiusTurnInner * COUNTS_PER_INCH);
-                        mintStepRightTarget2 = mintStartPositionRight2 + (int)(mdblArcLengthRadiusTurnInner * COUNTS_PER_INCH);
+                        mintStepLeftTarget1 = mintStartPositionLeft1 + (int)(rdblArcLengthRadiusTurnOuter * COUNTS_PER_INCH);
+                        mintStepLeftTarget2 = mintStartPositionLeft2 + (int)(rdblArcLengthRadiusTurnOuter * COUNTS_PER_INCH);
+                        mintStepRightTarget1 = mintStartPositionRight1 + (int)(dblArcLengthRadiusTurnInner * COUNTS_PER_INCH);
+                        mintStepRightTarget2 = mintStartPositionRight2 + (int)(dblArcLengthRadiusTurnInner * COUNTS_PER_INCH);
 
                         //store the encoder positions so next step can calculate destination
                         mintLastEncoderDestinationLeft1 = mintStepLeftTarget1;
@@ -3210,8 +2931,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
                         robotDrive.rightMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                         // set power on motor controller to start moving
-                        setDriveLeftMotorPower(mdblSpeedOuter);  //left side is outer when turning left
-                        setDriveRightMotorPower(mdblSpeedInner);  //right side is inner when turning left
+                        setDriveLeftMotorPower(rdblSpeedOuter);  //left side is outer when turning left
+                        setDriveRightMotorPower(rdblSpeedInner);  //right side is inner when turning left
                         break;
                 }
 
@@ -3843,7 +3564,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
             case STATE_INIT: {
                 //ensure vision processing is enable
                 mblnDisableVisionProcessing = false;  //enable vision processing
-                readyToCapture = true;               //let OpenCV start doing its thing
+                mblnReadyToCapture = true;               //let OpenCV start doing its thing
                 mintNumberColourTries = 0;
                 mintCurStBeaconColour5291 = stepState.STATE_RUNNING;
                 if (debug >= 2) {
@@ -3866,7 +3587,7 @@ public class AutoDriveTeam5291 extends LinearOpMode
                 }
 
                 if (mintNumberColourTries >= 1) {
-                    readyToCapture = false;
+                    mblnReadyToCapture = false;
                     mintCurStBeaconColour5291 = stepState.STATE_COMPLETE;
                     deleteParallelStep();
                 }
@@ -3897,8 +3618,8 @@ public class AutoDriveTeam5291 extends LinearOpMode
         switch (mintCurStAttackBeacon5291) {
             case STATE_INIT: {
                 //ensure vision processing is enable
-                mblnDisableVisionProcessing = false;  //enable vision processing
-                readyToCapture = false;               //stop OpenCV start doing its thing
+                mblnDisableVisionProcessing = true;  //disable vision processing
+                mblnReadyToCapture = false;               //stop OpenCV from doing its thing
                 mintNumberColourTries = 0;
                 mintCurStAttackBeacon5291 = stepState.STATE_RUNNING;
                 if (debug >= 2) {
@@ -3916,89 +3637,67 @@ public class AutoDriveTeam5291 extends LinearOpMode
 
                 if (allianceColor.equals("Red")) {
                     if (mColour == Constants.BeaconColours.BEACON_BLUE_RED) {    //means red is to the right
-                        //moveServo(servoBeaconRight, SERVOBEACONRIGHT_HOME + 90, SERVOBEACONRIGHT_MIN_RANGE, SERVOBEACONRIGHT_MAX_RANGE);
-                        //moveServo(servoBeaconLeft, SERVOBEACONLEFT_HOME + 7, SERVOBEACONLEFT_MIN_RANGE, SERVOBEACONLEFT_MAX_RANGE);
                         blnColourOK = true;
                     } else if (mColour == Constants.BeaconColours.BEACON_RED_BLUE) {
-                        //moveServo(servoBeaconRight, SERVOBEACONRIGHT_HOME, SERVOBEACONRIGHT_MIN_RANGE, SERVOBEACONRIGHT_MAX_RANGE);
-                        //moveServo(servoBeaconLeft, SERVOBEACONLEFT_HOME + 90, SERVOBEACONLEFT_MIN_RANGE, SERVOBEACONLEFT_MAX_RANGE);
                         blnColourOK = true;
                     } else if (mColour == Constants.BeaconColours.BEACON_RED)
                     {
-                        //LedState (LedOff, LedOn, LedOff, LedOff, LedOn, LedOff);
-                        //insertSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0, mintCurrentStep + 1);
-                        //insertSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
                         blnColourOK = false;
                     } else if (mColour == Constants.BeaconColours.BEACON_BLUE)
                     {
-                        //LedState (LedOff, LedOff, LedOn, LedOff, LedOff, LedOn);
-                        //insertSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0, mintCurrentStep + 1);
-                        //insertSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
                         blnColourOK = false;
                     }
                 } else if (allianceColor.equals("Blue")) {
                     if (mColour == Constants.BeaconColours.BEACON_BLUE_RED) {    //means red is to the right
-                        //moveServo(servoBeaconRight, SERVOBEACONRIGHT_HOME , SERVOBEACONRIGHT_MIN_RANGE, SERVOBEACONRIGHT_MAX_RANGE);
-                        //moveServo(servoBeaconLeft, SERVOBEACONLEFT_HOME + 90, SERVOBEACONLEFT_MIN_RANGE, SERVOBEACONLEFT_MAX_RANGE);
                         blnColourOK = true;
                     } else if (mColour == Constants.BeaconColours.BEACON_RED_BLUE) {
-                        //moveServo(servoBeaconRight, SERVOBEACONRIGHT_HOME + 90, SERVOBEACONRIGHT_MIN_RANGE, SERVOBEACONRIGHT_MAX_RANGE);
-                        //moveServo(servoBeaconLeft, SERVOBEACONLEFT_HOME, SERVOBEACONLEFT_MIN_RANGE, SERVOBEACONLEFT_MAX_RANGE);
                         blnColourOK = true;
                     }  else if (mColour == Constants.BeaconColours.BEACON_RED)
                     {
-                        //LedState (LedOff, LedOn, LedOff, LedOff, LedOn, LedOff);
-                        //insertSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0, mintCurrentStep + 1);
-                        //insertSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
                         blnColourOK = false;
                     } else if (mColour == Constants.BeaconColours.BEACON_BLUE)
                     {
-                        //LedState (LedOff, LedOff, LedOn, LedOff, LedOff, LedOn);
-                        //insertSteps(5,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0, mintCurrentStep + 1);
-                        //insertSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
                         blnColourOK = false;
                     }
                 }
                 if (blnColourOK) {
                     mint5291LEDStatus = LEDState.STATE_BEACON;
-                    readRangeSensors();  // This takes 100ms so use it wisely
-                    dblMaxDistance = Math.max(Math.abs(mdblRangeSensor1), Math.abs(mdblRangeSensor2));  //get the maxiumum distance from wall
-                    if (dblMaxDistance > 50) {
+                    int loops = 0;
+                    do {
                         readRangeSensors();  // This takes 100ms so use it wisely
                         dblMaxDistance = Math.max(Math.abs(mdblRangeSensor1), Math.abs(mdblRangeSensor2));  //get the maxiumum distance from wall
-                    }
-                    if (dblMaxDistance > 50) {
-                        readRangeSensors();  // This takes 100ms so use it wisely
-                        dblMaxDistance = Math.min(Math.abs(mdblRangeSensor1), Math.abs(mdblRangeSensor2)) + 5;  //get the maxiumum distance from wall
-                    }
+                        loops++;
+                    } while ((dblMaxDistance > 50) && (loops < 3));
 
                     if (!(dblMaxDistance == 0)) {
                         insertSteps(3, "FWE-12", false, false, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
                         insertSteps(2, "EYE",   false, false,  9,     0,    0,    0,    0,    0,    0,mintCurrentStep + 1);
                         insertSteps(3, "FWE" + (dblMaxDistance / 2.54), true, true, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);
                     }
+                    
                 } else {
                     mint5291LEDStatus = LEDState.STATE_ERROR;
                     if (mintStepRetries < 1) {  //only1 retry
                         mintStepRetries++;
-                        readRangeSensors();  // This takes 100ms so use it wisely
-                        dblMaxDistance = Math.max(Math.abs(mdblRangeSensor1), Math.abs(mdblRangeSensor2));  //get the maxiumum distance from wall
-                        if (dblMaxDistance > 50) {
+                        int loops = 0;
+                        do {
                             readRangeSensors();  // This takes 100ms so use it wisely
                             dblMaxDistance = Math.max(Math.abs(mdblRangeSensor1), Math.abs(mdblRangeSensor2));  //get the maxiumum distance from wall
-                        }
-                        if (dblMaxDistance > 50) {
-                            readRangeSensors();  // This takes 100ms so use it wisely
-                            dblMaxDistance = Math.min(Math.abs(mdblRangeSensor1), Math.abs(mdblRangeSensor2)) + 5;  //get the maxiumum distance from wall
-                        }
+                            loops++;
+                        } while ((dblMaxDistance > 50) && (loops < 3));
+                        
+                        //jut in case we get some weird error, make something up
+                        if (dblMaxDistance > 50)
+                            dblMaxDistance = 14;
+                        
                         insertSteps(3, "ATB",  false, false,   0,    0,    0,    0,    0,    0,    0,    mintCurrentStep + 1);
                         insertSteps(3,  "BCL",  false, false,   0,    0,    0,    0,    0,    0,    0,    mintCurrentStep + 1);
                         if (allianceColor.equals("Red"))
-                            insertSteps(3, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
+                            insertSteps(2, "GTE180",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
                         else if (allianceColor.equals("Blue"))
-                            insertSteps(3, "GTE270",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
+                            insertSteps(2, "GTE270",false, false,   0,    0,    0,    0,    0,    0,    0.47, mintCurrentStep + 1);
                         if ((16 - (dblMaxDistance / 2.54)) >= 0) {
-                            insertSteps(3, "FWE-" + (16 - (dblMaxDistance / 2.54)), false, true, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);  //we want to be 18 inches from wall
+                            insertSteps(2, "FWE-" + (16 - (dblMaxDistance / 2.54)), false, true, 0, 0, 0, 0, 0, 0, 0.4, mintCurrentStep + 1);  //we want to be 18 inches from wall
                         }
                     } else {
                         mintStepRetries = 0;  //reset the counter in case another step needs it
@@ -4689,12 +4388,24 @@ public class AutoDriveTeam5291 extends LinearOpMode
     private Double getAdafruitHeading ()
     {
         Orientation angles;
-
         angles = imu.getAngularOrientation().toAxesReference(AxesReference.INTRINSIC).toAxesOrder(AxesOrder.ZYX);
-        return formatAngle(angles.angleUnit, angles.firstAngle);
+        return angleToHeading(formatAngle(angles.angleUnit, angles.firstAngle));
     }
 
+    //for adafruit IMU
     private Double formatAngle(AngleUnit angleUnit, double angle) {
         return AngleUnit.DEGREES.fromUnit(angleUnit, angle);
+    }
+
+    //for adafruit IMU as it returns z angle only
+    private double angleToHeading(double z) {
+
+        double angle = -z;
+        if (angle < 0)
+            return angle + 360;
+        else if (angle > 360)
+            return angle - 360;
+        else
+            return angle;
     }
 }
