@@ -208,12 +208,12 @@ public class BaseDriveWorking extends OpMode {
         //arms controls, - all gamepad 2
         if (gamepad2.right_trigger > 0) {
             mblnIntakeFlip = true;
-            armDrive.sweeper.setDirection(DcMotor.Direction.FORWARD);
+            armDrive.sweeper.setDirection(DcMotor.Direction.REVERSE);
         }
         else
         {
             mblnIntakeFlip = false;
-            armDrive.sweeper.setDirection(DcMotor.Direction.REVERSE);
+            armDrive.sweeper.setDirection(DcMotor.Direction.FORWARD);
         }
 
         if (gamepad2.right_bumper)
@@ -339,13 +339,11 @@ public class BaseDriveWorking extends OpMode {
 
         if (blnGamePadA)
         {
-            mblnSlowDown = true;
             mdblMax = 0.25;
             mdblLeftPow = gamepad1.left_stick_y;
             mdblRightPow = mdblLeftPow;
         } else {
-            mblnSlowDown = false;
-            mdblMax = 1;
+            mdblMax = 0.99;
         }
 
         if (mdblLeftPow < 0) {

@@ -15,6 +15,10 @@ public abstract class Constants {
         BEACON_BLUE,
         BEACON_RED_BLUE,
         BEACON_BLUE_RED,
+        BEACON_RED_LEFT,
+        BEACON_RED_RIGHT,
+        BEACON_BLUE_LEFT,
+        BEACON_BLUE_RIGHT,
         UNKNOWN;
 
         public String toString() {

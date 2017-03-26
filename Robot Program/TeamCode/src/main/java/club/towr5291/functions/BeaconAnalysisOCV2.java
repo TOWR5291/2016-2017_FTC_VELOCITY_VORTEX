@@ -110,10 +110,13 @@ public class BeaconAnalysisOCV2 {
 
     }
 
-    public Constants.BeaconColours beaconAnalysisOCV2(int debuglevel, Mat img, int count) {
+    public Constants.BeaconColours beaconAnalysisOCV2(int debuglevel, Mat img, int count, Point beacTopL, Point beacBotR, Point beacMiddle, boolean beacKnown) {
+
+        //set debug level based on menu system
+        debug = debuglevel;
 
         if ((count >= 1) && (debug >= 9))
-            return beaconColourResult;
+            return Constants.BeaconColours.UNKNOWN;
         
         //clear out old information
         finalImg = new Mat();
@@ -141,9 +144,6 @@ public class BeaconAnalysisOCV2 {
         beacon_box = new Rect( 0, 0, 1, 1 );
 
         imageTimeStamp = System.currentTimeMillis();
-
-        //set debug level based on menu system
-        debug = debuglevel;
 
         if (debug >= 1)
         {
@@ -189,6 +189,8 @@ public class BeaconAnalysisOCV2 {
         //image is 1280 x720
         //roi = new Rect(0, 0, 1280, 360);
         //} else
+
+        /* commented March 20 Ian
         {
             //see if reducing image size make its faster
             //takes 600ms to process at this size
@@ -200,7 +202,28 @@ public class BeaconAnalysisOCV2 {
             }
             Imgproc.resize(img, img, size);
             roi = new Rect(0, 0, 640, 180);
+        }*/
+
+        // added march 20 ian to see if we get Beacon by itself
+        if (beacKnown) {
+            roi = new Rect((int) beacTopL.x, (int) beacTopL.y, (int) beacBotR.x - (int) beacTopL.x, (int) beacBotR.y - (int) beacTopL.y);
+            Log.d("Vuforia", "beacTopL.x " + beacTopL.x);
+            Log.d("Vuforia", "beacTopL.y " + beacTopL.y);
+            Log.d("Vuforia", "beacBotR.x " + beacBotR.x);
+            Log.d("Vuforia", "beacBotR.y " + beacBotR.y);
+        } else {
+            //see if reducing image size make its faster
+            //takes 600ms to process at this size
+            Size size = new Size(0, 0);
+            if (img.height() == 360) {
+                size = new Size(640, 180);//the dst image size,e.g.100x100
+            } else {
+                size = new Size(640, 360);//the dst image size,e.g.100x100
+            }
+            Imgproc.resize(img, img, size);
+            roi = new Rect(0, 0, 640, 180);
         }
+
         Mat cropped = new Mat(img, roi);
         original = cropped.clone();
 
@@ -273,7 +296,7 @@ public class BeaconAnalysisOCV2 {
         finalImg = draw();
         if (debug >= 2)
             SaveImage(finalImg, imageTimeStamp + "-99 final " + imageCounter );
-        calcPosition();
+        calcPosition(beacMiddle);
 
         if (debug >= 1)
         {
@@ -286,7 +309,6 @@ public class BeaconAnalysisOCV2 {
         }
 
         return beaconColourResult;
-
     }
 
     private void findLum()
@@ -303,10 +325,10 @@ public class BeaconAnalysisOCV2 {
 
         lumAvg = Core.mean( lum ).val[0];
 
-        if(tmp1Img == null)
+        //if(tmp1Img == null)
             tmp1Img = sat.clone();
-        else
-            sat.copyTo(tmp1Img);
+        //else
+        //    sat.copyTo(tmp1Img);
 
         Core.normalize( tmp1Img, sat, 120, 255, Core.NORM_MINMAX );
         lum.copyTo(tmp1Img);
@@ -317,7 +339,7 @@ public class BeaconAnalysisOCV2 {
         if (debug >= 9)
             SaveImage(lum, imageTimeStamp + "-13 findLum lum normalize " + imageCounter );
 
-        if (white == null)
+        //if (white == null)
             white = lum.clone();
 
         Imgproc.GaussianBlur( lum, tmp1Img, new Size(25,25), 25);
@@ -340,7 +362,7 @@ public class BeaconAnalysisOCV2 {
         hsv_channels.set( 1, sat );
         hsv_channels.set( 2, lum );
 
-        if (zonedImg == null)
+        //if (zonedImg == null)
             zonedImg = new Mat(hsvImg.rows(), hsvImg.cols(), hsvImg.type());
 
         Core.merge( hsv_channels, zonedImg );
@@ -355,11 +377,13 @@ public class BeaconAnalysisOCV2 {
         List<Mat> tmp = new ArrayList<>();
         Core.split( hsvImg, tmp );
 
-        if(maskImg == null)  maskImg = new Mat(hsvImg.rows(), hsvImg.cols(), hsvImg.type());
+        //if(maskImg == null)
+          maskImg = new Mat(hsvImg.rows(), hsvImg.cols(), hsvImg.type());
 
-        if(onesImg == null)
+        //if(onesImg == null)
             onesImg = Mat.ones( hsvImg.rows(), hsvImg.cols(), white.type() );
-        if(zeroImg == null)
+
+        //if(zeroImg == null)
             zeroImg = Mat.zeros( hsvImg.rows(), hsvImg.cols(), white.type() );
 
         white.copyTo(tmp1Img);
@@ -391,6 +415,12 @@ public class BeaconAnalysisOCV2 {
 
         //get known rubbish areas from hashmap and process
 
+
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Start Crap Filter");
+        }
+        // this process is 350ms
         for (int x = 0; x < loadHSVCrapindex; x++) {
             if (x == 0) {
                 if (HSVCrapFilters.containsKey(String.valueOf(x))) {
@@ -404,6 +434,10 @@ public class BeaconAnalysisOCV2 {
                     Core.bitwise_or(crap1, crap2, crap1);
                 }
             }
+        }
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Finish Crap Filter");
         }
         Imgproc.dilate(crap1, crap1, new Mat());
         Imgproc.dilate(crap1, crap1, new Mat());
@@ -433,6 +467,12 @@ public class BeaconAnalysisOCV2 {
 //                SaveImage(blue2, imageTimeStamp + "-22 findBlue inRange2 " + imageCounter);
 //            Core.bitwise_or(blue_areas, blue2, blue_areas);
 
+            if (debug >= 3)
+            {
+                fileLogger.writeEvent(TAG, "Start Blue Filter");
+            }
+
+            // this process is 300ms
             for (int x = 0; x < loadHSVBlueindex; x++) {
                 if (x == 0) {
                     if (HSVBlueFilters.containsKey(String.valueOf(x))) {
@@ -446,6 +486,10 @@ public class BeaconAnalysisOCV2 {
                         Core.bitwise_or(blue_areas, blue1, blue_areas);
                     }
                 }
+            }
+            if (debug >= 3)
+            {
+                fileLogger.writeEvent(TAG, "Finish Blue Filter");
             }
 
             if (debug >= 9)
@@ -510,7 +554,12 @@ public class BeaconAnalysisOCV2 {
 //        if (debug >= 9)
 //            SaveImage(red_areas, imageTimeStamp + "-28 findRed bitwise_or " + imageCounter );
 
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Start Red Filter");
+        }
 
+        // this process is 200ms
         for (int x = 0; x < loadHSVRedindex; x++) {
             if (x == 0) {
                 if (HSVRedFilters.containsKey(String.valueOf(x))) {
@@ -524,6 +573,10 @@ public class BeaconAnalysisOCV2 {
                     Core.bitwise_or(red_areas, red1, red_areas);
                 }
             }
+        }
+        if (debug >= 3)
+        {
+            fileLogger.writeEvent(TAG, "Finish Red Filter");
         }
 
         //filter out the known crap
@@ -833,7 +886,7 @@ public class BeaconAnalysisOCV2 {
         return out;
     }
 
-    private void calcPosition()
+    private void calcPosition(Point beacMiddle)
     {
         double beac_ctr;
         Point centroidRedPosition;
@@ -866,14 +919,32 @@ public class BeaconAnalysisOCV2 {
         centroidRedPosition = centroidRed.get(0);
 
         if (( red_box.width < 5 || red_box.height < 5 ) || ( blue_box.width < 5 || blue_box.height < 5 )) {
-            beaconColourResult = Constants.BeaconColours.UNKNOWN;
-            return;
+            //beaconColourResult = Constants.BeaconColours.UNKNOWN;
+            //return;
         } else if ( centroidBluePosition.x  < centroidRedPosition.x ) {
             beaconColourResult = Constants.BeaconColours.BEACON_BLUE_RED;
             return;
         } else if ( centroidRedPosition.x < centroidBluePosition.x ) {
             beaconColourResult = Constants.BeaconColours.BEACON_RED_BLUE;
             return;
+        }
+
+        if (( red_box.width > 5 && red_box.height > 5 )) {
+            if (centroidRedPosition.x < beacMiddle.x) {
+                beaconColourResult = Constants.BeaconColours.BEACON_RED_LEFT;
+                return;
+            } else if (centroidRedPosition.x > beacMiddle.x) {
+                beaconColourResult = Constants.BeaconColours.BEACON_RED_RIGHT;
+                return;
+            }
+        } else if (( blue_box.width > 5 && blue_box.height > 5 )) {
+            if (centroidBluePosition.x < beacMiddle.x) {
+                beaconColourResult = Constants.BeaconColours.BEACON_BLUE_LEFT;
+                return;
+            } else if (centroidBluePosition.x > beacMiddle.x) {
+                beaconColourResult = Constants.BeaconColours.BEACON_BLUE_RIGHT;
+                return;
+            }
         }
 
         if (( red_box.width < 5 || red_box.height < 5 ) || ( blue_box.width < 5 || blue_box.height < 5 )) {

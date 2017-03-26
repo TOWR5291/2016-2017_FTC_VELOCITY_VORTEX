@@ -1,18 +1,11 @@
 package club.towr5291.Concepts;
 
-import android.content.SharedPreferences;
-import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.HashMap;
 
 import club.towr5291.functions.FileLogger;
@@ -21,52 +14,54 @@ import club.towr5291.functions.ReadStepFile;
 
 
 /**
- * Created by ianhaden on 19/01/2017.
- */
+ * Created by Ian Haden on 19/01/2017.
+ * TOWR 5291 ReadStepsFile
+ Copyright (c) 2017 TOWR5291
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ 2017-01-19 - Ian Haden - Initial creation
+ 2017-03-11 - Ian Haden - Modified to use the class to load the sequence
+***/
 
 @TeleOp(name = "Concept Read Steps", group = "5291Concept")
 
 public class ConceptReadStepFile extends LinearOpMode {
 
-    //The autonomous menu settings from the sharepreferences
-    private SharedPreferences sharedPreferences;
     private String teamNumber;
-    private String allianceColor;
-    private String allianceStartPosition;
     private String allianceParkPosition;
+    private String allianceStartPosition;
     private int delay;
     private String numBeacons;
     private String robotConfig;
-    private int debug;
+    private String allianceColor;
+    private int debug = 3;
 
     //set up the variables for the logger
     final String TAG = "Concept Read File";
     private ElapsedTime runtime = new ElapsedTime();
     private FileLogger fileLogger;
 
-
     private ReadStepFile autonomousStepsTest = new ReadStepFile();
 
     private HashMap<String,LibraryStateSegAuto> autonomousStepsMap = new HashMap<String,LibraryStateSegAuto>();
 
-    private void loadSharePreferences()
-    {
-        //load variables
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(hardwareMap.appContext);
-        teamNumber = sharedPreferences.getString("club.towr5291.Autonomous.TeamNumber", "0000");
-        allianceColor = sharedPreferences.getString("club.towr5291.Autonomous.Color", "Red");
-        allianceStartPosition = sharedPreferences.getString("club.towr5291.Autonomous.StartPosition", "Left");
-        allianceParkPosition = sharedPreferences.getString("club.towr5291.Autonomous.ParkPosition", "Vortex");
-        delay = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Delay", "0"));
-        numBeacons = sharedPreferences.getString("club.towr5291.Autonomous.Beacons", "One");
-        robotConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "TileRunner-2x40");
-        debug = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Debug", "1"));
-        debug = 3;
-    }
-
     @Override
     public void runOpMode() throws InterruptedException {
-        loadSharePreferences();
 
         LibraryStateSegAuto mStateSegAuto;
 
@@ -94,8 +89,7 @@ public class ConceptReadStepFile extends LinearOpMode {
         autonomousStepsMap = autonomousStepsTest.ReadStepFile("5291RedLeft.csv" , allianceParkPosition, numBeacons);
 
         Log.d("Steplist", "Number of loaded steps " + autonomousStepsTest.getNumberLoadedSteps());
-        for (int loop = 1; loop < autonomousStepsTest.getNumberLoadedSteps(); loop++)
-        {
+        for (int loop = 1; loop < autonomousStepsTest.getNumberLoadedSteps(); loop++) {
             mStateSegAuto = autonomousStepsMap.get(String.valueOf(loop));
             Log.d("Steplist", "Reading  " + loop + " timeout " + mStateSegAuto.getmRobotTimeOut() + " command " + mStateSegAuto.getmRobotCommand());
         }
@@ -110,8 +104,7 @@ public class ConceptReadStepFile extends LinearOpMode {
         autonomousStepsMap = autonomousStepsTest.ReadStepFile("5291RedLeft.csv" , allianceParkPosition, numBeacons);
 
         Log.d("Steplist", "Number of loaded steps " + autonomousStepsTest.getNumberLoadedSteps());
-        for (int loop = 1; loop < autonomousStepsTest.getNumberLoadedSteps(); loop++)
-        {
+        for (int loop = 1; loop < autonomousStepsTest.getNumberLoadedSteps(); loop++) {
             mStateSegAuto = autonomousStepsMap.get(String.valueOf(loop));
             Log.d("Steplist", "Reading  " + loop + " timeout " + mStateSegAuto.getmRobotTimeOut() + " command " + mStateSegAuto.getmRobotCommand());
         }
@@ -126,8 +119,7 @@ public class ConceptReadStepFile extends LinearOpMode {
         autonomousStepsMap = autonomousStepsTest.ReadStepFile("5291RedRight.csv" , allianceParkPosition, numBeacons);
 
         Log.d("Steplist", "Number of loaded steps " + autonomousStepsTest.getNumberLoadedSteps());
-        for (int loop = 1; loop < autonomousStepsTest.getNumberLoadedSteps(); loop++)
-        {
+        for (int loop = 1; loop < autonomousStepsTest.getNumberLoadedSteps(); loop++) {
             mStateSegAuto = autonomousStepsMap.get(String.valueOf(loop));
             Log.d("Steplist", "Reading  " + loop + " timeout " + mStateSegAuto.getmRobotTimeOut() + " command " + mStateSegAuto.getmRobotCommand());
         }
@@ -142,8 +134,7 @@ public class ConceptReadStepFile extends LinearOpMode {
         autonomousStepsMap = autonomousStepsTest.ReadStepFile("5291RedRight.csv" , allianceParkPosition, numBeacons);
 
         Log.d("Steplist", "Number of loaded steps " + autonomousStepsTest.getNumberLoadedSteps());
-        for (int loop = 1; loop < autonomousStepsTest.getNumberLoadedSteps(); loop++)
-        {
+        for (int loop = 1; loop < autonomousStepsTest.getNumberLoadedSteps(); loop++) {
             mStateSegAuto = autonomousStepsMap.get(String.valueOf(loop));
             Log.d("Steplist", "Reading  " + loop + " timeout " + mStateSegAuto.getmRobotTimeOut() + " command " + mStateSegAuto.getmRobotCommand());
         }

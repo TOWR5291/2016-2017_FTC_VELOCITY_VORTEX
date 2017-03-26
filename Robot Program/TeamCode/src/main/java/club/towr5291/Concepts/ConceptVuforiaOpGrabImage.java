@@ -94,6 +94,9 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
     private String numBeacons;
     private String robotConfig;
 
+    private static final int TARGET_WIDTH = 254;
+    private static final int TARGET_HEIGHT = 184;
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -107,6 +110,8 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         numBeacons = sharedPreferences.getString("club.towr5291.Autonomous.Beacons", "One");
         robotConfig = sharedPreferences.getString("club.towr5291.Autonomous.RobotConfig", "TileRunner-2x40");
         debug = Integer.parseInt(sharedPreferences.getString("club.towr5291.Autonomous.Debug", null));
+
+        debug = 3;
 
         //start the log
         startDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
@@ -337,38 +342,14 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
         Image rgb = null;
 
         int loop = 0;
+        Constants.BeaconColours Colour = Constants.BeaconColours.UNKNOWN;
 
         while (opModeIsActive()) {
-            List<MatOfPoint> contoursRed  = new ArrayList<MatOfPoint>();
-            List<MatOfPoint> contoursBlue = new ArrayList<MatOfPoint>();
 
-            VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().take(); //takes the frame at the head of the queue
-
-            long numImages = frame.getNumImages();
-
-            for (int i = 0; i < numImages; i++)
-            {
-                if (frame.getImage(i).getFormat() == PIXEL_FORMAT.RGB565)
-                {
-                    rgb = frame.getImage(i);
-                    break;
-                }
-            }
-
-            /*rgb is now the Image object that we’ve used in the video*/
-            Log.d("OPENCV","Height " + rgb.getHeight() + " Width " + rgb.getWidth());
-
-            Bitmap bm = Bitmap.createBitmap(rgb.getWidth(), rgb.getHeight(), Bitmap.Config.RGB_565);
-            bm.copyPixelsFromBuffer(rgb.getPixels());
-            Mat tmp = new Mat(rgb.getWidth(), rgb.getHeight(), CvType.CV_8UC4);
-            Utils.bitmapToMat(bm, tmp);
-
-            //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop);
-            //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV2(tmp, loop, debug);
-            Constants.BeaconColours Colour = beaconColour.BeaconAnalysisOCVPlayground(debug, tmp, loop);
-            Log.d("OPENCV","Returned " + Colour);
-
-            frame.close();
+            boolean gotBeacomDims = false;
+            Point beaconBotRight = new Point(0,0);
+            Point beaconTopLeft = new Point(0,0);
+            Point beaconMiddle = new Point(0,0);
 
             for (VuforiaTrackable beac : velocityVortex) {
 
@@ -380,14 +361,110 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
                     float[] poseData = Arrays.copyOfRange(pose.transposed().getData(), 0, 12);
                     rawPose.setData(poseData);
 
-                    Vec2F upperLeft = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(-127,92,0));
-                    Vec2F upperRight = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(127,92,0));
-                    Vec2F lowerLeft = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(127,-92,0));
-                    Vec2F lowerright = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(-127,-92,0));
+                    Vec2F upperLeft  = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(-TARGET_WIDTH / 2,  TARGET_HEIGHT / 2, 0));
+                    Vec2F upperRight = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F( TARGET_WIDTH / 2,  TARGET_HEIGHT / 2, 0));
+                    Vec2F lowerRight = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F( TARGET_WIDTH / 2, -TARGET_HEIGHT / 2, 0));
+                    Vec2F lowerLeft  = Tool.projectPoint(vuforia.getCameraCalibration(), rawPose, new Vec3F(-TARGET_WIDTH / 2, -TARGET_HEIGHT / 2, 0));
 
+                    double dblMidPointTopx = (upperRight.getData()[0] + upperLeft.getData()[0]) / 2;
+                    double dblMidPointTopy = (upperRight.getData()[1] + upperLeft.getData()[1]) / 2;
+                    double dblMidPointBotx = (lowerRight.getData()[0] + lowerLeft.getData()[0]) / 2;
+                    double dblMidPointBoty = (lowerRight.getData()[1] + lowerLeft.getData()[1]) / 2;
+
+                    double width  = Math.sqrt((Math.pow((upperRight.getData()[1] - upperLeft.getData()[1]),2)) + (Math.pow((upperRight.getData()[0] - upperLeft.getData()[0]),2)));
+                    double height = Math.sqrt((Math.pow((dblMidPointTopy - dblMidPointBoty),2)) + (Math.pow((dblMidPointTopx - dblMidPointBotx),2)));
+
+                    //width is equal to 254 mm, so width of beacon is 220mm, height of beacon is 150mm
+                    //pixels per mm width, using a known size of the target
+                    double dblWidthPixelsPermm = width / TARGET_WIDTH;
+                    double dblHeightPixelsPermm = height / TARGET_HEIGHT;
+
+                    //beacon base is about 25mm above top of target
+                    beaconBotRight = new Point ((dblMidPointTopx + (110 * dblWidthPixelsPermm)), dblMidPointTopy - (30 * dblHeightPixelsPermm));
+                    beaconTopLeft = new Point ((dblMidPointTopx - (110 * dblWidthPixelsPermm)), dblMidPointTopy - (160  * dblHeightPixelsPermm));
+
+                    beaconMiddle.x = dblMidPointTopx;
+                    beaconMiddle.y = dblMidPointTopy + (105  * dblHeightPixelsPermm);
+
+                    gotBeacomDims = true;
+
+                    if (debug >= 1)
+                    {
+                        fileLogger.writeEvent("Vuforia", "upperLeft 0 "  + upperLeft.getData()[0]);
+                        fileLogger.writeEvent("Vuforia", "upperLeft 1 "  + upperLeft.getData()[1]);
+                        Log.d("Vuforia", "upperLeft 0 "  + upperLeft.getData()[0]);
+                        Log.d("Vuforia", "upperLeft 1 "  + upperLeft.getData()[1]);
+
+                        fileLogger.writeEvent("Vuforia", "upperRight 0 "  + upperRight.getData()[0]);
+                        fileLogger.writeEvent("Vuforia", "upperRight 1 "  + upperRight.getData()[1]);
+                        Log.d("Vuforia", "upperRight 0 "  + upperRight.getData()[0]);
+                        Log.d("Vuforia", "upperRight 1 "  + upperRight.getData()[1]);
+
+                        fileLogger.writeEvent("Vuforia", "lowerLeft 0 "  + lowerLeft.getData()[0]);
+                        fileLogger.writeEvent("Vuforia", "lowerLeft 1 "  + lowerLeft.getData()[1]);
+                        Log.d("Vuforia", "lowerLeft 0 "  + lowerLeft.getData()[0]);
+                        Log.d("Vuforia", "lowerLeft 1 "  + lowerLeft.getData()[1]);
+
+                        fileLogger.writeEvent("Vuforia", "lowerRight 0 "  + lowerRight.getData()[0]);
+                        fileLogger.writeEvent("Vuforia", "lowerRight 1 "  + lowerRight.getData()[1]);
+                        Log.d("Vuforia", "lowerRight 0 "  + lowerRight.getData()[0]);
+                        Log.d("Vuforia", "lowerRight 1 "  + lowerRight.getData()[1]);
+
+                        fileLogger.writeEvent("Vuforia", "dblMidPointTopx "  + dblMidPointTopx);
+                        fileLogger.writeEvent("Vuforia", "dblMidPointTopy "  + dblMidPointTopy);
+                        fileLogger.writeEvent("Vuforia", "dblMidPointBotx "  + dblMidPointBotx);
+                        fileLogger.writeEvent("Vuforia", "dblMidPointBoty "  + dblMidPointBoty);
+                        Log.d("Vuforia", "dblMidPointTopx "  + dblMidPointTopx);
+                        Log.d("Vuforia", "dblMidPointTopy "  + dblMidPointTopy);
+                        Log.d("Vuforia", "dblMidPointBotx "  + dblMidPointBotx);
+                        Log.d("Vuforia", "dblMidPointBoty "  + dblMidPointBoty);
+
+                        fileLogger.writeEvent("Vuforia", "width in pixels "  + width);
+                        fileLogger.writeEvent("Vuforia", "height in pixels "  + height);
+                        Log.d("Vuforia", "width in pixels "  + width);
+                        Log.d("Vuforia", "height in pixels "  + height);
+                    }
+                }
+            }
+
+            if (gotBeacomDims) {
+
+                VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().take(); //takes the frame at the head of the queue
+
+                long numImages = frame.getNumImages();
+
+                for (int i = 0; i < numImages; i++) {
+                    if (frame.getImage(i).getFormat() == PIXEL_FORMAT.RGB565) {
+                        rgb = frame.getImage(i);
+                        break;
+                    }
                 }
 
+            /*rgb is now the Image object that we’ve used in the video*/
+                Log.d("OPENCV", "Height " + rgb.getHeight() + " Width " + rgb.getWidth());
+
+                Bitmap bm = Bitmap.createBitmap(rgb.getWidth(), rgb.getHeight(), Bitmap.Config.RGB_565);
+                bm.copyPixelsFromBuffer(rgb.getPixels());
+                Mat tmp = new Mat(rgb.getWidth(), rgb.getHeight(), CvType.CV_8UC4);
+                Utils.bitmapToMat(bm, tmp);
+
+                if (beaconTopLeft.x < 0)
+                    beaconTopLeft.x = 0;
+                if (beaconTopLeft.y < 0)
+                    beaconTopLeft.y = 0;
+                if (beaconBotRight.x > rgb.getWidth())
+                    beaconBotRight.x = rgb.getWidth();
+                if (beaconBotRight.y > rgb.getHeight())
+                    beaconBotRight.y = rgb.getHeight();
+
+                frame.close();
+                //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV(tmp, loop);
+                //Constants.BeaconColours Colour = beaconColour.beaconAnalysisOCV2(tmp, loop, debug);
+                Colour = beaconColour.BeaconAnalysisOCVPlayground(debug, tmp, loop, beaconTopLeft, beaconBotRight, beaconMiddle);
+                loop++;
+                Log.d("OPENCV", "Returned " + Colour);
             }
+
             for (VuforiaTrackable trackable : allTrackables) {
                 /**
                  * getUpdatedRobotLocation() will return null if no new information is available since
@@ -441,6 +518,18 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
                 case BEACON_RED_BLUE:
                     telemetry.addData("Beacon ", "Red Blue");
                     break;
+                case BEACON_BLUE_LEFT:
+                    telemetry.addData("Beacon ", "Blue Left");
+                    break;
+                case BEACON_RED_LEFT:
+                    telemetry.addData("Beacon ", "Red Left");
+                    break;
+                case BEACON_BLUE_RIGHT:
+                    telemetry.addData("Beacon ", "Blue Right");
+                    break;
+                case BEACON_RED_RIGHT:
+                    telemetry.addData("Beacon ", "Red Right");
+                    break;
                 case UNKNOWN:
                     telemetry.addData("Beacon ", "Unknown");
                     break;
@@ -448,7 +537,7 @@ public class ConceptVuforiaOpGrabImage extends LinearOpMode{
 
 
             telemetry.update();
-            loop++;
+
         }
 
         //stop the log
