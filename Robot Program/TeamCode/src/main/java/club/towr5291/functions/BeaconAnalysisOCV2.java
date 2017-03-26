@@ -931,18 +931,18 @@ public class BeaconAnalysisOCV2 {
 
         if (( red_box.width > 5 && red_box.height > 5 )) {
             if (centroidRedPosition.x < beacMiddle.x) {
-                beaconColourResult = Constants.BeaconColours.BEACON_RED_LEFT;
+                beaconColourResult = Constants.BeaconColours.BEACON_RED_BLUE;
                 return;
             } else if (centroidRedPosition.x > beacMiddle.x) {
-                beaconColourResult = Constants.BeaconColours.BEACON_RED_RIGHT;
+                beaconColourResult = Constants.BeaconColours.BEACON_BLUE_RED;
                 return;
             }
         } else if (( blue_box.width > 5 && blue_box.height > 5 )) {
             if (centroidBluePosition.x < beacMiddle.x) {
-                beaconColourResult = Constants.BeaconColours.BEACON_BLUE_LEFT;
+                beaconColourResult = Constants.BeaconColours.BEACON_BLUE_RED;
                 return;
             } else if (centroidBluePosition.x > beacMiddle.x) {
-                beaconColourResult = Constants.BeaconColours.BEACON_BLUE_RIGHT;
+                beaconColourResult = Constants.BeaconColours.BEACON_RED_BLUE;
                 return;
             }
         }
