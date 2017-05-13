@@ -189,6 +189,9 @@ public class BaseDriveWorking extends OpMode {
         mint5291LEDStatus = LEDState.STATE_TEAM;
         mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_DOWN;
 
+        moveServo(servoBeaconRight, SERVOBEACONRIGHT_HOME, SERVOBEACONRIGHT_MIN_RANGE, SERVOBEACONRIGHT_MAX_RANGE);
+        moveServo(servoBeaconLeft, SERVOBEACONLEFT_HOME, SERVOBEACONLEFT_MIN_RANGE, SERVOBEACONLEFT_MAX_RANGE);
+
         mdblMax = 1;
         mblnSlowDown = false;
 
@@ -199,7 +202,7 @@ public class BaseDriveWorking extends OpMode {
  */
     @Override
     public void start() {
-        mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_UP;
+        mint5291PUSHERStatus = SERVOPusherState.STATE_LEFT_RIGHT_DOWN;
     }
 
     @Override
@@ -225,6 +228,12 @@ public class BaseDriveWorking extends OpMode {
         {
             mblnIntakeOn = false;
             armDrive.sweeper.setPower(0);
+        }
+
+        if (gamepad2.left_bumper) {
+            armDrive.flicker.setDirection(DcMotor.Direction.FORWARD);
+        } else {
+            armDrive.flicker.setDirection(DcMotor.Direction.REVERSE);
         }
 
         if (gamepad2.left_trigger > 0)
@@ -340,7 +349,6 @@ public class BaseDriveWorking extends OpMode {
         if (blnGamePadA)
         {
             mdblMax = 0.25;
-            mdblLeftPow = gamepad1.left_stick_y;
             mdblRightPow = mdblLeftPow;
         } else {
             mdblMax = 0.99;
@@ -396,6 +404,7 @@ public class BaseDriveWorking extends OpMode {
         //LED STUFF
         //process LED status
         //ERROR - FLASH RED 3 TIMES
+
         switch (mint5291LEDStatus) {
             case STATE_TEAM:        //FLASH Alliance Colour
                 if (allianceColor.equals("Red"))
@@ -497,6 +506,7 @@ public class BaseDriveWorking extends OpMode {
                 }
                 break;
         }
+
 
         //PUSHER SERVO STUFF
         switch (mint5291PUSHERStatus) {

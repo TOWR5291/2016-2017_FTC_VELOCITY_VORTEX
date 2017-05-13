@@ -191,28 +191,25 @@ public class BeaconAnalysisOCVPlayground {
             //roi = new Rect(0, 0, 1280, 360);
         //} else
 
-        /* commented March 20 Ian
-        {
-            //see if reducing image size make its faster
-            //takes 600ms to process at this size
-            Size size = new Size(0, 0);
-            if (img.height() == 360) {
-                size = new Size(640, 180);//the dst image size,e.g.100x100
-            } else {
-                size = new Size(640, 360);//the dst image size,e.g.100x100
-            }
-            Imgproc.resize(img, img, size);
-            roi = new Rect(0, 0, 640, 180);
-        }*/
-
         // added march 20 ian to see if we get Beacon by itself
 
-        roi = new Rect((int)beacTopL.x, (int)beacTopL.y, (int)beacBotR.x - (int)beacTopL.x, (int)beacBotR.y - (int)beacTopL.y);
+        //roi = new Rect((int)beacTopL.x, (int)beacTopL.y, (int)beacBotR.x - (int)beacTopL.x, (int)beacBotR.y - (int)beacTopL.y);
         Log.d("Vuforia", "beacTopL.x "  + beacTopL.x);
         Log.d("Vuforia", "beacTopL.y "  + beacTopL.y);
         Log.d("Vuforia", "beacBotR.x "  + beacBotR.x);
         Log.d("Vuforia", "beacBotR.y "  + beacBotR.y);
 
+        //commented March 20 Ian
+        //see if reducing image size make its faster
+        //takes 600ms to process at this size
+        Size size = new Size(0, 0);
+        if (img.height() == 360) {
+            size = new Size(640, 180);//the dst image size,e.g.100x100
+        } else {
+            size = new Size(640, 360);//the dst image size,e.g.100x100
+        }
+        Imgproc.resize(img, img, size);
+        roi = new Rect(0, 0, 640, 180);
 
         Mat cropped = new Mat(img, roi);
         original = cropped.clone();
@@ -391,21 +388,8 @@ public class BeaconAnalysisOCVPlayground {
         Core.multiply( tmpHsvImg, maskImg, zonedImg );
         if (debug >= 9)
             SaveImage(zonedImg, imageTimeStamp + "-20 findLum multiply " + imageCounter );
-/*
-
-        //get known rubbish areas to filter out
-        Core.inRange(zonedImg, new Scalar(100, 140, 0), new Scalar(200, 220, 20), crap1);
-        Core.inRange(zonedImg, new Scalar(0, 180, 0), new Scalar(20, 220, 20), crap2);
-        Core.bitwise_or(crap1, crap2, crap1);
-        Core.inRange(zonedImg, new Scalar(0, 120, 240), new Scalar(80, 140, 255), crap2);
-        Core.bitwise_or(crap1, crap2, crap1);
-        Core.inRange(zonedImg, new Scalar(140, 120, 160), new Scalar(160, 140, 180), crap2);
-        Core.bitwise_or(crap1, crap2, crap1);
-*/
 
         //get known rubbish areas from hashmap and process
-
-
         if (debug >= 3)
         {
             fileLogger.writeEvent(TAG, "Start Crap Filter");
@@ -519,7 +503,6 @@ public class BeaconAnalysisOCVPlayground {
                 }
             }
         }
-
 
         // There can be several blobs.  Find the largest that fills a certain amount
         // of the image.  These are crude heuristics but should be fine if we control
@@ -642,7 +625,6 @@ public class BeaconAnalysisOCVPlayground {
             fileLogger.writeEvent(TAG, "createBeaconMask ");
             Log.d(TAG, "createBeaconMask ");
         }
-
 
         for ( Rect butn : buttons )
         {
